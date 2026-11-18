@@ -298,7 +298,7 @@ class TestReal(unittest.TestCase):
 
     def test_chu(self):
         page, _ = self.build(self.inp)
-        self.assertEqual(page.count("<div class='chu'>作成者の注："), 2)   # 説明の移り変わりの表と、質問の該当の部分
+        self.assertEqual(page.count("<div class='chu'>作成者の注："), 8)   # 注5行。説明の移り変わりの表と、質問の該当の部分に出る
         self.assertIn("作成者が補った説明", page)
 
     def with_chu(self, **kw):
