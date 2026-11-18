@@ -296,6 +296,31 @@ class TestReal(unittest.TestCase):
             self.build(Wrap(self.inp, change))
         self.assertIn("(b) 出典の無い記述", kinds(c.exception))
 
+    def test_chu(self):
+        page, _ = self.build(self.inp)
+        self.assertEqual(page.count("<div class='chu'>作成者の注："), 2)   # 説明の移り変わりの表と、質問の該当の部分
+        self.assertIn("作成者が補った説明", page)
+
+    def with_chu(self, **kw):
+        t = dict(self.teigi)
+        t["chu"] = [dict(self.teigi["chu"][0], **kw)]
+        return t
+
+    def test_stop_chu_target_missing(self):
+        with self.assertRaises(bn.Stop) as c:
+            self.build(self.inp, self.with_chu(part="どの記述にも無い字"))
+        self.assertIn("定義", kinds(c.exception))
+
+    def test_stop_chu_fragment_not_in_source(self):
+        with self.assertRaises(bn.Stop) as c:
+            self.build(self.inp, self.with_chu(text="表では「この字は資料に無い」とあります。"))
+        self.assertIn("(a) 引用が原典に無い", kinds(c.exception))
+
+    def test_stop_chu_source_unknown(self):
+        with self.assertRaises(bn.Stop) as c:
+            self.build(self.inp, self.with_chu(moto="doc:sonzai-shinai/1"))
+        self.assertTrue({"(a) 引用が原典に無い", "(b) 出典の無い記述"} & set(kinds(c.exception)))
+
     def test_stop_word(self):
         t = dict(self.teigi)
         t["topics"] = [(P_, s, sh, se + "の記載" if s == "menseki" else se) for P_, s, sh, se in t["topics"]]
