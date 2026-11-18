@@ -285,7 +285,7 @@ class Page:
             return keys.ymd(f) + ("〜" + keys.ymd(t) if t and t != f else "") if f else ""
         return "".join(f"<tr><td class='nw'>{kikan(x)}</td><td>{E(x['name'])}</td>"
                        f"<td>{'、'.join(S(self.srcname(s)) for s in x['sources'].split(',')[:2])}</td></tr>"
-                       for x in self.m["katei"])
+                       for x in reversed(self.m["katei"]))
 
     def chu(self, sid_or_source, text):
         """その資料の、その字を含む文に付ける「作成者の注」。無ければ空。"""
@@ -370,7 +370,7 @@ class Page:
 <h2>論点ごとのページ</h2>
 <table><tr><th>論点</th><th>町の資料・答弁の記述</th><th>議会での質問</th></tr>{''.join(rows)}</table>
 <p class='m'>準備中の論点：{E('／'.join(T['junbi']))}　ほか</p>
-<h2>これまでの経過</h2>
+<h2>これまでの経過（新しい順）</h2>
 <table><tr><th>時期</th><th>内容</th><th>もとの資料</th></tr>{self.katei_rows()}</table>
 <h2>議会での質問から見る（{len(qmap)}件）</h2>
 <p class='m'>一つの質問が、複数の論点にまたがることがあります。質問ごとに、関係する論点のページを示します。</p>
