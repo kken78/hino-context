@@ -13,6 +13,7 @@ from fnmatch import fnmatchcase
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LOCK_PATH = os.path.join(ROOT, "inputs.lock.json")
+GAIBU_COLUMNS = ["id", "name", "hakkou", "hiduke", "url", "kakunin", "page", "ji"]
 HS = "hino-council-search"
 SP = "shiga-hino-plans"
 TD = "hino-town-docs"
@@ -205,6 +206,27 @@ class Inputs:
         return self.read_text(SP, path) if path in self.files(SP, f"data/{layer}/*/*.txt") else None
 
     # ---- 前の作りの定義と台帳（hino-ronten） ----
+
+    def gaibu(self):
+        """外部の公的な資料の表（SCHEMA.md §5）。このリポジトリの teigi/gaibu.tsv。無ければ空。"""
+        if not hasattr(self, "_gaibu"):
+            path = os.path.join(ROOT, "teigi", "gaibu.tsv")
+            rows = []
+            if os.path.exists(path):
+                with open(path, encoding="utf-8") as f:
+                    rows = read_tsv(f.read(), "teigi/gaibu.tsv", GAIBU_COLUMNS)
+                errs = []
+                for i, r in enumerate(rows, 2):
+                    if any(not r[c] for c in ("id", "name", "hakkou", "url", "kakunin", "page", "ji")):
+                        errs.append(f"{i} 行目：id・name・hakkou・url・kakunin・page・ji に空がある")
+                    elif not r["url"].startswith("https://"):
+                        errs.append(f"{i} 行目：url が https で始まらない")
+                    elif not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", r["kakunin"]):
+                        errs.append(f"{i} 行目：kakunin の形が YYYY-MM-DD でない")
+                if errs:
+                    raise InputError(f"teigi/gaibu.tsv：{len(errs)} 件\n" + "\n".join(f"  - {e}" for e in errs))
+            self._gaibu = rows
+        return self._gaibu
 
     def ronten_tsv(self, path):
         return read_tsv(self.read_bytes(RT, path), f"{RT} {path}")

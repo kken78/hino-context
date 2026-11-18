@@ -298,8 +298,21 @@ class TestReal(unittest.TestCase):
 
     def test_chu(self):
         page, _ = self.build(self.inp)
-        self.assertEqual(page.count("<div class='chu'>作成者の注："), 2)   # 説明の移り変わりの表と、質問の該当の部分
+        self.assertEqual(page.count("<div class='chu'>作成者の注："), 9)   # 注6行。説明の移り変わりの表と、質問の該当の部分に出る
         self.assertIn("作成者が補った説明", page)
+
+    def test_chu_gaibu(self):
+        page, _ = self.build(self.inp)
+        self.assertEqual(page.count("総務省自治財政局財務調査課「地方公共団体における公共施設等の適正な管理の推進について」"), 1)
+        self.assertIn("2026年11月18日に確認", page)
+
+    def test_stop_chu_gaibu_fragment(self):
+        t = dict(self.teigi)
+        ext = next(c for c in self.teigi["chu"] if c["moto"].startswith("ext:"))
+        t["chu"] = [dict(ext, text="総務省の資料では「表に無い字」とされています。")]
+        with self.assertRaises(bn.Stop) as c:
+            self.build(self.inp, t)
+        self.assertIn("(a) 引用が原典に無い", kinds(c.exception))
 
     def with_chu(self, **kw):
         t = dict(self.teigi)

@@ -18,12 +18,14 @@ SEARCH = "https://kken78.github.io/hino-council-search/#sid={}"
 class KeyFormError(ValueError):
     """鍵の形が SCHEMA.md §2 に合わない。"""
 
+RE_EXT = re.compile(r"ext:([a-z0-9][a-z0-9-]*)/([0-9]+)")
+
 
 def parse(key):
-    """資料の鍵 → (種類, 部分の組)。種類は sp・para・iq・sq・doc・pt・plan・gi・node。形が違えば KeyFormError。"""
+    """資料の鍵 → (種類, 部分の組)。種類は sp・para・iq・sq・doc・pt・plan・gi・node・ext。形が違えば KeyFormError。"""
     key = key or ""
     for kind, rx in (("sp", RE_SP), ("para", RE_PARA), ("iq", RE_IQ), ("sq", RE_SQ), ("doc", RE_DOC_PAGE),
-                     ("pt", RE_PT_PAGE), ("plan", RE_PLAN), ("gi", RE_GI), ("node", RE_NODE)):
+                     ("pt", RE_PT_PAGE), ("plan", RE_PLAN), ("gi", RE_GI), ("node", RE_NODE), ("ext", RE_EXT)):
         m = rx.fullmatch(key)
         if m:
             if kind == "para" and m.group(3) and int(m.group(2)) >= int(m.group(3)):
@@ -108,6 +110,12 @@ def source_name(inp, key):
     if kind == "pt":
         name = ((inp.plan(g[0]) or {}).get("meta") or {}).get("name", "")
         return f"{name} {g[2]}ページ" if name else ""
+    if kind == "ext":
+        r = next((r for r in inp.gaibu() if r["id"] == g[0] and r["page"] == g[1]), None)
+        if not r:
+            return ""
+        hiduke = f"（{r['hiduke']}）" if r["hiduke"] else ""
+        return f"{r['hakkou']}「{r['name']}」{hiduke} {g[1]}ページ"
     return ""
 
 
@@ -123,4 +131,6 @@ def source_url(inp, key, p=None):
     if kind == "pt":
         row = next((r for r in inp.sources_index() if r["id"] == g[0] and r["file"] == g[1] + ".pdf"), None)
         return _page_url(inp, (row or {}).get("url", ""), g[2])
+    if kind == "ext":
+        return next((r["url"] for r in inp.gaibu() if r["id"] == g[0] and r["page"] == g[1]), "")
     return ""

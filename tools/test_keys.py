@@ -65,5 +65,30 @@ class TestWrite(unittest.TestCase):
         self.assertEqual(keys.search_url(SID, 5), f"https://kken78.github.io/hino-council-search/#sid={SID}&p=5")
 
 
+
+class TestExt(unittest.TestCase):
+    def test_parse(self):
+        self.assertEqual(keys.parse("ext:soumu-tekiseikanri-20251118/2"), ("ext", ("soumu-tekiseikanri-20251118", "2")))
+        for bad in ("ext:/2", "ext:Soumu/2", "ext:soumu", "ext:soumu/a"):
+            with self.assertRaises(keys.KeyFormError):
+                keys.parse(bad)
+
+    def test_name_url_and_text(self):
+        import shogo
+
+        class Fake:
+            def gaibu(self):
+                return [dict(id="a-1", name="題", hakkou="総務省", hiduke="令和7年1月1日", url="https://example.jp/a.pdf",
+                             kakunin="2026-11-18", page="2", ji="充当率９０％")]
+        inp = Fake()
+        self.assertEqual(keys.source_name(inp, "ext:a-1/2"), "総務省「題」（令和7年1月1日） 2ページ")
+        self.assertEqual(keys.source_url(inp, "ext:a-1/2"), "https://example.jp/a.pdf")
+        self.assertEqual(keys.source_name(inp, "ext:a-1/3"), "")
+        res = shogo.check_quotes(inp, [dict(where="w", source="ext:a-1/2", quote="90%"),
+                                       dict(where="w", source="ext:a-1/2", quote="50%"),
+                                       dict(where="w", source="ext:b/1", quote="90%")])
+        self.assertEqual((res.total, res.matched), (3, 1))
+
+
 if __name__ == "__main__":
     unittest.main()
