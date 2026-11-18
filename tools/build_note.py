@@ -301,7 +301,7 @@ class Page:
 
     def topic(self, P, slug, short, setsumei):
         inp, T, qsrc = self.inp, self.t, self.m["qsrc"]
-        ko = sorted([x for x in self.m["ko"] if x["point"] == P], key=lambda x: x["source_date"])
+        ko = sorted([x for x in self.m["ko"] if x["point"] == P], key=lambda x: x["source_date"], reverse=True)
         docs = sorted([x for x in ko if not x["source"].startswith("sp:")], key=lambda x: x["source_date"], reverse=True)
         sec1 = "".join(f"<div class='now'><div>「{S(x['quote'])}」</div><div class='m'>{keys.ymd(x['source_date'])}の資料　"
                        f"{self.link(x)}{'　' + self.atai(x) if self.atai(x) else ''}</div></div>" for x in docs) \
@@ -312,7 +312,7 @@ class Page:
         tome = [x for x in ko if self.pat and self.pat.search(x["quote"])]
         rows3 = "".join(f"<tr><td class='nw'>{keys.ymd(x['source_date'])}</td><td>「{S(x['quote'])}」</td>"
                         f"<td>{self.link(x)}</td></tr>" for x in tome)
-        ta = sorted([r for r in self.m["ta"] if r["point"] == P], key=lambda r: qdate(r["question"]))
+        ta = sorted([r for r in self.m["ta"] if r["point"] == P], key=lambda r: qdate(r["question"]), reverse=True)
         blocks = []
         for r in ta:
             q = r["question"]
@@ -331,7 +331,7 @@ class Page:
         jis = "" if any(x["kind"] == "実績" for x in ko) else \
             "<p class='m'>実績（契約額、決算額、完成後の数値など）が分かる資料は、このページのもとにした資料の中にはありません。</p>"
         sec3 = (f"<h2>今後検討・決定するとされていること</h2><table><tr><th>時期</th><th>内容</th><th>もとの資料</th></tr>{rows3}</table>"
-                "<p class='m'>上の表のうち、「まだ」「今後」などの語を含む記述を抜き出しています。その後の状況は、上の表の新しい時期の記述で確認してください。</p>") \
+                "<p class='m'>上の表のうち、「まだ」「今後」などの語を含む記述を抜き出しています。その後の状況は、上の表で、より新しい時期の記述を確認してください。</p>") \
             if tome else ""
         th = E(T["theme"])
         h = f"""<section id='{slug}' class='page'>
@@ -339,8 +339,8 @@ class Page:
 <h1>{E(P)}</h1>
 <p class='lead'>「{th}」のうち、{E(setsumei)}について、町の資料と議会の会議録の記述を集めたページです。意見や評価は加えていません。各項目のリンクから、もとの資料を確認できます。</p>
 <div class='nav'><b>同じテーマのほかのページ</b>：{sib}　<a href='#top'>テーマのページへ戻る</a></div>
-<h2>町の資料の記述（新しいものから）</h2>{sec1}
-<h2>説明の移り変わり（時期の順）</h2>
+<h2>町の資料の記述（新しい順）</h2>{sec1}
+<h2>これまでの説明と答弁（新しい順）</h2>
 <table><tr><th>時期</th><th>区分</th><th>内容</th><th>もとの資料</th></tr>{rows2}</table>{jis}
 {sec3}
 <h2>議会での質問と答弁（{len(ta)}件）</h2>
@@ -362,7 +362,7 @@ class Page:
                 qmap.setdefault(q, []).append((P, slug))
         qrows = "".join(f"<tr><td>{qhead(q, qsrc)}</td><td>{'、'.join(f'<a href=#{s}>{E(p)}</a>' for p, s in ps)}</td>"
                         f"<td><a href='{E(keys.source_url(self.inp, q))}' target='_blank'>会議録</a></td></tr>"
-                        for q, ps in sorted(qmap.items(), key=lambda kv: qdate(kv[0])))
+                        for q, ps in sorted(qmap.items(), key=lambda kv: qdate(kv[0]), reverse=True))
         top = f"""<section id='top' class='page'>
 <p class='lead'>{SITE} ＞ {th}</p>
 <h1>{th}</h1>
