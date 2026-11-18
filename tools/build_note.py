@@ -26,7 +26,7 @@ import ronten  # noqa: E402
 import shogo  # noqa: E402
 
 TEIGI_COLUMNS = ["kind", "key", "name", "short", "setsumei"]
-TEIGI_KINDS = ("テーマ", "論点", "準備中", "抜き出しの語", "単位")
+TEIGI_KINDS = ("テーマ", "論点", "準備中", "抜き出しの語", "単位", "注")
 SKILL_PATH = os.path.join(inputs.ROOT, "SKILL.md")
 OUT_DIR = os.path.join(inputs.ROOT, "build", "note")
 SITE = "日野町 論点ノート（非公式・試作）"
@@ -76,7 +76,9 @@ def read_teigi(path, theme):
                 topics=[(r["name"], r["key"], r["short"], r["setsumei"]) for r in tp],
                 junbi=[r["name"] for r in rows if r["kind"] == "準備中"],
                 words=[r["name"] for r in rows if r["kind"] == "抜き出しの語"],
-                units=[(r["key"], r["name"]) for r in rows if r["kind"] == "単位"])
+                units=[(r["key"], r["name"]) for r in rows if r["kind"] == "単位"],
+                chu=[dict(source=r["key"], part=r["name"], moto=r["short"], text=r["setsumei"])
+                     for r in rows if r["kind"] == "注"])
 
 
 def _words(cell):
@@ -205,6 +207,21 @@ def collect(inp, teigi, theme):
     for r in ta:
         if not r["hani"] or not qhead_parts(qsrc.get(r["question"], ""))[1]:
             problems.append(("(b) 出典の無い記述", f"問いと事項の対応 {r['question']} / {r['point']}：範囲か問いの題が無い"))
+    # 注（SCHEMA.md §5）：付ける記述があるか、注のもとの資料があるか、「」の字が資料にあるか
+    for c in teigi.get("chu", []):
+        where = f"注 {c['source']}「{c['part']}」"
+        if not (c["source"] and c["part"] and c["moto"] and c["text"]):
+            problems.append(("定義", f"{where}：key・name・short・setsumei に空がある"))
+            continue
+        if not any(r["source"].split("/")[0] == c["source"].split("/")[0] and c["part"] in r["quote"] for r in ko):
+            problems.append(("定義", f"{where}：注を付ける記述が見つからない"))
+        n, u = named(c["moto"])
+        if not (n and u):
+            problems.append(("(b) 出典の無い記述", f"{where}：注のもとの資料「{c['moto']}」の名前か url が作れない"))
+        frs = re.findall(r"「([^」]+)」", c["text"])
+        cres = shogo.check_quotes(inp, [dict(where=where, source=c["moto"], quote=f) for f in frs])
+        for m in cres.mismatched:
+            problems.append(("(a) 引用が原典に無い", f"{m['where']}：{m['reason']}（{m['source']}）「{m['quote']}」"))
     return dict(ko=ko, katei=katei, ta=ta, qsrc=qsrc), problems, (res, pres)
 
 
@@ -270,6 +287,15 @@ class Page:
                        f"<td>{'、'.join(S(self.srcname(s)) for s in x['sources'].split(',')[:2])}</td></tr>"
                        for x in self.m["katei"])
 
+    def chu(self, sid_or_source, text):
+        """その資料の、その字を含む文に付ける「作成者の注」。無ければ空。"""
+        out = []
+        for c in self.t.get("chu", []):
+            if c["source"].split("/")[0] == sid_or_source.split("/")[0] and c["part"] in text:
+                link = f"<a href='{E(keys.source_url(self.inp, c['moto']))}' target='_blank'>{S(keys.source_name(self.inp, c['moto']))}</a>"
+                out.append(f"<div class='chu'>作成者の注：{E(c['text'])}（もとの資料：{link}）</div>")
+        return "".join(out)
+
     def topic(self, P, slug, short, setsumei):
         inp, T, qsrc = self.inp, self.t, self.m["qsrc"]
         ko = sorted([x for x in self.m["ko"] if x["point"] == P], key=lambda x: x["source_date"])
@@ -278,7 +304,7 @@ class Page:
                        f"{self.link(x)}{'　' + self.atai(x) if self.atai(x) else ''}</div></div>" for x in docs) \
             or "<p class='m'>町の資料の記述は、まだ整理できていません。</p>"
         rows2 = "".join(f"<tr><td class='nw'>{keys.ymd(x['source_date'])}</td><td class='nw'>{self.doko(x)}</td>"
-                        f"<td>「{S(x['quote'])}」{'<br><span class=m>' + self.atai(x) + '</span>' if self.atai(x) else ''}</td>"
+                        f"<td>「{S(x['quote'])}」{'<br><span class=m>' + self.atai(x) + '</span>' if self.atai(x) else ''}{self.chu(x['source'], x['quote'])}</td>"
                         f"<td>{self.link(x)}</td></tr>" for x in ko)
         tome = [x for x in ko if self.pat and self.pat.search(x["quote"])]
         rows3 = "".join(f"<tr><td class='nw'>{keys.ymd(x['source_date'])}</td><td>「{S(x['quote'])}」</td>"
@@ -294,7 +320,7 @@ class Page:
                     cur = sid
                     body.append(f"<div class='spk'>{S(inp.speaker(sid))}</div>")
                 para = inputs.paragraphs(inp.statement_text(sid))[i - 1]
-                body.append(f"<div class='para'>{S(para)}　<a href='{E(keys.search_url(sid, i))}' target='_blank'>会議録</a></div>")
+                body.append(f"<div class='para'>{S(para)}　<a href='{E(keys.search_url(sid, i))}' target='_blank'>会議録</a>{self.chu('sp:' + sid, para)}</div>")
             blocks.append(f"<div class='qa'><h3>{qhead(q, qsrc)}</h3><details><summary>{E(short)}に関する部分を表示（{len(ps)}か所）</summary>"
                           f"{''.join(body)}</details><p class='m'><a href='{E(keys.source_url(inp, q))}' target='_blank'>"
                           f"会議録でこの質問の全体を見る</a></p></div>")
@@ -354,11 +380,11 @@ h1{{font-size:1.3em;margin-bottom:.2em}} h2{{font-size:1.05em;border-top:2px sol
 .lead,.m{{font-size:.88em;color:#555}} .now{{border-left:4px solid #2a6fb0;padding:.3em .7em;margin:.6em 0;background:#f4f8fc}}
 table{{border-collapse:collapse;width:100%;font-size:.9em}} td,th{{border:1px solid #bbb;padding:.35em .5em;vertical-align:top;text-align:left}} th{{background:#eee}} .nw{{white-space:nowrap}}
 .qa{{border:1px solid #bbb;border-radius:4px;padding:.5em .8em;margin:.7em 0}} .spk{{font-weight:bold;font-size:.9em;margin-top:.6em}} .para{{font-size:.92em;margin:.3em 0;padding-left:.6em;border-left:3px solid #ccc}}
-.nav{{font-size:.85em;border:1px solid #ccc;padding:.4em .8em;margin:.6em 0}} .note{{font-size:.85em;background:#f6f6f6;border:1px solid #ccc;padding:.5em .8em;margin-top:2em}}
+.chu{{font-size:.88em;margin:.3em 0;padding:.3em .6em;border:1px dashed #888;background:#fffbe8}} .nav{{font-size:.85em;border:1px solid #ccc;padding:.4em .8em;margin:.6em 0}} .note{{font-size:.85em;background:#f6f6f6;border:1px solid #ccc;padding:.5em .8em;margin-top:2em}}
 .page{{display:none}} .page.on{{display:block}}
 </style></head><body>
 {top}{''.join(pages)}
-<div class='note'><b>このページについて</b><br>町と町議会が公開している資料（会議録、計画、当初予算の概要、広報ひの など）をもとに作成しています。掲載している文は資料からの引用で、要約や言い換えは行っていません。正確な内容は、もとの資料で確認してください。個人による試作であり、日野町および日野町議会の公式のものではありません。（{today.year}年{today.month}月{today.day}日作成）</div>
+<div class='note'><b>このページについて</b><br>町と町議会が公開している資料（会議録、計画、当初予算の概要、広報ひの など）をもとに作成しています。掲載している文は資料からの引用で、要約や言い換えは行っていません。「作成者の注」とある所だけは、引用した文だけでは数の意味を読み違えるおそれがあるため、作成者が補った説明です。正確な内容は、もとの資料で確認してください。個人による試作であり、日野町および日野町議会の公式のものではありません。（{today.year}年{today.month}月{today.day}日作成）</div>
 <script>
 function show(){{var id=(location.hash||'#top').slice(1);var ps=document.querySelectorAll('.page');var hit=false;ps.forEach(function(p){{var on=p.id===id;p.classList.toggle('on',on);if(on)hit=true;}});if(!hit)document.getElementById('top').classList.add('on');window.scrollTo(0,0);}}
 window.addEventListener('hashchange',show);show();
