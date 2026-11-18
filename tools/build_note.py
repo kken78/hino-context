@@ -293,6 +293,9 @@ class Page:
         for c in self.t.get("chu", []):
             if c["source"].split("/")[0] == sid_or_source.split("/")[0] and c["part"] in text:
                 link = f"<a href='{E(keys.source_url(self.inp, c['moto']))}' target='_blank'>{S(keys.source_name(self.inp, c['moto']))}</a>"
+                if c["moto"].startswith("ext:"):
+                    k = next(r["kakunin"] for r in self.inp.gaibu() if c["moto"] == f"ext:{r['id']}/{r['page']}")
+                    link += f"　{keys.ymd(k)}に確認"
                 out.append(f"<div class='chu'>作成者の注：{E(c['text'])}（もとの資料：{link}）</div>")
         return "".join(out)
 

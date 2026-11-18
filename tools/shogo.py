@@ -38,6 +38,8 @@ def source_texts(inp, key):
         if g[0] not in inp.docs():
             return None
         out = [page_of(inp.doc_text(g[0], layer), int(g[1])) for layer in ("text", "text_raw")]
+    elif kind == "ext":
+        out = [r["ji"] for r in inp.gaibu() if r["id"] == g[0] and r["page"] == g[1]]
     elif kind == "pt":
         out = [page_of(inp.pt_text(g[0], g[1], layer), int(g[2])) for layer in ("text", "text_raw")]
     else:
