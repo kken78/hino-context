@@ -285,7 +285,7 @@ class Page:
             return keys.ymd(f) + ("〜" + keys.ymd(t) if t and t != f else "") if f else ""
         return "".join(f"<tr><td class='nw'>{kikan(x)}</td><td>{E(x['name'])}</td>"
                        f"<td>{'、'.join(S(self.srcname(s)) for s in x['sources'].split(',')[:2])}</td></tr>"
-                       for x in reversed(self.m["katei"]))
+                       for x in sorted(self.m["katei"], key=lambda x: x.get("from") or "", reverse=True))
 
     def chu(self, sid_or_source, text):
         """その資料の、その字を含む文に付ける「作成者の注」。無ければ空。"""
