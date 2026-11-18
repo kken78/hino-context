@@ -1,0 +1,22 @@
+{
+  "council-dashboard": {
+    "sha": "e1507bf87f12806c5e9d7941ce7ecc3c1cf70eab",
+    "files": []
+  },
+  "hino-council-search": {
+    "sha": "3f794e7c93be7a8a5844a01c89b817b196ad1bef",
+    "files": ["public/data/index-manifest.json", "public/data/index/*.json"]
+  },
+  "shiga-hino-plans": {
+    "sha": "ae24c58d6b0d1cf1bf994d072b232652a5ae6451",
+    "files": ["data/plans/*.json", "data/sources_index.tsv", "data/text/*/*.txt", "data/text_raw/*/*.txt"]
+  },
+  "hino-town-docs": {
+    "sha": "60cd50b3c6b013c73fda7a9a9af7298fa7040078",
+    "files": ["data/sources.tsv", "data/text/*.txt", "data/text_raw/*.txt"]
+  },
+  "hino-ronten": {
+    "sha": "1c34ba0d1a39fe701f2d0086f1d0e2542cc55137",
+    "files": ["ref/themes.tsv", "records/kotogara.tsv", "records/katei.tsv", "records/taio.tsv"]
+  }
+}
