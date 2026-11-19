@@ -10,6 +10,7 @@ import datetime
 import os
 import re
 import sys
+import unicodedata
 from collections import Counter, namedtuple
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -105,15 +106,17 @@ def suji_parts(atai):
 
 
 def atai_in_inyo(atai, inyo):
-    """数値がある の行で、atai の数字の部分が、すべて inyo の中にあるか（どちらも §3 の正規化をした字で）。
+    """数値がある の行で、atai の数字の部分が、すべて inyo の中に、1つの数として書かれているか。
 
     数字が1つも無い atai（「なし」など）は、検査の対象にしない（None を返す）。
     """
     parts = suji_parts(atai)
     if not parts:
         return None
-    q = shogo.norm(inyo)
-    return all(p in q for p in parts)
+    # 数字の境目を見る（40 が 140 の中で合わないように）。空白を消すと境目が分からなくなるので、
+    # inyo は NFKC だけを行い、空白は残す。前が数字・「,」・「.」、後ろが数字（「,」「.」に続く数字を含む）なら合わない。
+    q = unicodedata.normalize("NFKC", inyo or "")
+    return all(re.search(r"(?<![0-9,.])" + re.escape(p) + r"(?![0-9]|[,.][0-9])", q) for p in parts)
 
 
 def check_suji(rows):
@@ -142,6 +145,8 @@ def check_atai(rows, suji_ids):
         j = r["jotai"]
         if r["suji"] not in suji_ids:
             out.append(Mondai(ATAI_NAME, n, f"suji が定義の表に無い（{r['suji']}）"))
+        if not r["jiten"].strip():
+            out.append(Mondai(ATAI_NAME, n, "jiten（いつの数値か）が空"))
         if j not in JOTAI:
             out.append(Mondai(ATAI_NAME, n, f"jotai が {'・'.join(JOTAI)} のどれでもない（{j}）"))
         else:
