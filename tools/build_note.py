@@ -86,11 +86,11 @@ def _words(cell):
 
 
 def read_kotoba(path=SKILL_PATH):
-    """SKILL.md §2 の言葉の表 → (使わない語, 確かめる所) の並びと、使う語の集まり。"""
+    """SKILL.md §2 の言葉の表 → (使わない語, 確認する所) の並びと、使う語の集まり。"""
     with open(path, encoding="utf-8") as f:
         lines = f.read().splitlines()
     try:
-        i = lines.index("| 使わない | 使う | 確かめる所 |")
+        i = lines.index("| 使わない | 使う | 確認する所 |")
     except ValueError:
         raise inputs.InputError(f"{path}：言葉の表の見出しの行が無い")
     ng, ok = [], set()
@@ -431,8 +431,8 @@ def main(argv=None):
         f.write(page)
     q, p = info["quotes"], info["paras"]
     print(f"{os.path.relpath(out, inputs.ROOT)}（{os.path.getsize(out)} バイト）")
-    print(f"引用の照らし合わせ：対象 {q.total}、合った {q.matched}、合わなかった {len(q.mismatched)}")
-    print(f"段落の確かめ：対象 {p.total}、合った {p.matched}、合わなかった {len(p.mismatched)}")
+    print(f"引用の照合：対象 {q.total}、合った {q.matched}、合わなかった {len(q.mismatched)}")
+    print(f"段落の確認：対象 {p.total}、合った {p.matched}、合わなかった {len(p.mismatched)}")
     for P, nk, nt in info["counts"]:
         print(f"  {P}：記述 {nk} 件、議会での質問 {nt} 件")
     print(f"議会での質問から見る：{info['questions']} 件")
