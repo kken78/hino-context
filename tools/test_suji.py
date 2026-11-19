@@ -120,6 +120,7 @@ class TestAtai(unittest.TestCase):
                          ["「数値を示さない説明がある」の行で、必ず書く列が空（inyo）"])
         self.assertEqual(run(atai=[atai_row(jotai=suji.NAI, atai="", shiryo="", inyo="", kakunin="")]),
                          ["「調べた範囲に見つからない」の行で、必ず書く列が空（hani・kakunin）"])
+        self.assertEqual(run(atai=[atai_row(jiten="")]), ["jiten（いつの数値か）が空"])
 
     def test_atai_in_empty_state(self):
         p = run(atai=[atai_row(jotai=suji.KARA)])
@@ -167,6 +168,15 @@ class TestAtaiInInyo(unittest.TestCase):
         self.assertFalse(suji.atai_in_inyo("▲3", "▲5 ▲4 ▲4 0 0"))
         self.assertFalse(suji.atai_in_inyo("▲0", "▲5 ▲4 ▲4 0 0"))          # 符号も数字の部分に含める
         self.assertFalse(suji.atai_in_inyo("3,000,000", "3000000"))         # 桁区切りの「,」も字のまま
+
+    def test_boundary(self):
+        # 別の数の一部とは合わない
+        self.assertFalse(suji.atai_in_inyo("40", "140名程度"))
+        self.assertFalse(suji.atai_in_inyo("234", "1,234千円"))
+        self.assertFalse(suji.atai_in_inyo("0", "達成率 100.0%"))
+        self.assertTrue(suji.atai_in_inyo("3", "令和7年4月 2 2 11 15 3"))
+        self.assertTrue(suji.atai_in_inyo("3", "５ ３ 100.0%"))
+        self.assertTrue(suji.atai_in_inyo("1", "平成31年度は１名の待機児童が出た"))
 
     def test_no_digit(self):
         self.assertIsNone(suji.atai_in_inyo("なし", "該当なし"))
