@@ -1,7 +1,7 @@
-"""入力の場所と lock の確かめ、入力の読み込み（SCHEMA.md §1）。
+"""入力の場所と lock の確認、入力の読み込み（SCHEMA.md §1）。
 
 入力は読むだけ。lock の SHA の、files に当たるファイルだけを `git show <SHA>:<path>` で読む。
-読む前に、5つの入力の作業ツリーの HEAD が lock の SHA と同じかを確かめ、違えば止める（InputError）。
+読む前に、5つの入力の作業ツリーの HEAD が lock の SHA と同じかを確認し、違えば止める（InputError）。
 """
 import csv
 import io
@@ -39,7 +39,7 @@ def repo_dir(repo):
 
 
 def load_lock(path=LOCK_PATH):
-    """lock を読み、5つの入力・40桁の sha・files の形を確かめる。"""
+    """lock を読み、5つの入力・40桁の sha・files の形を確認する。"""
     try:
         with open(path, encoding="utf-8") as f:
             lock = json.load(f)
@@ -96,7 +96,7 @@ def match_lock(pattern, path):
 
 
 def read_tsv(data, name, columns=None):
-    """TSV（1行目が列名、引用符を使わない）を辞書の並びで読む。columns があれば列名を確かめる。"""
+    """TSV（1行目が列名、引用符を使わない）を辞書の並びで読む。columns があれば列名を確認する。"""
     text = data.decode("utf-8") if isinstance(data, bytes) else data
     rows = list(csv.reader(io.StringIO(text), delimiter="\t", quoting=csv.QUOTE_NONE))
     rows = [r for r in rows if r]

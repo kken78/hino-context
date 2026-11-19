@@ -1,4 +1,4 @@
-"""引用を原典と照らす（SCHEMA.md §3）。結果は、件数と、合わなかった行の一覧で返す。"""
+"""引用を原典と照合する（SCHEMA.md §3）。結果は、件数と、合わなかった行の一覧で返す。"""
 import re
 import unicodedata
 from dataclasses import dataclass, field
@@ -26,7 +26,7 @@ def page_of(text, page):
 
 
 def source_texts(inp, key):
-    """資料の鍵 → 照らす本文の並び。鍵の形が違うか、入力に無ければ None。"""
+    """資料の鍵 → 照合する本文の並び。鍵の形が違うか、入力に無ければ None。"""
     try:
         kind, g = keys.parse(key)
     except keys.KeyFormError:
@@ -61,7 +61,7 @@ class Result:
 
 
 def check_quotes(inp, rows):
-    """rows は {"where", "source", "quote"} の並び。引用が資料の本文にあるかを1件ずつ確かめる。"""
+    """rows は {"where", "source", "quote"} の並び。引用が資料の本文にあるかを1件ずつ確認する。"""
     res = Result()
     for r in rows:
         res.total += 1
@@ -70,7 +70,7 @@ def check_quotes(inp, rows):
         if not q:
             reason = "引用が空"
         elif texts is None:
-            reason = "資料が入力に無いか、照らせない資料の鍵"
+            reason = "資料が入力に無いか、照合できない資料の鍵"
         elif not any(q in norm(t) for t in texts):
             reason = "引用が資料の本文に無い"
         else:
@@ -81,7 +81,7 @@ def check_quotes(inp, rows):
 
 
 def check_paras(inp, rows):
-    """rows は {"where", "hani"} の並び。段落の鍵が、その発言の段落を指しているかを、段落ごとに確かめる。"""
+    """rows は {"where", "hani"} の並び。段落の鍵が、その発言の段落を指しているかを、段落ごとに確認する。"""
     res = Result()
     for r in rows:
         try:
