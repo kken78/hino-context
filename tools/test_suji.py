@@ -262,7 +262,7 @@ def fake7():
 
 
 def bunsho_row(**kw):
-    r = dict(bunsho="pt:kodomo/honpen", namae="第３期子ども計画", shurui="法定の計画",
+    r = dict(bunsho="pt:kodomo/honpen", namae="第３期子ども計画", shurui="keikaku",
              konkyo="子ども・子育て支援法第 61 条に基づく", konkyo_tokoro="pt:kodomo/honpen/3", hiduke="2025-03",
              hiduke_moto="pt:kodomo/honpen/1", chu="")
     r.update(kw)
@@ -311,6 +311,24 @@ class TestBunsho(unittest.TestCase):
         p, kazoe = run7()
         self.assertEqual(p, [])
         self.assertEqual((kazoe["taisho"], kazoe["atta"], kazoe["yonda"]), (1, 1, 0))
+
+    def test_shurui_wa_keikaku(self):
+        """計画ライブラリの文書の shurui は keikaku。こちらで付けた名前は止まる（SCHEMA.md §7.1）。"""
+        p, _ = run7(bunsho=[bunsho_row(shurui="法定の計画")])
+        self.assertTrue(any("shurui が §7.1 と違う（keikaku のはず：法定の計画）" in x for x in p), p)
+
+    def test_shurui_jitsubutsu(self):
+        """実際の入力と表：町の資料の shurui は、入力の台帳の category と同じ。別の字に変えると止まる。"""
+        inp = real_inputs()
+        if inp is None:
+            self.skipTest("入力が無い")
+        rows, p0 = suji.read_bunsho(open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), suji.BUNSHO_NAME), encoding="utf-8").read())
+        self.assertEqual(p0, [])
+        out, _ = suji.check_bunsho(inp, rows)
+        self.assertEqual([m.naiyo for m in out], [])
+        koho = [dict(r, shurui="広報") if r["bunsho"] == "doc:koho-no792-04" else r for r in rows]
+        out, _ = suji.check_bunsho(inp, koho)
+        self.assertTrue(any("shurui が §7.1 と違う（koho のはず：広報）" in m.naiyo for m in out), [m.naiyo for m in out])
 
     def test_key(self):
         p, _ = run7(bunsho=[bunsho_row(bunsho="pt:kodomo")])
