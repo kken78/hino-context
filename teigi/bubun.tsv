@@ -49,3 +49,8 @@ pt:youho/honpen	15		見出し	第３章 日野町幼児教育保育施設の再�
 pt:youho/honpen	16	15	見出し	４ 再編整備スケジュール	pt:youho/honpen/34		機械	
 pt:youho/honpen-202503	1		見出し	第３章 日野町幼児教育保育施設の再編整備計画	pt:youho/honpen-202503/25		機械	
 pt:youho/honpen-202503	2	1	見出し	４ 再編整備スケジュール	pt:youho/honpen-202503/34		機械	
+pt:senryaku2/x1	1		見出し	基本目標１．結婚・出産・子育ての希望をみんなで支えてかなえる	pt:senryaku2/x1/16		機械	
+pt:senryaku2/x1	2	1	表	③ 具体的な取り組み・取り組みごとの重要業績評価指標	pt:senryaku2/x1/16		機械	列の見出しの行は「№ 重要業績評価指標（KPI）指標名 基準値 目標値(Ｒ7) 担当部署」
+pt:senryaku2/x1	3	2	行	保育所等待機児童数	pt:senryaku2/x1/16		読んだ	行の字が「R1：1件 0件」で、数値だけの並びでないので、行と列の数え方の検査から外れる
+pt:senryaku2/x1	4	2	列	基準値	pt:senryaku2/x1/16	1	読んだ	
+pt:senryaku2/x1	5	2	列	目標値(Ｒ7)	pt:senryaku2/x1/16	2	読んだ	
