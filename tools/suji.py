@@ -217,6 +217,29 @@ def check_hatsugen(inp, rows):
     return out
 
 
+def check_shurui(inp, rows):
+    """shurui の字が、shiryo のページ（発言はその発言）の原典の文字にあるか（SCHEMA.md §6.2・§6.4）。
+
+    → (問題の並び, 数えた結果)。原典の文字が入力に無い資料の行と、shiryo が空の行は除いて、数を出す。
+    確認するのは、字がページにあることまで。その数値についての字かどうかは、この検査では分からない。
+    """
+    out, kazoe = [], Counter()
+    if inp is None:
+        return out, kazoe
+    for r in rows:
+        sh = r["shurui"].strip()
+        if not sh:
+            continue
+        texts = shogo.source_texts(inp, r["shiryo"]) if r["shiryo"].strip() else None
+        if not texts or not any(t for t in texts):
+            kazoe["shurui_nozoita"] += 1
+            continue
+        kazoe["shurui_taisho"] += 1
+        if not any(shogo.norm(sh) in shogo.norm(t) for t in texts if t):
+            out.append(Mondai(ATAI_NAME, r["_gyo"], f"shurui の字が、shiryo の原典の文字に無い（{sh}）"))
+    return out, kazoe
+
+
 def check_suji(rows):
     """定義の表の検査。"""
     out = []
@@ -649,6 +672,8 @@ def check_all(inp, suji_rows, atai_rows, bunsho_rows=None, bubun_rows=None):
     out += more
     out += check_kakunin(inp, atai_rows)
     out += check_hatsugen(inp, atai_rows)
+    more, shurui_kazoe = check_shurui(inp, atai_rows)
+    out += more
     res = shogo.check_quotes(inp, quotes) if quotes else shogo.Result()
     for m in res.mismatched:
         out.append(Mondai(ATAI_NAME, m["where"], f"inyo が shiryo の資料の本文に無い（{m['reason']}：{m['source']}）"))
@@ -660,6 +685,8 @@ def check_all(inp, suji_rows, atai_rows, bunsho_rows=None, bubun_rows=None):
         out += more
         more, kazoe = check_atai_bubun(inp, atai_rows, bubun_rows or [], index, names)
         out += more
+    kazoe = Counter(kazoe)
+    kazoe.update(shurui_kazoe)
     order = {SUJI_NAME: 0, ATAI_NAME: 1, BUNSHO_NAME: 2, BUBUN_NAME: 3}
     out.sort(key=lambda m: (order.get(m.hyo, 4), m.gyo))
     return out, res, kazoe
@@ -699,7 +726,7 @@ def main(argv=None, teigi_dir=None):
         if all(aru7.values()):
             bunsho_rows, p3 = read_bunsho(_read_file(paths7[BUNSHO_NAME]))
             bubun_rows, p4 = read_bubun(_read_file(paths7[BUBUN_NAME]))
-        need = any(r["inyo"].strip() or r["bubun"] or r["retsu"] for r in atai_rows) or bool(bunsho_rows or bubun_rows)
+        need = any(r["inyo"].strip() or r["bubun"] or r["retsu"] or r["shurui"].strip() for r in atai_rows) or bool(bunsho_rows or bubun_rows)
         inp = inputs.Inputs() if need else None
         problems, res, kazoe = check_all(inp, suji_rows, atai_rows, bunsho_rows, bubun_rows)
     except (inputs.InputError, OSError, UnicodeDecodeError) as e:
@@ -724,6 +751,7 @@ def main(argv=None, teigi_dir=None):
           f"retsu がある行：{sum(1 for r in atai_rows if r['retsu'])}")
     print(f"行と列を指す数値の検査：対象 {kazoe['taisho']}、合った {kazoe['atta']}。"
           f"torikata が「読んだ」で検査から外した行 {kazoe['yonda']}")
+    print(f"shurui の字の検査：対象 {kazoe['shurui_taisho']}。原典の文字が入力に無くて除いた行 {kazoe['shurui_nozoita']}")
     if problems:
         print(f"止めた：問題が {len(problems)} 件", file=sys.stderr)
         for m in problems:
