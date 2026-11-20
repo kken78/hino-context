@@ -50,6 +50,7 @@ RE_SUJI = re.compile(r"[▲△\-−]?[0-9](?:[0-9,.]*[0-9])?")
 # 依頼者が PDF で数値を確認した記録（SCHEMA.md §6.3）。chu にこの字が要る行がある。
 RE_KAKUNIN = re.compile(r"依頼者が PDF で確認（([0-9]{4}-[0-9]{2}-[0-9]{2})）")
 KOHO = "koho"   # hino-town-docs の sources.tsv の category。広報ひの
+KEIKAKU = "keikaku"   # 計画ライブラリの文書（pt・plan の鍵）の shurui（SCHEMA.md §7.1）
 
 Mondai = namedtuple("Mondai", "hyo gyo naiyo")   # 表の名前、行の番号（列名の行は1）、何が問題か
 
@@ -363,6 +364,10 @@ def check_bunsho(inp, rows):
         if count[b] > 1:
             out.append(Mondai(BUNSHO_NAME, n, f"bunsho が重なっている（{b}）"))
         names.add(b)
+        if katachi and aru:
+            want = (inp.docs().get(b[4:]) or {}).get("category") if b.startswith("doc:") else KEIKAKU
+            if r["shurui"] != want:
+                out.append(Mondai(BUNSHO_NAME, n, f"shurui が §7.1 と違う（{want} のはず：{r['shurui']}）"))
         if not r["namae"].strip():
             out.append(Mondai(BUNSHO_NAME, n, "namae が空"))
         elif katachi and aru and not b.startswith("plan:") and not on_page(inp, r["namae"], b + "/1"):
