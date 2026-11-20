@@ -25,7 +25,7 @@ import shogo  # noqa: E402
 TEIGI_DIR = os.path.join(inputs.ROOT, "teigi")
 SUJI_NAME = "teigi/suji.tsv"
 ATAI_NAME = "teigi/atai.tsv"
-SUJI_COLUMNS = ["id", "name", "nani", "tani", "iikata", "toki", "sei", "chui", "kettei"]
+SUJI_COLUMNS = ["id", "name", "nani", "tani", "iikata", "toki", "nendo_tsuki", "sei", "chui", "kettei"]
 ATAI_COLUMNS = ["suji", "kubun", "jiten", "nendo", "atai", "shurui", "jotai", "shiryo", "inyo", "hani", "kakunin",
                 "chu", "bubun", "retsu"]
 BUNSHO_NAME = "teigi/bunsho.tsv"
@@ -217,6 +217,60 @@ def check_hatsugen(inp, rows):
     return out
 
 
+NENDO_TSUKI = {str(m) for m in range(1, 13)}
+# 時点の関係（SCHEMA.md §7.3）。数値の時点と、資料の日付（発言は発言の日）の、年と月の比較で決める。単語では決めない
+KANKEI_ATO = "資料の日付より後の時点について書いた数値"
+KANKEI_MAE = "資料の日付より前か同じ時点について書いた数値"
+KANKEI_TOCHU = "年度の途中に出た資料の数値"
+RE_NENGETSU = re.compile(r"(令和|平成)(元|[0-9]+)年([0-9]+)月")
+GENGO = {"令和": 2018, "平成": 1988}
+
+
+def shiryo_nengetsu(shiryo, bunsho_by_key):
+    """資料の日付 → (年, 月)。発言は発言の日、ほかは文書の表の hiduke。分からなければ None。"""
+    try:
+        kind, g = keys.parse(shiryo)
+    except keys.KeyFormError:
+        return None
+    if kind == "sp":
+        d = keys.sid_date(g[0])            # YYYY-MM-DD
+        return (int(d[:4]), int(d[5:7])) if d else None
+    h = (bunsho_by_key.get(bunsho_of(shiryo)) or {}).get("hiduke", "")
+    return (int(h[:4]), int(h[5:7])) if RE_HIDUKE.fullmatch(h) else None
+
+
+def jiten_kankei(r, teigi, bunsho_by_key):
+    """数値の行 → 時点の関係（KANKEI_ATO・KANKEI_MAE・KANKEI_TOCHU）。出さない場合は None（SCHEMA.md §7.3）。
+
+    r は数値の表の行、teigi はその定義の行、bunsho_by_key は文書の鍵 → 文書の表の行。
+    """
+    if not r["nendo"].strip() or not r["shiryo"].strip():
+        return None
+    hi = shiryo_nengetsu(r["shiryo"], bunsho_by_key)
+    if hi is None:
+        return None
+    nendo = int(r["nendo"])
+    m = RE_NENGETSU.fullmatch(r["jiten"].strip())
+    tsuki = (teigi or {}).get("nendo_tsuki", "")
+    if m:                                   # 年月の字。暦の年は元号から出す（1〜3月は、年度と暦の年が違う）
+        toki = (GENGO[m.group(1)] + (1 if m.group(2) == "元" else int(m.group(2))), int(m.group(3)))
+    elif tsuki in NENDO_TSUKI:              # 年度の字で、定義が月を決めている
+        t = int(tsuki)
+        toki = (nendo if t >= 4 else nendo + 1, t)
+    else:                                   # 年度の字で、定義が月を決めていない。年度を期間として扱う
+        if hi < (nendo, 4):
+            return KANKEI_ATO
+        return KANKEI_MAE if hi > (nendo + 1, 3) else KANKEI_TOCHU
+    return KANKEI_ATO if toki > hi else KANKEI_MAE
+
+
+def count_kankei(suji_rows, atai_rows, bunsho_rows):
+    """時点の関係ごとの行の数。→ Counter（鍵は3つの関係の字と None）。"""
+    teigi = {r["id"]: r for r in suji_rows}
+    by = {r["bunsho"]: r for r in bunsho_rows or []}
+    return Counter(jiten_kankei(r, teigi.get(r["suji"]), by) for r in atai_rows)
+
+
 def check_shurui(inp, rows):
     """shurui の字が、shiryo のページ（発言はその発言）の原典の文字にあるか（SCHEMA.md §6.2・§6.4）。
 
@@ -253,6 +307,8 @@ def check_suji(rows):
             out.append(Mondai(SUJI_NAME, n, f"id の形が違う（英小文字・数字・ハイフンのはず：{r['id']}）"))
         if r["id"] and ids[r["id"]] > 1:
             out.append(Mondai(SUJI_NAME, n, f"定義の id が重なっている（{r['id']}）"))
+        if r["nendo_tsuki"] and r["nendo_tsuki"] not in NENDO_TSUKI:
+            out.append(Mondai(SUJI_NAME, n, f"nendo_tsuki の形が違う（空か、1〜12の数のはず：{r['nendo_tsuki']}）"))
         if r["kettei"] and r["kettei"] != "案" and not is_ymd(r["kettei"]):
             out.append(Mondai(SUJI_NAME, n, f"kettei の形が違う（YYYY-MM-DD か「案」のはず：{r['kettei']}）"))
     return out
@@ -751,6 +807,8 @@ def main(argv=None, teigi_dir=None):
           f"retsu がある行：{sum(1 for r in atai_rows if r['retsu'])}")
     print(f"行と列を指す数値の検査：対象 {kazoe['taisho']}、合った {kazoe['atta']}。"
           f"torikata が「読んだ」で検査から外した行 {kazoe['yonda']}")
+    kk = count_kankei(suji_rows, atai_rows, bunsho_rows)
+    print(f"時点の関係：後の時点 {kk[KANKEI_ATO]}、前か同じ時点 {kk[KANKEI_MAE]}、年度の途中 {kk[KANKEI_TOCHU]}、出さない {kk[None]}")
     print(f"shurui の字の検査：対象 {kazoe['shurui_taisho']}。原典の文字が入力に無くて除いた行 {kazoe['shurui_nozoita']}")
     if problems:
         print(f"止めた：問題が {len(problems)} 件", file=sys.stderr)

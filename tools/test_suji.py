@@ -42,7 +42,7 @@ def tsv(columns, rows):
 
 def teigi_row(**kw):
     r = dict(id="taiki", name="待機児童数", nani="各年4月の待機児童の数", tani="人", iikata="", toki="各年4月1日現在",
-             sei="", chui="", kettei="案")
+             nendo_tsuki="4", sei="", chui="", kettei="案")
     r.update(kw)
     return r
 
@@ -82,7 +82,7 @@ class TestRead(unittest.TestCase):
         text = tsv(suji.SUJI_COLUMNS, [teigi_row()]) + "\n" + "a\tb\n"
         rows, p = suji.read_suji(text)
         self.assertEqual(len(rows), 1)
-        self.assertEqual([(m.gyo, m.naiyo) for m in p], [(4, "列の数が 2（9 のはず）")])   # 空の行も数える
+        self.assertEqual([(m.gyo, m.naiyo) for m in p], [(4, f"列の数が 2（{len(suji.SUJI_COLUMNS)} のはず）")])   # 空の行も数える
 
 
 class TestTeigi(unittest.TestCase):
@@ -509,6 +509,82 @@ def real_inputs():
         return inputs.Inputs()
     except inputs.InputError:
         return None
+
+
+class TestJitenKankei(unittest.TestCase):
+    """時点の関係（SCHEMA.md §7.3）。数値の時点と資料の日付の、年と月の比較で決める。"""
+
+    BUNSHO = {"pt:youho/honpen": {"hiduke": "2026-06"}, "pt:kodomo/honpen": {"hiduke": "2025-03"},
+              "doc:yosan-1": {"hiduke": "2025-12-23"}, "doc:fuhyo": {"hiduke": ""}}
+    T4 = {"nendo_tsuki": "4"}
+    T0 = {"nendo_tsuki": ""}
+
+    def k(self, teigi=None, **kw):
+        r = dict(jiten="令和7年4月", nendo="2025", shiryo="pt:youho/honpen/11")
+        r.update(kw)
+        return suji.jiten_kankei(r, self.T4 if teigi is None else teigi, self.BUNSHO)
+
+    def test_nengetsu(self):
+        self.assertEqual(self.k(), suji.KANKEI_MAE)                                              # 2025年4月 と 2026年6月
+        self.assertEqual(self.k(shiryo="pt:kodomo/honpen/72"), suji.KANKEI_ATO)                  # 2025年4月 と 2025年3月
+        self.assertEqual(self.k(jiten="令和7年3月", nendo="2024", shiryo="pt:kodomo/honpen/72"), suji.KANKEI_MAE)  # 同じ月
+        # 1〜3月は、年度（2024）ではなく暦の年（2025）で比較する
+        self.assertEqual(self.k(jiten="令和7年2月", nendo="2024", shiryo="pt:kodomo/honpen/72"), suji.KANKEI_MAE)
+        self.assertEqual(self.k(jiten="平成31年4月", nendo="2019", shiryo="sp:0000004662_20190614_0094"), suji.KANKEI_MAE)
+        self.assertEqual(self.k(jiten="令和元年5月", nendo="2019", shiryo="sp:0000004662_20190401_0001"), suji.KANKEI_ATO)
+
+    def test_hatsugen_no_hi(self):
+        # 発言の日は、sid の日付（YYYYMMDD）の年と月。2019年6月14日の答弁が述べる平成31年度の数値は、4月として比較して「前か同じ」
+        self.assertEqual(suji.shiryo_nengetsu("sp:0000004662_20190614_0094", {}), (2019, 6))
+        self.assertEqual(self.k(jiten="平成31年度", nendo="2019", shiryo="sp:0000004662_20190614_0094"), suji.KANKEI_MAE)
+        self.assertEqual(self.k(jiten="令和7年4月", nendo="2025", shiryo="sp:0000008489_20250613_0084"), suji.KANKEI_MAE)
+
+    def test_nendo_to_tsuki(self):
+        self.assertEqual(self.k(jiten="令和7年度", shiryo="pt:kodomo/honpen/72"), suji.KANKEI_ATO)     # 2025年4月 と 2025年3月
+        self.assertEqual(self.k(jiten="令和6年度", nendo="2024", shiryo="pt:kodomo/honpen/72"), suji.KANKEI_MAE)
+        # 月が1〜3の定義は、年度の翌年の暦の年で比較する
+        self.assertEqual(self.k(teigi={"nendo_tsuki": "3"}, jiten="令和6年度", nendo="2024", shiryo="pt:kodomo/honpen/72"),
+                         suji.KANKEI_MAE)                                                       # 2025年3月 と 2025年3月
+        self.assertEqual(self.k(teigi={"nendo_tsuki": "3"}, jiten="令和7年度", nendo="2025", shiryo="pt:kodomo/honpen/72"),
+                         suji.KANKEI_ATO)
+
+    def test_nendo_wa_kikan(self):
+        k = lambda nendo, shiryo: self.k(teigi=self.T0, jiten="年度", nendo=nendo, shiryo=shiryo)  # noqa: E731
+        self.assertEqual(k("2025", "pt:kodomo/honpen/72"), suji.KANKEI_ATO)      # 期間 2025年4月〜2026年3月。資料 2025年3月
+        self.assertEqual(k("2024", "pt:kodomo/honpen/72"), suji.KANKEI_TOCHU)    # 期間 2024年4月〜2025年3月。資料 2025年3月
+        self.assertEqual(k("2025", "doc:yosan-1/2"), suji.KANKEI_TOCHU)          # 資料 2025年12月
+        self.assertEqual(k("2025", "pt:youho/honpen/11"), suji.KANKEI_MAE)       # 資料 2026年6月
+        self.assertEqual(k("2026", "pt:youho/honpen/11"), suji.KANKEI_TOCHU)     # 期間 2026年4月〜。資料 2026年6月
+        # 注の付いた年度の字（補正）も、年度として扱う
+        self.assertEqual(self.k(teigi=self.T0, jiten="令和7年度（12月補正）", shiryo="doc:yosan-1/2"), suji.KANKEI_TOCHU)
+
+    def test_dasanai(self):
+        self.assertIsNone(self.k(nendo=""))
+        self.assertIsNone(self.k(shiryo=""))
+        self.assertIsNone(self.k(shiryo="doc:fuhyo/1"))       # 文書の表の hiduke が空
+        self.assertIsNone(self.k(shiryo="doc:nai/1"))         # 文書の表に無い
+        self.assertIsNone(self.k(shiryo="plan:nai"))
+
+    def test_jitsubutsu(self):
+        """実際の表：どの行にも、3つの関係のどれかか「出さない」が決まる。決定にかかわる行を、中身で選んで確認する。"""
+        t = real_tables()
+        kk = suji.count_kankei(t["suji"], t["atai"], t["bunsho"])
+        self.assertEqual(sum(kk.values()), len(t["atai"]))
+        teigi = {r["id"]: r for r in t["suji"]}
+        by = {r["bunsho"]: r for r in t["bunsho"]}
+        one = lambda **kw: [r for r in t["atai"] if all(r[k] == v for k, v in kw.items())]  # noqa: E731
+        r = one(suji="taiki", jiten="平成31年度", shiryo="sp:0000004662_20190614_0094")
+        self.assertEqual(len(r), 1)
+        self.assertEqual(suji.jiten_kankei(r[0], teigi["taiki"], by), suji.KANKEI_MAE)
+        r = one(suji="taiki", shiryo="pt:senryaku2/x1/16", nendo="2025")
+        self.assertEqual(suji.jiten_kankei(r[0], teigi["taiki"], by), suji.KANKEI_ATO)
+        r = one(suji="yosan-hosei", jiten="令和7年度（12月補正）")
+        self.assertEqual(suji.jiten_kankei(r[0], teigi["yosan-hosei"], by), suji.KANKEI_TOCHU)
+        self.assertTrue(all(suji.jiten_kankei(x, teigi["kaien"], by) is None for x in one(suji="kaien")))
+
+    def test_nendo_tsuki_no_katachi(self):
+        self.assertEqual(run(teigi=[teigi_row(nendo_tsuki="13")]), ["nendo_tsuki の形が違う（空か、1〜12の数のはず：13）"])
+        self.assertEqual(run(teigi=[teigi_row(nendo_tsuki="")]), [])
 
 
 class TestShurui(unittest.TestCase):
