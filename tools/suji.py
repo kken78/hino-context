@@ -218,10 +218,11 @@ def check_hatsugen(inp, rows):
 
 
 NENDO_TSUKI = {str(m) for m in range(1, 13)}
-# 時点の関係（SCHEMA.md §7.3）。数値の時点と、資料の日付（発言は発言の日）の、年と月の比較で決める。単語では決めない
-KANKEI_ATO = "資料の日付より後の時点について書いた数値"
-KANKEI_MAE = "資料の日付より前か同じ時点について書いた数値"
-KANKEI_TOCHU = "年度の途中に出た資料の数値"
+# 時点の関係の印（SCHEMA.md §7.3）。意味は、§7.3 の条件と実物の例で決まる。画面の言葉は、ここに書かない
+KANKEI_ATO = "ato"        # 数値の時点が、資料の日付より後
+KANKEI_MAE = "mae"        # 数値の時点が、資料の日付と同じか、前
+KANKEI_TOCHU = "tochu"    # 数値の時点が年度の期間で、資料の日付が、その期間の中
+KANKEI = (KANKEI_ATO, KANKEI_MAE, KANKEI_TOCHU)
 RE_NENGETSU = re.compile(r"(令和|平成)(元|[0-9]+)年([0-9]+)月")
 GENGO = {"令和": 2018, "平成": 1988}
 
@@ -240,7 +241,7 @@ def shiryo_nengetsu(shiryo, bunsho_by_key):
 
 
 def jiten_kankei(r, teigi, bunsho_by_key):
-    """数値の行 → 時点の関係（KANKEI_ATO・KANKEI_MAE・KANKEI_TOCHU）。出さない場合は None（SCHEMA.md §7.3）。
+    """数値の行 → 時点の関係の印（ato・mae・tochu）。条件に当てはまらない行は None（SCHEMA.md §7.3）。
 
     r は数値の表の行、teigi はその定義の行、bunsho_by_key は文書の鍵 → 文書の表の行。
     """
@@ -808,7 +809,7 @@ def main(argv=None, teigi_dir=None):
     print(f"行と列を指す数値の検査：対象 {kazoe['taisho']}、合った {kazoe['atta']}。"
           f"torikata が「読んだ」で検査から外した行 {kazoe['yonda']}")
     kk = count_kankei(suji_rows, atai_rows, bunsho_rows)
-    print(f"時点の関係：後の時点 {kk[KANKEI_ATO]}、前か同じ時点 {kk[KANKEI_MAE]}、年度の途中 {kk[KANKEI_TOCHU]}、出さない {kk[None]}")
+    print(f"時点の関係：ato {kk[KANKEI_ATO]}、mae {kk[KANKEI_MAE]}、tochu {kk[KANKEI_TOCHU]}、無し {kk[None]}")
     print(f"shurui の字の検査：対象 {kazoe['shurui_taisho']}。原典の文字が入力に無くて除いた行 {kazoe['shurui_nozoita']}")
     if problems:
         print(f"止めた：問題が {len(problems)} 件", file=sys.stderr)

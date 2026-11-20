@@ -36,7 +36,11 @@ RIYU_HIDUKE = "資料に日付が無い"
 RIYU_SHIRYO = "資料が無い"
 RIYU = (RIYU_NENDO, RIYU_HIDUKE, RIYU_SHIRYO)
 # 列の順（SCHEMA.md §7.3 の3つの関係）
-KANKEI = (sj.KANKEI_ATO, sj.KANKEI_TOCHU, sj.KANKEI_MAE)
+KANKEI = (sj.KANKEI_ATO, sj.KANKEI_TOCHU, sj.KANKEI_MAE)       # 列の順
+# 時点の関係の印 → 画面の言葉。画面の言葉は、データの構造（tools/suji.py・SCHEMA.md）に書かず、画面の側で持つ
+KOTOBA = {sj.KANKEI_ATO: "資料の日付より後の時点について書いた数値",
+          sj.KANKEI_MAE: "資料の日付より前か同じ時点について書いた数値",
+          sj.KANKEI_TOCHU: "年度の途中に出た資料の数値"}
 # 「資料の間で、数値が一致していません」を出すときに比較する行の、資料の字での種類（空か「実績」）
 HIKAKU_SHURUI = ("", "実績")
 
@@ -245,7 +249,7 @@ class Page:
                     xs = [e for e in es if e.toki[1] == label and e.kankei == k]
                     cells.append(self.cell_mae(xs) if k == sj.KANKEI_MAE else "".join(e.chip() for e in xs))
                 rows.append(f"<tr><th>{E(label)}</th>" + "".join(f"<td>{c}</td>" for c in cells) + "</tr>")
-            head = "".join(f"<th>{E(k)}</th>" for k in cols)
+            head = "".join(f"<th>{E(KOTOBA[k])}</th>" for k in cols)
             out.append((f"<h3>{E(kb)}</h3>" if kb else "")
                        + f"<table>\n<thead><tr><th>時点</th>{head}</tr></thead>\n<tbody>{''.join(rows)}</tbody>\n</table>")
         t = self.t["nendo_tsuki"]
@@ -261,7 +265,7 @@ class Page:
                     "数値を選ぶと、下の「数値ごとの、もとの資料」に移ります。</p>")
         body = "\n".join(out)
         chigau = ("<p class=note>「資料の間で、数値が一致していません」は、同じ時点の"
-                  f"「{sj.KANKEI_MAE}」のうち、資料の字が無いか「実績」の数値どうしで、字が違うときに出しています。</p>"
+                  f"「{KOTOBA[sj.KANKEI_MAE]}」のうち、資料の字が無いか「実績」の数値どうしで、字が違うときに出しています。</p>"
                   if self.chigau else "")
         return f"<h2>年ごとの数値</h2>\n{setsumei}\n{body}\n{chigau}\n{self.nai()}"
 
@@ -310,7 +314,7 @@ class Page:
                       ("資料の中の位置", e.ichi or ("まだ指していません（ページまで）" if e.page else "まだ指していません")),
                       ("資料の文", f"「{S(r['inyo'])}」" if r["inyo"] else "引用はありません")]
         items.append(("資料の字での種類", S(r["shurui"]) if r["shurui"] else "資料に、種類を示す字はありません"))
-        items.append(("時点の関係", E(e.kankei) if e.kankei else f"出していません（{e.riyu}）"))
+        items.append(("時点の関係", E(KOTOBA[e.kankei]) if e.kankei else f"出していません（{e.riyu}）"))
         if e.konkyo:
             items.append(("資料の根拠（資料の文）", e.konkyo))
         if r["chu"]:

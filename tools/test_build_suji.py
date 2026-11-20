@@ -98,7 +98,7 @@ class TestFake(unittest.TestCase):
 
     def test_columns(self):
         page, info = self.build()
-        self.assertEqual(heads(page), ["時点", suji.KANKEI_ATO, suji.KANKEI_MAE])      # 1行も無い関係の列は出さない
+        self.assertEqual(heads(page), ["時点", bs.KOTOBA[suji.KANKEI_ATO], bs.KOTOBA[suji.KANKEI_MAE]])      # 1行も無い関係の列は出さない
         self.assertEqual([chips(c) for c in cells(page, "2025年4月")], [["3"], []])
         self.assertEqual([chips(c) for c in cells(page, "2024年4月")], [[], ["8", "7", "5"]])
         self.assertNotIn("2026年4月", re.findall(r"<tr><th>(.*?)</th>", page))         # 関係を出さない行は表に入れない
@@ -113,12 +113,12 @@ class TestFake(unittest.TestCase):
                 for k, j, n, v in (("2号", "令和5年度", "2023", "40"), ("2号", "令和6年度", "2024", "41"),
                                    ("2号", "令和7年度", "2025", "42"), ("3号", "令和6年度", "2024", "40"))]
         page, _ = self.build(tables([t], rows), "fusoku")
-        self.assertEqual(heads(page, "<h3>2号</h3>"), ["時点", suji.KANKEI_ATO, suji.KANKEI_TOCHU, suji.KANKEI_MAE])
+        self.assertEqual(heads(page, "<h3>2号</h3>"), ["時点", bs.KOTOBA[suji.KANKEI_ATO], bs.KOTOBA[suji.KANKEI_TOCHU], bs.KOTOBA[suji.KANKEI_MAE]])
         self.assertEqual([chips(c) for c in cells(page, "2023年度", "<h3>2号</h3>")], [[], [], ["40"]])
         self.assertEqual([chips(c) for c in cells(page, "2024年度", "<h3>2号</h3>")], [[], ["41"], []])
         self.assertEqual([chips(c) for c in cells(page, "2025年度", "<h3>2号</h3>")], [["42"], [], []])
         # 区分ごとに表を分ける。列は、定義の中に1行でもある関係の列（区分ごとには減らさない）
-        self.assertEqual(heads(page, "<h3>3号</h3>"), ["時点", suji.KANKEI_ATO, suji.KANKEI_TOCHU, suji.KANKEI_MAE])
+        self.assertEqual(heads(page, "<h3>3号</h3>"), ["時点", bs.KOTOBA[suji.KANKEI_ATO], bs.KOTOBA[suji.KANKEI_TOCHU], bs.KOTOBA[suji.KANKEI_MAE]])
         self.assertEqual([chips(c) for c in cells(page, "2024年度", "<h3>3号</h3>")], [[], ["40"], []])
         self.assertIn("年度を、その年の4月から翌年の3月までの期間として扱っています", page)
 
@@ -238,7 +238,7 @@ class TestReal(unittest.TestCase):
 
     def test_taiki_2025(self):
         page, _ = self.page("taiki")
-        self.assertEqual(heads(page), ["時点", suji.KANKEI_ATO, suji.KANKEI_MAE])
+        self.assertEqual(heads(page), ["時点", bs.KOTOBA[suji.KANKEI_ATO], bs.KOTOBA[suji.KANKEI_MAE]])
         ato, mae = cells(page, "2025年4月")
         self.assertEqual(len(re.findall("class=chip", ato)), 3)
         self.assertEqual(len(re.findall("class=chip", mae)), 2)
