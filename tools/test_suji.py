@@ -1,4 +1,4 @@
-"""数値の定義の表と数値の表の検査（SCHEMA.md §6）。"""
+"""数値の定義の表と数値の表、文書の表と文書の部分の表の検査（SCHEMA.md §6・§7）。"""
 import io
 import os
 import sys
@@ -8,6 +8,7 @@ from unittest import mock
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+import inputs  # noqa: E402
 import suji  # noqa: E402
 from test_shogo import FakeInputs  # noqa: E402
 
@@ -239,6 +240,333 @@ class TestForm(unittest.TestCase):
         self.assertEqual(run(atai=[atai_row(nendo="")]), [])
         self.assertEqual(run(atai=[atai_row(nendo="R7")]), ["nendo が西暦4桁でない（R7）"])
         self.assertEqual(run(atai=[atai_row(nendo="令和7")]), ["nendo が西暦4桁でない（令和7）"])
+
+
+# ---------------------------------------------------------------- 文書と、文書の部分（SCHEMA.md §7）
+
+SID7 = "0000008489_20250613_0084"
+KODOMO_RAW = ("第３期\n子ども計画\n令和７年３月\f"
+              "第５章 量の見込み\n"
+              "①１号認定〔教育〕\n2025 年\n（R7）\n2026 年\n（R8）\n不足分（②－①） 0 0\n"
+              "②２号認定〔保育〕\n2025 年\n（R7）\n2026 年\n（R8）\n①量の見込み 271 270\n②確保方策 266 266\n"
+              "不足分（②－①） ▲5 ▲4\n"
+              "③３号認定〔０歳児〕\n2025 年\n（R7）\n2026 年\n（R8）\n不足分（②－①） ▲6 ▲5\f"
+              "本計画は、子ども・子育て支援法第 61 条に基づく計画です。")
+
+
+def fake7():
+    inp = fake()
+    inp._pt[("kodomo", "honpen", "text_raw")] = KODOMO_RAW
+    inp._st[SID7] = ("森弘一郎", "はじめに。\n現在の待機児童数は3名です。\n終わり。")
+    return inp
+
+
+def bunsho_row(**kw):
+    r = dict(bunsho="pt:kodomo/honpen", namae="第３期子ども計画", shurui="法定の計画",
+             konkyo="子ども・子育て支援法第 61 条に基づく", konkyo_tokoro="pt:kodomo/honpen/3", hiduke="2025-03",
+             hiduke_moto="pt:kodomo/honpen/1", chu="")
+    r.update(kw)
+    return r
+
+
+def bubun_rows():
+    """2ページの表②と表③。表①は部分の表に入れない（表②の題より前にあるので、範囲に入らない）。"""
+    k = "pt:kodomo/honpen"
+    rows = [("1", "", "見出し", "第５章 量の見込み", "", "機械"),
+            ("2", "1", "表", "②２号認定〔保育〕", "", "機械"),
+            ("3", "2", "行", "不足分（②－①）", "", "機械"),
+            ("4", "2", "列", "2025 年（R7）", "1", "機械"),
+            ("5", "2", "列", "2026 年（R8）", "2", "機械"),
+            ("6", "2", "行", "①量の見込み", "", "機械"),
+            ("7", "1", "表", "③３号認定〔０歳児〕", "", "機械"),
+            ("8", "7", "行", "不足分（②－①）", "", "機械"),
+            ("9", "7", "列", "2025 年（R7）", "1", "機械")]
+    return [dict(bunsho=k, n=n, oya=o, shu=shu, name=name, tokoro=f"{k}/2", jun=jun, torikata=tk, chu="")
+            for n, o, shu, name, jun, tk in rows]
+
+
+def atai7(**kw):
+    r = atai_row(atai="▲5", shiryo="pt:kodomo/honpen/2", inyo="不足分（②－①） ▲5 ▲4", bubun="3", retsu="4")
+    r.update(kw)
+    return r
+
+
+def run7(atai=None, bunsho=None, bubun=None, inp=None):
+    """§7 の表を含めて検査する。→ (問題の内容の並び, 数えた結果)。"""
+    s, _ = suji.read_suji(tsv(suji.SUJI_COLUMNS, [teigi_row()]))
+    a, p1 = suji.read_atai(tsv(suji.ATAI_COLUMNS, atai if atai is not None else [atai7()]))
+    b, p2 = suji.read_bunsho(tsv(suji.BUNSHO_COLUMNS, bunsho if bunsho is not None else [bunsho_row()]))
+    c, p3 = suji.read_bubun(tsv(suji.BUBUN_COLUMNS, bubun if bubun is not None else bubun_rows()))
+    problems, _, kazoe = suji.check_all(inp or fake7(), s, a, b, c)
+    return [m.naiyo for m in p1 + p2 + p3 + problems], kazoe
+
+
+def change(rows, bango, **kw):
+    """文書の部分の行の並びの、番号が bango の行を書き換えた並び。"""
+    return [dict(r, **kw) if r["n"] == bango else r for r in rows]
+
+
+class TestBunsho(unittest.TestCase):
+    def test_ok(self):
+        p, kazoe = run7()
+        self.assertEqual(p, [])
+        self.assertEqual((kazoe["taisho"], kazoe["atta"], kazoe["yonda"]), (1, 1, 0))
+
+    def test_key(self):
+        p, _ = run7(bunsho=[bunsho_row(bunsho="pt:kodomo")])
+        self.assertIn("bunsho の形が §7.1 と違う（pt:<id>/<名前>、doc:<id>、plan:<id> のはず：pt:kodomo）", p)
+        p, _ = run7(bunsho=[bunsho_row(bunsho="pt:nai/honpen", konkyo="", konkyo_tokoro="", hiduke="",
+                                       hiduke_moto="", chu="無い")], atai=[], bubun=[])
+        self.assertEqual(p, ["bunsho が lock の版の入力に無い（pt:nai/honpen）"])
+        p, _ = run7(bunsho=[bunsho_row(), bunsho_row()])
+        self.assertEqual(p, ["bunsho が重なっている（pt:kodomo/honpen）"] * 2)
+
+    def test_namae(self):
+        p, _ = run7(bunsho=[bunsho_row(namae="第３期子ども・子育て支援事業計画")])
+        self.assertEqual(p, ["namae の字が、1ページの原典の文字に無い（第３期子ども・子育て支援事業計画）"])
+
+    def test_konkyo(self):
+        p, _ = run7(bunsho=[bunsho_row(konkyo_tokoro="pt:kodomo/honpen/2")])
+        self.assertEqual(p, ["konkyo の字が、konkyo_tokoro のページの原典の文字に無い（pt:kodomo/honpen/2）"])
+        p, _ = run7(bunsho=[bunsho_row(konkyo_tokoro="pt:youho/honpen/3")])
+        self.assertEqual(p, ["konkyo_tokoro が、この文書のページの鍵でない（pt:youho/honpen/3）"])
+        p, _ = run7(bunsho=[bunsho_row(konkyo="", konkyo_tokoro="")])
+        self.assertEqual(p, ["konkyo が空なのに、chu に探したページが無い"])
+        p, _ = run7(bunsho=[bunsho_row(konkyo="", konkyo_tokoro="", chu="3ページを見た")])
+        self.assertEqual(p, [])
+
+    def test_hiduke(self):
+        for h in ("2025-3", "2025-13", "2025/03", "2025-02-30"):
+            p, _ = run7(bunsho=[bunsho_row(hiduke=h)])
+            self.assertEqual(p, [f"hiduke の形が違う（YYYY-MM か YYYY-MM-DD のはず：{h}）"], h)
+        self.assertEqual(run7(bunsho=[bunsho_row(hiduke="2025-03-24")])[0], [])
+        p, _ = run7(bunsho=[bunsho_row(hiduke_moto="")])
+        self.assertEqual(p, ["hiduke があるのに、hiduke_moto が空"])
+        p, _ = run7(bunsho=[bunsho_row(hiduke_moto="pt:youho/honpen/1")])
+        self.assertEqual(p, ["hiduke_moto が、この文書のページの鍵でない（pt:youho/honpen/1）"])
+        self.assertEqual(run7(bunsho=[bunsho_row(hiduke_moto="shiga-hino-plans data/plans/kodomo.json")])[0], [])
+        p, _ = run7(bunsho=[bunsho_row(hiduke_moto="台帳")])
+        self.assertEqual(p, ["hiduke_moto が、ページの鍵でも、入力の台帳の名前でもない（台帳）"])
+        p, _ = run7(bunsho=[bunsho_row(hiduke="", hiduke_moto="")])
+        self.assertEqual(p, ["hiduke が空なのに、chu に理由が無い"])
+
+
+class TestBubun(unittest.TestCase):
+    def test_key_and_parent(self):
+        rows = bubun_rows()
+        p, _ = run7(bubun=rows + [dict(rows[2])])
+        self.assertEqual(p.count("bunsho と n の組が重なっている（pt:kodomo/honpen の 3）"), 2)
+        p, _ = run7(bubun=change(rows, "6", n="x"))
+        self.assertIn("n が1からの整数でない（x）", p)
+        p, _ = run7(bubun=[dict(r, bunsho="pt:youho/honpen", tokoro="pt:youho/honpen/2") for r in rows], atai=[])
+        self.assertIn("bunsho が文書の表に無い（pt:youho/honpen）", p)
+        p, _ = run7(bubun=change(rows, "6", oya="20"))
+        self.assertEqual(p, ["oya が、同じ文書の部分の表に無い（20）"])
+        p, _ = run7(bubun=change(rows, "1", oya="2"))
+        self.assertEqual(p, ["oya が、自分より小さい番号でない（2）"])
+
+    def test_shu(self):
+        rows = bubun_rows()
+        p, _ = run7(bubun=change(rows, "6", shu="セル"))
+        self.assertEqual(p, ["shu が 見出し・表・行・列 のどれでもない（セル）"])
+        p, _ = run7(bubun=change(rows, "6", oya="1"))         # 行の親が見出し
+        self.assertEqual(p, ["「行」の親の種類が違う（表 のはず：見出し）"])
+        p, _ = run7(bubun=change(rows, "7", oya="2"))         # 表の親が表
+        self.assertIn("「表」の親の種類が違う（無し・見出し のはず：表）", p)
+        p, _ = run7(bubun=change(rows, "6", torikata="AI"))
+        self.assertEqual(p, ["torikata が 機械・読んだ のどちらでもない（AI）"])
+
+    def test_name_and_jun(self):
+        rows = bubun_rows()
+        p, _ = run7(bubun=change(rows, "1", name="第６章 量の見込み"))
+        self.assertEqual(p, ["name の字が、tokoro のページの原典の文字に無い（第６章 量の見込み）"])
+        p, _ = run7(bubun=change(rows, "1", tokoro="pt:kodomo/honpen/1"))
+        self.assertEqual(p, ["name の字が、tokoro のページの原典の文字に無い（第５章 量の見込み）"])
+        p, _ = run7(bubun=change(rows, "5", jun=""))
+        self.assertEqual(p, ["列の行で、jun が1からの整数でない（）"])
+        p, _ = run7(bubun=change(rows, "6", jun="1"))
+        self.assertEqual(p, ["列でない行に jun がある（1）"])
+        p, _ = run7(bubun=change(rows, "5", jun="1"))
+        self.assertIn("同じ表に、jun が同じ列がある（1）", p)
+
+    def test_table_range(self):
+        rows = bubun_rows()
+        # 表の題の行が、ページに無い
+        p, _ = run7(bubun=change(rows, "2", name="②２号認定"))
+        self.assertIn("表の題と同じ字の行が、tokoro のページに 0 行ある（1行のはず：②２号認定）", p)
+        # 行の見出しが、親の表の範囲に無い（表③の範囲には「②確保方策」が無い）
+        p, _ = run7(bubun=rows + [dict(rows[5], n="10", oya="7", name="②確保方策")])
+        self.assertEqual(p, ["行の見出しと数値の行が、親の表の範囲に 0 行ある（1行のはず：②確保方策）"])
+        # 列の見出しが、ページにはあるが、親の表の範囲に無い（「②確保方策」は表②の範囲にあり、表③の範囲に無い）
+        p, _ = run7(bubun=change(rows, "9", name="②確保方策"))
+        self.assertEqual(p, ["列の見出しの字が、親の表の範囲に無い（②確保方策）"])
+        # 「機械」の列は、範囲の中で jun の順に並んでいる
+        p, _ = run7(bubun=change(change(rows, "4", jun="2"), "5", jun="1"), atai=[])
+        self.assertEqual(p, ["列の見出しが、親の表の範囲で jun の順に並んでいない（2025 年（R7））"])
+        # 「読んだ」の列は、順を確認しない
+        p, _ = run7(bubun=change(change(rows, "4", jun="2", torikata="読んだ"), "5", jun="1", torikata="読んだ"),
+                    atai=[])
+        self.assertEqual(p, [])
+
+
+class TestAtaiBubun(unittest.TestCase):
+    def test_other_row(self):
+        # 別の行（①量の見込み）の数値を取ると止まる
+        p, _ = run7(atai=[atai7(bubun="6")])
+        self.assertEqual(p, ["行の数値の 1 つ目（271）が、atai（▲5）と違う"])
+
+    def test_other_column(self):
+        # 別の列の数値を取ると止まる
+        p, _ = run7(atai=[atai7(retsu="5")])
+        self.assertEqual(p, ["行の数値の 2 つ目（▲4）が、atai（▲5）と違う"])
+
+    def test_same_row_name_in_other_table(self):
+        # 同じページの表①・表③にも「不足分（②－①）」がある。親の表（表②）の範囲の行だけを見る
+        self.assertEqual(run7()[0], [])
+        self.assertEqual(run7(atai=[atai7(atai="▲6", inyo="不足分（②－①） ▲6 ▲5", bubun="8", retsu="9")])[0], [])
+        # 表③を部分の表から除くと、表②の範囲がページの終わりまで延び、同じ見出しの行が2つになって止まる
+        rows = [r for r in bubun_rows() if r["n"] not in ("7", "8", "9")]
+        p, _ = run7(bubun=rows)
+        self.assertIn("行の見出しと数値の行が、親の表の範囲に 2 行ある（1行のはず：不足分（②－①））", p)
+
+    def test_form(self):
+        p, _ = run7(atai=[atai7(bubun="")])
+        self.assertEqual(p, ["retsu があるのに、bubun が空"])
+        p, _ = run7(atai=[atai7(bubun="30")])
+        self.assertEqual(p, ["bubun が、shiryo の文書の部分の表に無い（pt:kodomo/honpen の 30）"])
+        p, _ = run7(atai=[atai7(retsu="")])
+        self.assertEqual(p, ["bubun が行なのに、retsu が空"])
+        p, _ = run7(atai=[atai7(retsu="6")])
+        self.assertEqual(p, ["bubun が行、retsu が列でない（bubun：行、retsu：行）"])
+        p, _ = run7(atai=[atai7(retsu="9")])
+        self.assertEqual(p, ["bubun の行と retsu の列の親の表が違う（2 と 7）"])
+        p, _ = run7(atai=[atai7(bubun="1", retsu="")])                  # 見出しを指す
+        self.assertEqual(p, [])
+        p, _ = run7(atai=[atai7(shiryo="doc:yosan-1/2", inyo="3,000,000", atai="3,000,000")])
+        self.assertEqual(p, ["shiryo の文書が、文書の表に無い（doc:yosan-1）"])
+        p, _ = run7(atai=[atai7(shiryo="ext:soumu-1/2", inyo="充当率90％", atai="90％", shurui="制度の率")])
+        self.assertEqual(p, ["bubun を書けない shiryo（ext:soumu-1/2）"])
+
+    def test_page_and_count(self):
+        p, _ = run7(atai=[atai7(shiryo="pt:kodomo/honpen/3", inyo="本計画は")], )
+        self.assertIn("shiryo のページが、表の tokoro と違う（pt:kodomo/honpen/3 と pt:kodomo/honpen/2）", p)
+        rows = bubun_rows() + [dict(bubun_rows()[3], n="10", name="2026 年（R8）", jun="3", torikata="読んだ")]
+        p, _ = run7(atai=[atai7(retsu="10")], bubun=rows)
+        self.assertEqual(p, ["行の数値は 2 個で、列の jun（3）の数値が無い"])
+
+    def test_yonda(self):
+        # 行か表の torikata が「読んだ」なら、数値の検査から外して数える
+        p, kazoe = run7(atai=[atai7(atai="▲4", inyo="▲5 ▲4")], bubun=change(bubun_rows(), "3", torikata="読んだ"))
+        self.assertEqual(p, [])
+        self.assertEqual((kazoe["taisho"], kazoe["yonda"]), (0, 1))
+        p, kazoe = run7(bubun=change(bubun_rows(), "2", torikata="読んだ"))
+        self.assertEqual((p, kazoe["yonda"]), ([], 1))
+
+    def test_hatsugen(self):
+        row = dict(atai="3", shiryo=f"sp:{SID7}", inyo="現在の待機児童数は3名です。", retsu="")
+        self.assertEqual(run7(atai=[atai7(bubun=f"sp:{SID7}/2", **row)])[0], [])
+        self.assertEqual(run7(atai=[atai7(bubun=f"sp:{SID7}/1-2", **row)])[0], [])     # 続いた段落の形
+        p, _ = run7(atai=[atai7(bubun=f"sp:{SID7}/1", **row)])
+        self.assertEqual(p, [f"inyo の字が、bubun の段落に無い（sp:{SID7}/1）"])
+        p, _ = run7(atai=[atai7(bubun=f"sp:{SID7}/4", **row)])
+        self.assertEqual(p, [f"bubun の番号の段落が、発言に無い（sp:{SID7}/4）"])
+        p, _ = run7(atai=[atai7(bubun=f"sp:{SID}/1", **row)])
+        self.assertEqual(p, [f"bubun の発言が、shiryo の発言と違う（sp:{SID}/1）"])
+        p, _ = run7(atai=[atai7(bubun="2", **row)])
+        self.assertEqual(p, ["発言を shiryo にした行で、bubun が段落の鍵の形でない（2）"])
+        p, _ = run7(atai=[atai7(bubun=f"sp:{SID7}/2", **dict(row, retsu="4"))])
+        self.assertEqual(p, ["発言を shiryo にした行に、retsu がある"])
+
+    def test_row_numbers(self):
+        self.assertEqual(suji.row_numbers("不足分（②－①） ▲5 ▲4 ▲4 0 0", "不足分（②－①）"), ["▲5", "▲4", "▲4", "0", "0"])
+        self.assertEqual(suji.row_numbers("平成 30 年４月 ０ ０ ４ ４ １", "平成30年4月"), ["0", "0", "4", "4", "1"])
+        self.assertEqual(suji.row_numbers("一般会計 9,935,000 12.7 △1.6", "一般会計"), ["9,935,000", "12.7", "△1.6"])
+        self.assertIsNone(suji.row_numbers("令和10年4月 0 1", "令和1"))             # 見出しの続きに字がある
+        self.assertIsNone(suji.row_numbers("1 8 件 件", "1"))                        # 数値でない字がある
+        self.assertIsNone(suji.row_numbers("不足分（②－①）", "不足分（②－①）"))    # 数値が無い
+
+
+def real_inputs():
+    try:
+        return inputs.Inputs()
+    except inputs.InputError:
+        return None
+
+
+def real_tables():
+    out = {}
+    for name, reader in (("suji", suji.read_suji), ("atai", suji.read_atai), ("bunsho", suji.read_bunsho),
+                         ("bubun", suji.read_bubun)):
+        with open(os.path.join(suji.TEIGI_DIR, name + ".tsv"), encoding="utf-8") as f:
+            rows, p = reader(f.read())
+        assert not p, p
+        out[name] = rows
+    return out
+
+
+class TestReal7(unittest.TestCase):
+    """lock の版の入力と、このリポジトリの表で確認する。入力が lock と合わなければ飛ばす。"""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.inp = real_inputs()
+        if cls.inp is None:
+            raise unittest.SkipTest("lock の版の入力が無い")
+        cls.t = real_tables()
+
+    def run_real(self, atai=None, bubun=None):
+        t = self.t
+        p, _, kazoe = suji.check_all(self.inp, t["suji"], atai or t["atai"], t["bunsho"], bubun or t["bubun"])
+        return [(m.hyo, m.gyo, m.naiyo) for m in p], kazoe
+
+    def atai_at(self, gyo):
+        return next(r for r in self.t["atai"] if r["_gyo"] == gyo)
+
+    def with_row(self, gyo, **kw):
+        return [dict(r, **kw) if r["_gyo"] == gyo else r for r in self.t["atai"]]
+
+    def test_tables_ok(self):
+        p, kazoe = self.run_real()
+        self.assertEqual(p, [])
+        self.assertEqual(kazoe["taisho"], kazoe["atta"])
+
+    def test_other_row(self):
+        # 41行目（表②の不足分、令和7年度、▲5）が、同じ表の「②確保方策」の行を指すと止まる
+        r = self.atai_at(41)
+        self.assertEqual((r["atai"], r["bubun"], r["retsu"]), ("▲5", "6", "7"))
+        p, _ = self.run_real(atai=self.with_row(41, bubun="5"))
+        self.assertEqual(p, [(suji.ATAI_NAME, 41, "行の数値の 1 つ目（266）が、atai（▲5）と違う")])
+
+    def test_other_column(self):
+        # 42行目（表②の不足分、令和8年度、▲4）が、令和7年度の列を指すと止まる
+        self.assertEqual(self.atai_at(42)["retsu"], "8")
+        p, _ = self.run_real(atai=self.with_row(42, retsu="7"))
+        self.assertEqual(p, [(suji.ATAI_NAME, 42, "行の数値の 1 つ目（▲5）が、atai（▲4）と違う")])
+        # 待機児童数（再編整備計画の表の5つ目の列）が、小計（4つ目の列）を指すと止まる
+        self.assertEqual(self.atai_at(16)["atai"], "3")
+        p, _ = self.run_real(atai=self.with_row(16, retsu=self.atai_at(17)["retsu"]))
+        self.assertEqual(p, [(suji.ATAI_NAME, 16, "行の数値の 4 つ目（15）が、atai（3）と違う")])
+
+    def test_same_row_name_in_other_table(self):
+        # 子ども・子育て支援事業計画の72ページには「不足分（②－①）」の行が3つある（表①・②・③）
+        raw = suji.page_raw(self.inp, "pt:kodomo/honpen/72")
+        self.assertEqual(sum(1 for ln in raw.split("\n") if ln.startswith("不足分（②－①）")), 3)
+        bubun = self.t["bubun"]
+        hyo = {r["name"][:1]: r for r in bubun if r["bunsho"] == "pt:kodomo/honpen" and r["shu"] == "表"}
+        for k, want in (("②", ["▲5", "▲4", "▲4", "0", "0"]), ("③", ["▲6", "▲5", "▲5", "0", "0"])):
+            lines, why = suji.table_range(self.inp, bubun, hyo[k])
+            self.assertEqual(why, "")
+            self.assertEqual(suji.row_in_range(lines, "不足分（②－①）"), (want, ""), k)
+        # 表③を部分の表から除くと、表②の範囲に「不足分（②－①）」が2行入り、止まる
+        n3 = hyo["③"]["n"]
+        rest = [r for r in bubun if not (r["bunsho"] == "pt:kodomo/honpen" and n3 in (r["n"], r["oya"]))]
+        atai = [r for r in self.t["atai"] if not (r["shiryo"] == "pt:kodomo/honpen/72" and r["kubun"].startswith("3号"))]
+        p, _ = self.run_real(atai=atai, bubun=rest)
+        gyo = next(r["_gyo"] for r in bubun if r["bunsho"] == "pt:kodomo/honpen" and r["oya"] == hyo["②"]["n"]
+                   and r["name"] == "不足分（②－①）")
+        ng = "行の見出しと数値の行が、親の表の範囲に 2 行ある（1行のはず：不足分（②－①））"
+        self.assertIn((suji.BUBUN_NAME, gyo, ng), p)
+        self.assertIn((suji.ATAI_NAME, 41, ng), p)
 
 
 class TestMain(unittest.TestCase):
