@@ -38,6 +38,12 @@ class TestCheck(unittest.TestCase):
         self.assertEqual(len(self.found("<p>この事項の記載</p>")), 2)
         self.assertEqual(len(self.found("<p>大事な点</p>")), 1)
         self.assertEqual(len(self.found("<p>値は</p>")), 1)
+
+    def test_jiten(self):
+        # 「時点」は、残っていると見ない言葉（SKILL.md §2 の表の読み方の項目）。「点」だけなら止まる
+        self.assertIn("時点", self.ok)
+        self.assertEqual(self.found("<p>資料の日付より後の時点について書いた数値。時点の関係</p>"), [])
+        self.assertEqual(len(self.found("<p>時点と、この点</p>")), 1)
         self.assertEqual(len(self.found("<p>出典：見本</p>")), 2)
 
     def test_quote_excluded(self):

@@ -27,8 +27,9 @@ class TestKensa(unittest.TestCase):
         self.assertNotIn("検査は全部通った", text)
 
     def test_steps(self):
-        # 4つの検査が、決まった順に入っている。テストの中からは、全部の検査を動かさない（テストが自分を呼ぶため）
-        self.assertEqual([n for n, _ in kensa.STEPS], ["書き方の検査", "全部のテスト", "表の検査", "試作のページの作成"])
+        # 5つの検査が、決まった順に入っている。テストの中からは、全部の検査を動かさない（テストが自分を呼ぶため）
+        self.assertEqual([n for n, _ in kensa.STEPS],
+                         ["書き方の検査", "全部のテスト", "表の検査", "試作のページの作成", "数値のページの作成"])
 
 
 if __name__ == "__main__":

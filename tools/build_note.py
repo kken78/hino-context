@@ -30,6 +30,7 @@ TEIGI_KINDS = ("テーマ", "論点", "準備中", "抜き出しの語", "単位
 SKILL_PATH = os.path.join(inputs.ROOT, "SKILL.md")
 OUT_DIR = os.path.join(inputs.ROOT, "build", "note")
 SITE = "日野町 論点ノート（非公式・試作）"
+NOKOSU = "- 次の言葉の一部として出る場合も、残っていると見ない："   # SKILL.md §2
 
 # 資料からの文（引用・会議録の段落・資料の題・発言者の名前）の始めと終わりの印。言葉の検査で除き、書き出す前に消す。
 A, B = "", ""
@@ -104,6 +105,10 @@ def read_kotoba(path=SKILL_PATH):
         ok |= set(_words(cells[1]))
     if not ng:
         raise inputs.InputError(f"{path}：言葉の表に行が無い")
+    # 表の読み方の項目のうち、「次の言葉の一部として出る場合も、残っていると見ない：…」の言葉も、同じ扱いにする
+    for line in lines[:i]:
+        if line.startswith(NOKOSU):
+            ok |= {w.strip() for w in line[len(NOKOSU):].rstrip("。").split("、") if w.strip()}
     return ng, ok
 
 

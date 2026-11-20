@@ -5,6 +5,7 @@
   2. build/ を消して、全部のテスト
   3. 数値の表と、文書の表・文書の部分の表の検査（tools/suji.py）
   4. 試作のページの作成（tools/build_note.py hoiku）
+  5. 数値のページの作成（tools/build_suji.py taiki）
 
 使い方：
   python3 -B tools/kensa.py
@@ -24,6 +25,7 @@ STEPS = [
     ("全部のテスト", PY + ["-m", "unittest", "discover", "-s", TOOLS, "-p", "test_*.py"]),
     ("表の検査", PY + [os.path.join(TOOLS, "suji.py")]),
     ("試作のページの作成", PY + [os.path.join(TOOLS, "build_note.py"), "hoiku"]),
+    ("数値のページの作成", PY + [os.path.join(TOOLS, "build_suji.py"), "taiki"]),
 ]
 
 
