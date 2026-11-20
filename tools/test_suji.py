@@ -570,6 +570,9 @@ class TestReal7(unittest.TestCase):
             raise unittest.SkipTest("lock の版の入力が無い")
         cls.t = real_tables()
 
+    # 子ども・子育て支援事業計画の表②（2号認定）の不足分の行
+    FUSOKU2 = dict(suji="fusoku", shiryo="pt:kodomo/honpen/72", kubun="2号認定（3〜5歳・保育）")
+
     def run_real(self, atai=None, bubun=None):
         t = self.t
         p, _, kazoe = suji.check_all(self.inp, t["suji"], atai or t["atai"], t["bunsho"], bubun or t["bubun"])
@@ -577,6 +580,12 @@ class TestReal7(unittest.TestCase):
 
     def atai_at(self, gyo):
         return next(r for r in self.t["atai"] if r["_gyo"] == gyo)
+
+    def gyo_of(self, **kw):
+        """中身で行を選ぶ（行を足しても変わらないように、行の番号では選ばない）。→ 行の番号。"""
+        hit = [r["_gyo"] for r in self.t["atai"] if all(r[k] == v for k, v in kw.items())]
+        self.assertEqual(len(hit), 1, kw)
+        return hit[0]
 
     def with_row(self, gyo, **kw):
         return [dict(r, **kw) if r["_gyo"] == gyo else r for r in self.t["atai"]]
@@ -587,21 +596,25 @@ class TestReal7(unittest.TestCase):
         self.assertEqual(kazoe["taisho"], kazoe["atta"])
 
     def test_other_row(self):
-        # 41行目（表②の不足分、令和7年度、▲5）が、同じ表の「②確保方策」の行を指すと止まる
-        r = self.atai_at(41)
+        # 表②の不足分、令和7年度、▲5 の行が、同じ表の「②確保方策」の行を指すと止まる
+        g = self.gyo_of(**self.FUSOKU2, nendo="2025")
+        r = self.atai_at(g)
         self.assertEqual((r["atai"], r["bubun"], r["retsu"]), ("▲5", "6", "7"))
-        p, _ = self.run_real(atai=self.with_row(41, bubun="5"))
-        self.assertEqual(p, [(suji.ATAI_NAME, 41, "行の数値の 1 つ目（266）が、atai（▲5）と違う")])
+        p, _ = self.run_real(atai=self.with_row(g, bubun="5"))
+        self.assertEqual(p, [(suji.ATAI_NAME, g, "行の数値の 1 つ目（266）が、atai（▲5）と違う")])
 
     def test_other_column(self):
-        # 42行目（表②の不足分、令和8年度、▲4）が、令和7年度の列を指すと止まる
-        self.assertEqual(self.atai_at(42)["retsu"], "8")
-        p, _ = self.run_real(atai=self.with_row(42, retsu="7"))
-        self.assertEqual(p, [(suji.ATAI_NAME, 42, "行の数値の 1 つ目（▲5）が、atai（▲4）と違う")])
+        # 表②の不足分、令和8年度、▲4 の行が、令和7年度の列を指すと止まる
+        g = self.gyo_of(**self.FUSOKU2, nendo="2026")
+        self.assertEqual(self.atai_at(g)["retsu"], "8")
+        p, _ = self.run_real(atai=self.with_row(g, retsu="7"))
+        self.assertEqual(p, [(suji.ATAI_NAME, g, "行の数値の 1 つ目（▲5）が、atai（▲4）と違う")])
         # 待機児童数（再編整備計画の表の5つ目の列）が、小計（4つ目の列）を指すと止まる
-        self.assertEqual(self.atai_at(16)["atai"], "3")
-        p, _ = self.run_real(atai=self.with_row(16, retsu=self.atai_at(17)["retsu"]))
-        self.assertEqual(p, [(suji.ATAI_NAME, 16, "行の数値の 4 つ目（15）が、atai（3）と違う")])
+        t = self.gyo_of(suji="taiki", shiryo="pt:youho/honpen/11", nendo="2025")
+        n = self.gyo_of(suji="nozoku", shiryo="pt:youho/honpen/11", nendo="2025")
+        self.assertEqual(self.atai_at(t)["atai"], "3")
+        p, _ = self.run_real(atai=self.with_row(t, retsu=self.atai_at(n)["retsu"]))
+        self.assertEqual(p, [(suji.ATAI_NAME, t, "行の数値の 4 つ目（15）が、atai（3）と違う")])
 
     def test_same_row_name_in_other_table(self):
         # 子ども・子育て支援事業計画の72ページには「不足分（②－①）」の行が3つある（表①・②・③）
@@ -622,7 +635,7 @@ class TestReal7(unittest.TestCase):
                    and r["name"] == "不足分（②－①）")
         ng = "行の見出しと数値の行が、親の表の範囲に 2 行ある（1行のはず：不足分（②－①））"
         self.assertIn((suji.BUBUN_NAME, gyo, ng), p)
-        self.assertIn((suji.ATAI_NAME, 41, ng), p)
+        self.assertIn((suji.ATAI_NAME, self.gyo_of(**self.FUSOKU2, nendo="2025"), ng), p)
 
 
 class TestMain(unittest.TestCase):
