@@ -48,7 +48,7 @@ def teigi_row(**kw):
 
 
 def atai_row(**kw):
-    r = dict(suji="taiki", kubun="", jiten="令和7年4月", nendo="2025", atai="3", shurui="実績", jotai=suji.ARU,
+    r = dict(suji="taiki", kubun="", jiten="令和7年4月", nendo="2025", atai="3", shurui="", jotai=suji.ARU,
              shiryo="pt:youho/honpen/2", inyo="令和7年4月 2 2 11 15 3", hani="", kakunin="2026-11-19", chu="")
     r.update(kw)
     return r
@@ -136,7 +136,7 @@ class TestAtai(unittest.TestCase):
     def test_inyo_sources(self):
         rows = [atai_row(atai="40程度", shiryo=f"sp:{SID}", inyo="定員は40名程度を考えております。"),
                 atai_row(atai="3,000,000", shiryo="doc:yosan-1/2", inyo="3,000,000"),
-                atai_row(atai="90％", shurui="制度の率", shiryo="ext:soumu-1/2", inyo="充当率90％")]
+                atai_row(atai="90％", shiryo="ext:soumu-1/2", inyo="充当率90％")]
         self.assertEqual(run(atai=rows), [])
 
     def test_koho(self):
@@ -322,7 +322,7 @@ class TestBunsho(unittest.TestCase):
         inp = real_inputs()
         if inp is None:
             self.skipTest("入力が無い")
-        rows, p0 = suji.read_bunsho(open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), suji.BUNSHO_NAME), encoding="utf-8").read())
+        rows, p0 = suji.read_bunsho(suji._read_file(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), suji.BUNSHO_NAME)))
         self.assertEqual(p0, [])
         out, _ = suji.check_bunsho(inp, rows)
         self.assertEqual([m.naiyo for m in out], [])
@@ -462,7 +462,7 @@ class TestAtaiBubun(unittest.TestCase):
         self.assertEqual(p, [])
         p, _ = run7(atai=[atai7(shiryo="doc:yosan-1/2", inyo="3,000,000", atai="3,000,000")])
         self.assertEqual(p, ["shiryo の文書が、文書の表に無い（doc:yosan-1）"])
-        p, _ = run7(atai=[atai7(shiryo="ext:soumu-1/2", inyo="充当率90％", atai="90％", shurui="制度の率")])
+        p, _ = run7(atai=[atai7(shiryo="ext:soumu-1/2", inyo="充当率90％", atai="90％")])
         self.assertEqual(p, ["bubun を書けない shiryo（ext:soumu-1/2）"])
 
     def test_page_and_count(self):
@@ -509,6 +509,44 @@ def real_inputs():
         return inputs.Inputs()
     except inputs.InputError:
         return None
+
+
+class TestShurui(unittest.TestCase):
+    """shurui の字が、shiryo の原典の文字にあるか（SCHEMA.md §6.2・§6.4）。実際の入力と表で確認する。"""
+
+    def setUp(self):
+        self.inp = real_inputs()
+        if self.inp is None:
+            self.skipTest("入力が無い")
+        path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), suji.ATAI_NAME)
+        self.rows, p = suji.read_atai(suji._read_file(path))
+        self.assertEqual(p, [])
+
+    def test_ima_no_hyo(self):
+        out, kazoe = suji.check_shurui(self.inp, self.rows)
+        self.assertEqual([m.naiyo for m in out], [])
+        self.assertGreater(kazoe["shurui_taisho"], 0)
+
+    def test_shiryo_ni_nai_ji(self):
+        """再編整備計画の待機児童数の表には「実績」の字が無い。書くと止まる。"""
+        rows = [dict(r) for r in self.rows]
+        r = next(x for x in rows if x["suji"] == "taiki" and x["shiryo"] == "pt:youho/honpen/11")
+        self.assertEqual(r["shurui"], "")
+        r["shurui"] = "実績"
+        out, _ = suji.check_shurui(self.inp, rows)
+        self.assertEqual([(m.gyo, m.naiyo) for m in out], [(r["_gyo"], "shurui の字が、shiryo の原典の文字に無い（実績）")])
+
+    def test_genten_no_moji_ga_nai(self):
+        """原典の文字が入力に無い資料（総合計画）の行は、検査から除いて数える。"""
+        rows = [dict(r) for r in self.rows if r["shiryo"] == "plan:sogo6" and r["shurui"]]
+        self.assertTrue(rows)
+        out, kazoe = suji.check_shurui(self.inp, rows)
+        self.assertEqual(out, [])
+        self.assertEqual((kazoe["shurui_taisho"], kazoe["shurui_nozoita"]), (0, len(rows)))
+
+    def test_inp_ga_nai(self):
+        self.assertEqual(suji.check_shurui(None, self.rows), ([], suji.Counter()))
+
 
 
 def real_tables():
