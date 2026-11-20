@@ -138,6 +138,22 @@ class TestAtai(unittest.TestCase):
                 atai_row(atai="90％", shurui="制度の率", shiryo="ext:soumu-1/2", inyo="充当率90％")]
         self.assertEqual(run(atai=rows), [])
 
+    def test_koho(self):
+        # 広報ひのを出典にした「数値がある」の行は、inyo が合っていても、確認の記録が要る
+        inp = fake()
+        inp._docs["koho-1"] = {"id": "koho-1", "category": "koho", "title": "広報", "url": "https://example.jp/k.pdf",
+                               "archive_url": ""}
+        inp._doc_texts[("koho-1", "text")] = "開園時期：令和11年４月（予定）"
+        row = dict(atai="令和11年4月", shiryo="doc:koho-1/1", inyo="開園時期：令和11年４月（予定）")
+        ng = "広報ひのを出典にした「数値がある」の行で、chu に「依頼者が PDF で確認（YYYY-MM-DD）」が無い"
+        self.assertEqual(run(atai=[atai_row(**row)], inp=inp), [ng])
+        self.assertEqual(run(atai=[atai_row(chu="依頼者が PDF で確認（2026-11-20）", **row)], inp=inp), [])
+        # 広報ひのでない町の資料は、確認の記録が無くてもよい
+        self.assertEqual(run(atai=[atai_row(atai="3,000,000", shiryo="doc:yosan-1/2", inyo="3,000,000")]), [])
+        # 「数値がある」でない行には、求めない
+        self.assertEqual(run(atai=[atai_row(jotai=suji.SETSUMEI, atai="", shiryo="doc:koho-1/1",
+                                            inyo="開園時期")], inp=inp), [])
+
     def test_shiryo_form(self):
         p = run(atai=[atai_row(shiryo="pt:youho")])
         self.assertEqual(len(p), 1)
@@ -149,7 +165,12 @@ class TestAtai(unittest.TestCase):
 
     def test_no_text_in_inputs(self):
         # 資料の本文が入力に無い行（plan:）は、inyo を空にでき、その場合は chu が必須
-        self.assertEqual(run(atai=[atai_row(shiryo="plan:sougou", inyo="", chu="総合計画の原文の文字が入力に無い")]), [])
+        ok = "総合計画の原文の文字が入力に無い。依頼者が PDF で確認（2026-11-20）"
+        self.assertEqual(run(atai=[atai_row(shiryo="plan:sougou", inyo="", chu=ok)]), [])
+        ng = "「数値がある」の行で、inyo が空なのに、chu に「依頼者が PDF で確認（YYYY-MM-DD）」が無い"
+        self.assertEqual(run(atai=[atai_row(shiryo="plan:sougou", inyo="", chu="総合計画の原文の文字が入力に無い")]), [ng])
+        # 日付の形が違う記録は、無いものとする
+        self.assertEqual(run(atai=[atai_row(shiryo="plan:sougou", inyo="", chu="依頼者が PDF で確認（2026-13-40）")]), [ng])
         self.assertEqual(run(atai=[atai_row(shiryo="plan:sougou", inyo="")]),
                          ["「数値がある」の行で、inyo が空で、chu に理由が無い"])
         p = run(atai=[atai_row(shiryo="plan:sougou", chu="入力に無い")])     # inyo を書くと照合できずに止まる

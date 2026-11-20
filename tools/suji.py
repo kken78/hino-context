@@ -41,6 +41,10 @@ SUJI_HISSU = ("id", "name", "nani", "kettei")
 # atai の中の数字の部分。符号（▲・△・マイナス）は数字の部分に含める。桁区切りの「,」と小数点も含める。
 RE_SUJI = re.compile(r"[▲△\-−]?[0-9](?:[0-9,.]*[0-9])?")
 
+# 依頼者が PDF で数値を確認した記録（SCHEMA.md §6.3）。chu にこの字が要る行がある。
+RE_KAKUNIN = re.compile(r"依頼者が PDF で確認（([0-9]{4}-[0-9]{2}-[0-9]{2})）")
+KOHO = "koho"   # hino-town-docs の sources.tsv の category。広報ひの
+
 Mondai = namedtuple("Mondai", "hyo gyo naiyo")   # 表の名前、行の番号（列名の行は1）、何が問題か
 
 
@@ -119,6 +123,38 @@ def atai_in_inyo(atai, inyo):
     return all(re.search(r"(?<![0-9,.])" + re.escape(p) + r"(?![0-9]|[,.][0-9])", q) for p in parts)
 
 
+def has_kakunin(chu):
+    """chu に「依頼者が PDF で確認（YYYY-MM-DD）」があり、日付の形が合っているか。"""
+    return any(is_ymd(d) for d in RE_KAKUNIN.findall(chu or ""))
+
+
+def is_koho(inp, shiryo):
+    """shiryo が、広報ひの（sources.tsv の category が koho）の資料か。鍵の形が違う行・doc でない行は False。"""
+    try:
+        kind, parts = keys.parse(shiryo)
+    except keys.KeyFormError:
+        return False
+    if kind != "doc":
+        return False
+    return (inp.docs().get(parts[0]) or {}).get("category") == KOHO
+
+
+def check_kakunin(inp, rows):
+    """「数値がある」の行で、広報ひのを出典にした行と、inyo が空の行に、確認の記録があるか（SCHEMA.md §6.4）。"""
+    out = []
+    for r in rows:
+        if r["jotai"] != ARU or has_kakunin(r["chu"]):
+            continue
+        if not r["inyo"].strip():
+            if r["chu"].strip():      # chu が空の行は、check_atai が「理由が無い」として出す
+                out.append(Mondai(ATAI_NAME, r["_gyo"],
+                                  "「数値がある」の行で、inyo が空なのに、chu に「依頼者が PDF で確認（YYYY-MM-DD）」が無い"))
+        elif is_koho(inp, r["shiryo"]):
+            out.append(Mondai(ATAI_NAME, r["_gyo"],
+                              "広報ひのを出典にした「数値がある」の行で、chu に「依頼者が PDF で確認（YYYY-MM-DD）」が無い"))
+    return out
+
+
 def check_suji(rows):
     """定義の表の検査。"""
     out = []
@@ -187,6 +223,7 @@ def check(inp, suji_rows, atai_rows):
     ids = {r["id"] for r in suji_rows if r["id"]}
     more, quotes = check_atai(atai_rows, ids)
     out += more
+    out += check_kakunin(inp, atai_rows)
     res = shogo.check_quotes(inp, quotes) if quotes else shogo.Result()
     for m in res.mismatched:
         out.append(Mondai(ATAI_NAME, m["where"], f"inyo が shiryo の資料の本文に無い（{m['reason']}：{m['source']}）"))
