@@ -16,3 +16,4 @@ doc:koho-no792-04	町の未来を担う子どもたちのために 幼児教育�
 doc:jigyo-shinkodomoen-kousou	日野町認定こども園整備基本構想	jigyo	本基本構想は、「第６次日野町総合計画」及び「第３期日野町子ども・子育て支援事業計画」を上位計画とし	doc:jigyo-shinkodomoen-kousou/5	2025-08	doc:jigyo-shinkodomoen-kousou/1	
 doc:jigyo-shinkodomoen-pabu	「日野町認定こども園整備基本構想（案）」におけるパブリックコメントの実施結果	jigyo					日付：文書に記載が見つからない（1〜4ページを見た）。hino-town-docs の sources.tsv の date も空。1ページに意見募集期間「令和７年７月１１日（金）から８月８日（金）まで」がある。根拠：意見募集を定めた法令・要綱の記載は見つからない（1ページ「１．はじめに」を見た）
 plan:sogo6	第6次日野町総合計画	keikaku			2021-03	shiga-hino-plans data/plans/sogo6.json	原典の文字が入力に無い。名前は data/plans/sogo6.json の meta.name、日付は meta.posted「2021年3月発行」から取った（原典の文字では確認していない）。根拠：原典の文字が入力に無いので探していない
+pt:senryaku2/x1	日野町くらし安心ひとづくり総合戦略	keikaku	本戦略は、まち・ひと・しごと創生法第１０条に基づき、国の総合戦略等の方向性を踏まえ、策定するものです。	pt:senryaku2/x1/8	2021-03	pt:senryaku2/x1/1	第２期（令和3年度〜令和7年度）。令和３年３月の版。計画ライブラリには、令和4年12月改訂の版（sougousenryaku2_r4-12ver）と令和6年3月改訂の版（honpen）もある
