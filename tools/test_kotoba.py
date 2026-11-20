@@ -1,4 +1,4 @@
-"""画面に出す言葉の検査（SKILL.md §2）。"""
+"""画面に出す言葉の検査（docs/design.md 2節）。"""
 import os
 import sys
 import unittest
@@ -13,7 +13,7 @@ def page(body):
 
 
 class TestTable(unittest.TestCase):
-    def test_read_skill(self):
+    def test_read_design(self):
         ng, ok = bn.read_kotoba()
         words = [w for w, _ in ng]
         for w in ("事項", "点", "題材", "当たる", "記載", "段落", "値", "性質", "対応", "原典", "出典", "開けます", "見本"):
@@ -22,6 +22,12 @@ class TestTable(unittest.TestCase):
         self.assertEqual(dict(ng)["点"], "文")
         self.assertTrue({"論点", "テーマ", "記述", "会議録", "金額", "数値", "もとの資料", "確認できます", "試作"} <= ok)
         self.assertNotIn("", ok)
+
+    def test_read_from_design_only(self):
+        # 言葉の表は docs/design.md の2節にだけある。SKILL.md には無い
+        self.assertTrue(bn.DESIGN_PATH.endswith(os.path.join("docs", "design.md")))
+        with self.assertRaises(bn.inputs.InputError):
+            bn.read_kotoba(os.path.join(bn.inputs.ROOT, "SKILL.md"))
 
 
 class TestCheck(unittest.TestCase):
@@ -40,7 +46,7 @@ class TestCheck(unittest.TestCase):
         self.assertEqual(len(self.found("<p>値は</p>")), 1)
 
     def test_jiten(self):
-        # 「時点」は、残っていると見ない言葉（SKILL.md §2 の表の読み方の項目）。「点」だけなら止まる
+        # 「時点」は、残っていると見ない言葉（docs/design.md 2節の表の読み方の項目）。「点」だけなら止まる
         self.assertIn("時点", self.ok)
         self.assertEqual(self.found("<p>資料の日付より後の時点について書いた数値。時点の関係</p>"), [])
         self.assertEqual(len(self.found("<p>時点と、この点</p>")), 1)

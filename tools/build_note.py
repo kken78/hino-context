@@ -7,7 +7,7 @@
 作る前の検査（1つでも当たれば、件数と該当行を示して、ページを作らずに止まる。終了コード 1）：
   (a) 引用が原典に無い行（段落の鍵が発言の段落を指していない行を含む）
   (b) 出典の無い記述
-  (c) 画面に出る文に、SKILL.md §2 の「使わない」言葉が残っている（資料からの引用の中は除く）
+  (c) 画面に出る文に、docs/design.md 2節の「使わない」言葉が残っている（資料からの引用の中は除く）
   (d) lock と入力が合わない
 """
 import datetime
@@ -27,10 +27,11 @@ import shogo  # noqa: E402
 
 TEIGI_COLUMNS = ["kind", "key", "name", "short", "setsumei"]
 TEIGI_KINDS = ("テーマ", "論点", "準備中", "抜き出しの語", "単位", "注")
-SKILL_PATH = os.path.join(inputs.ROOT, "SKILL.md")
+DESIGN_PATH = os.path.join(inputs.ROOT, "docs", "design.md")
+DESIGN_SETSU = "## 2. 画面に出す言葉"   # 言葉の表を読む節の見出し
 OUT_DIR = os.path.join(inputs.ROOT, "build", "note")
 SITE = "日野町 論点ノート（非公式・試作）"
-NOKOSU = "- 次の言葉の一部として出る場合も、残っていると見ない："   # SKILL.md §2
+NOKOSU = "- 次の言葉の一部として出る場合も、残っていると見ない："   # docs/design.md 2節
 
 # 資料からの文（引用・会議録の段落・資料の題・発言者の名前）の始めと終わりの印。言葉の検査で除き、書き出す前に消す。
 A, B = "", ""
@@ -86,10 +87,16 @@ def _words(cell):
     return [w.strip() for w in re.sub(r"（[^）]*）", "", cell).split("、") if w.strip()]
 
 
-def read_kotoba(path=SKILL_PATH):
-    """SKILL.md §2 の言葉の表 → (使わない語, 確認する所) の並びと、使う語の集まり。"""
+def read_kotoba(path=DESIGN_PATH):
+    """docs/design.md 2節の言葉の表 → (使わない語, 確認する所) の並びと、使う語の集まり。"""
     with open(path, encoding="utf-8") as f:
         lines = f.read().splitlines()
+    try:
+        s = lines.index(DESIGN_SETSU)
+    except ValueError:
+        raise inputs.InputError(f"{path}：節の見出し（{DESIGN_SETSU}）が無い")
+    e = next((j for j in range(s + 1, len(lines)) if lines[j].startswith("## ")), len(lines))
+    lines = lines[s:e]
     try:
         i = lines.index("| 使わない | 使う | 確認する所 |")
     except ValueError:
