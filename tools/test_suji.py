@@ -107,7 +107,7 @@ class TestAtai(unittest.TestCase):
     def test_jotai(self):
         self.assertTrue(run(atai=[atai_row(jotai="不明")])[0].startswith("jotai が 数値がある・"))
         for j, kw in ((suji.KARA, dict(atai="", inyo="")),
-                      (suji.SETSUMEI, dict(atai="", inyo="定員は40名程度")),
+                      (suji.SETSUMEI, dict(atai="", inyo="定員は40名程度を考えております。")),
                       (suji.NAI, dict(atai="", shiryo="", inyo="", hani="会議録 2020〜2025年。語「待機」"))):
             sh = dict(shiryo=f"sp:{SID}") if j == suji.SETSUMEI else {}
             self.assertEqual(run(atai=[atai_row(jotai=j, **dict(kw, **sh))]), [], j)
@@ -133,7 +133,7 @@ class TestAtai(unittest.TestCase):
         self.assertEqual(p, ["inyo が shiryo の資料の本文に無い（資料が入力に無いか、照合できない資料の鍵：doc:nai/2）"])
 
     def test_inyo_sources(self):
-        rows = [atai_row(atai="40程度", shiryo=f"sp:{SID}", inyo="40名程度"),
+        rows = [atai_row(atai="40程度", shiryo=f"sp:{SID}", inyo="定員は40名程度を考えております。"),
                 atai_row(atai="3,000,000", shiryo="doc:yosan-1/2", inyo="3,000,000"),
                 atai_row(atai="90％", shurui="制度の率", shiryo="ext:soumu-1/2", inyo="充当率90％")]
         self.assertEqual(run(atai=rows), [])
@@ -153,6 +153,23 @@ class TestAtai(unittest.TestCase):
         # 「数値がある」でない行には、求めない
         self.assertEqual(run(atai=[atai_row(jotai=suji.SETSUMEI, atai="", shiryo="doc:koho-1/1",
                                             inyo="開園時期")], inp=inp), [])
+
+    def test_hatsugen_bun(self):
+        # 発言を出典にした行の inyo は、文の頭から「。」まで（SCHEMA.md §6.2・§6.4）
+        ng = "発言を出典にした行で、inyo が、文の頭から「。」までになっていない"
+        row = dict(atai="40程度", shiryo=f"sp:{SID}")
+        self.assertEqual(run(atai=[atai_row(inyo="定員は40名程度を考えております。", **row)]), [])
+        self.assertEqual(run(atai=[atai_row(inyo="40名程度", **row)]), [ng])                    # 文の途中で切っている
+        self.assertEqual(run(atai=[atai_row(inyo="定員は40名程度を考えております", **row)]), [ng])    # 「。」が無い
+        # 続いた2つの文は、つないで引いてよい。改行も文の区切り
+        inp = fake()
+        inp._st[SID] = ("森弘一郎", "はじめに申し上げます。\n定員は40名程度です。今後、精査します。")
+        self.assertEqual(run(atai=[atai_row(inyo="定員は40名程度です。今後、精査します。", **row)], inp=inp), [])
+        self.assertEqual(run(atai=[atai_row(inyo="定員は40名程度です。", **row)], inp=inp), [])
+        self.assertEqual(run(atai=[atai_row(inyo="申し上げます。定員は40名程度です。", **row)], inp=inp), [ng])
+        # 町の資料の行には、求めない
+        self.assertEqual(run(atai=[atai_row(atai="3,000,000", shiryo="doc:yosan-1/2", inyo="3,000,000")]), [])
+        self.assertEqual(suji.bun_no_narabi("あ。い\nう。"), ["あ。", "い", "う。"])
 
     def test_shiryo_form(self):
         p = run(atai=[atai_row(shiryo="pt:youho")])

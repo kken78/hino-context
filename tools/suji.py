@@ -155,6 +155,53 @@ def check_kakunin(inp, rows):
     return out
 
 
+def bun_no_narabi(text):
+    """発言の本文 → 文の並び（SCHEMA.md §6.4）。改行と「。」で分ける。「。」は文に含める。"""
+    out = []
+    for para in (text or "").split("\n"):
+        for m in re.finditer(r"[^。]*。|[^。]+$", para):
+            if m.group(0).strip():
+                out.append(m.group(0).strip())
+    return out
+
+
+def is_bun(inyo, text):
+    """inyo が、発言の本文の、文の頭から「。」まで（続いた文をつないだ物を含む）になっているか。"""
+    q = shogo.norm(inyo)
+    if not q:
+        return False
+    buns = [shogo.norm(b) for b in bun_no_narabi(text)]
+    for i in range(len(buns)):
+        acc = ""
+        for b in buns[i:]:
+            acc += b
+            if acc == q:
+                return True
+            if len(acc) >= len(q):
+                break
+    return False
+
+
+def check_hatsugen(inp, rows):
+    """発言（sp）を出典にした行の inyo が、文の途中で切られていないか（SCHEMA.md §6.2・§6.4）。"""
+    out = []
+    for r in rows:
+        if not r["inyo"].strip():
+            continue
+        try:
+            kind, parts = keys.parse(r["shiryo"])
+        except keys.KeyFormError:
+            continue
+        if kind != "sp":
+            continue
+        text = inp.statement_text(parts[0])
+        if text is None:        # 発言が入力に無い行は、inyo の照合の側で出す
+            continue
+        if not is_bun(r["inyo"], text):
+            out.append(Mondai(ATAI_NAME, r["_gyo"], "発言を出典にした行で、inyo が、文の頭から「。」までになっていない"))
+    return out
+
+
 def check_suji(rows):
     """定義の表の検査。"""
     out = []
@@ -224,6 +271,7 @@ def check(inp, suji_rows, atai_rows):
     more, quotes = check_atai(atai_rows, ids)
     out += more
     out += check_kakunin(inp, atai_rows)
+    out += check_hatsugen(inp, atai_rows)
     res = shogo.check_quotes(inp, quotes) if quotes else shogo.Result()
     for m in res.mismatched:
         out.append(Mondai(ATAI_NAME, m["where"], f"inyo が shiryo の資料の本文に無い（{m['reason']}：{m['source']}）"))
