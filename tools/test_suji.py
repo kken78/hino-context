@@ -582,6 +582,31 @@ class TestJitenKankei(unittest.TestCase):
         self.assertEqual(suji.jiten_kankei(r[0], teigi["yosan-hosei"], by), suji.KANKEI_TOCHU)
         self.assertTrue(all(suji.jiten_kankei(x, teigi["kaien"], by) is None for x in one(suji="kaien")))
 
+    def test_schema_no_rei(self):
+        """SCHEMA.md §7.3 の実物の例の8行。行を中身で選んで判定し、印が §7.3 の表と同じであること。"""
+        t = real_tables()
+        teigi = {r["id"]: r for r in t["suji"]}
+        by = {r["bunsho"]: r for r in t["bunsho"]}
+        rei = [(dict(suji="taiki", jiten="令和7年度", shiryo="pt:senryaku2/x1/16"), "ato"),
+               (dict(suji="taiki", jiten="令和7年4月", shiryo="pt:youho/honpen/11"), "mae"),
+               (dict(suji="taiki", jiten="平成31年度", shiryo="sp:0000004662_20190614_0094"), "mae"),
+               (dict(suji="fusoku", jiten="令和7年度", shiryo="pt:kodomo/honpen/72", atai="▲5"), "ato"),
+               (dict(suji="yosan-hosei", jiten="令和7年度（12月補正）", shiryo="doc:yosan-r7-hosei-12/2"), "tochu"),
+               (dict(suji="kaien", jiten="2026年7月の広報ひの", atai="令和11年4月"), None),
+               (dict(suji="yosan-tosho", jiten="令和8年度", shiryo="doc:yosan-r8-fuhyo/1"), None),
+               (dict(suji="taiki", jiten="令和8年4月", shiryo=""), None)]
+        for kw, want in rei:
+            hit = [r for r in t["atai"] if all(r[k] == v for k, v in kw.items())]
+            self.assertEqual(len(hit), 1, kw)
+            self.assertEqual(suji.jiten_kankei(hit[0], teigi[kw["suji"]], by), want, kw)
+
+    def test_shirushi_dake(self):
+        """データの側が返すのは、3つの印か None だけ。画面の文を返さない（データの構造と画面を分ける）。"""
+        self.assertEqual(set(suji.KANKEI), {"ato", "mae", "tochu"})
+        t = real_tables()
+        kk = suji.count_kankei(t["suji"], t["atai"], t["bunsho"])
+        self.assertTrue(set(kk) <= {"ato", "mae", "tochu", None}, set(kk))
+
     def test_nendo_tsuki_no_katachi(self):
         self.assertEqual(run(teigi=[teigi_row(nendo_tsuki="13")]), ["nendo_tsuki の形が違う（空か、1〜12の数のはず：13）"])
         self.assertEqual(run(teigi=[teigi_row(nendo_tsuki="")]), [])
