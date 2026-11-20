@@ -1,4 +1,4 @@
-"""数値の表から、定義1つのページを作るツール（tools/build_suji.py）：列の分け方、並べ方、止まる条件。"""
+"""数値の表から、定義1つのページを作るツール（tools/build_suji.py）：列の分け方、並べ方、止まる条件、docs/design.md 3節との対応。"""
 import datetime
 import os
 import re
@@ -80,9 +80,18 @@ def cells(page, label, after=""):
 
 
 def heads(page, after=""):
+    """表の見出しの字（列の説明を除く）。"""
     start = page.index(after) if after else 0
     m = re.compile(r"<thead><tr>(.*?)</tr></thead>", re.S).search(page, start)
-    return re.findall(r"<th>(.*?)</th>", m.group(1))
+    return [re.sub(r"<span class=setsumei>.*?</span>", "", h) for h in re.findall(r"<th>(.*?)</th>", m.group(1))]
+
+
+D = bs.read_design()
+JIKI = D.bun("hyo-jiki")
+
+
+def go(k):
+    return D.kotoba(f"時点の関係 {k}")
 
 
 def chips(cell):
@@ -94,18 +103,21 @@ class TestFake(unittest.TestCase):
         self.kotoba = bn.read_kotoba()
 
     def build(self, t=None, sid="taiki", inp=None):
-        return bs.build(inp or fake(), t or tables(), sid, self.kotoba, TODAY)
+        return bs.build(inp or fake(), t or tables(), sid, self.kotoba, TODAY, design=D)
 
     def test_columns(self):
         page, info = self.build()
-        self.assertEqual(heads(page), ["時点", bs.KOTOBA[suji.KANKEI_ATO], bs.KOTOBA[suji.KANKEI_MAE]])      # 1行も無い関係の列は出さない
+        self.assertEqual(heads(page), [JIKI, go("ato"), go("mae")])      # 1行も無い印の列は出さない
         self.assertEqual([chips(c) for c in cells(page, "2025年4月")], [["3"], []])
         self.assertEqual([chips(c) for c in cells(page, "2024年4月")], [[], ["8", "7", "5"]])
-        self.assertNotIn("2026年4月", re.findall(r"<tr><th>(.*?)</th>", page))         # 関係を出さない行は表に入れない
+        self.assertNotIn("2026年4月", re.findall(r"<tr><th>(.*?)</th>", page))         # 印が無い行は表に入れない
         self.assertEqual(info["gyo"], 7)
         self.assertNotIn(bn.A, page)
         self.assertNotIn(bn.B, page)
-        self.assertIn("数値の定義は、まだ案です。", page)
+        self.assertIn(D.kotoba("定義の表 kettei が「案」"), page)
+        # 列の説明は ato と mae にだけ付ける（docs/design.md 3節の出し方）
+        self.assertIn(f"<span class=setsumei>{D.retsu_setsumei('時点の関係 ato')}</span>", page)
+        self.assertIn(f"<span class=setsumei>{D.retsu_setsumei('時点の関係 mae')}</span>", page)
 
     def test_tochu_and_kubun(self):
         t = teigi_row(id="fusoku", name="保育の不足分", nendo_tsuki="", toki="年度")
@@ -113,36 +125,36 @@ class TestFake(unittest.TestCase):
                 for k, j, n, v in (("2号", "令和5年度", "2023", "40"), ("2号", "令和6年度", "2024", "41"),
                                    ("2号", "令和7年度", "2025", "42"), ("3号", "令和6年度", "2024", "40"))]
         page, _ = self.build(tables([t], rows), "fusoku")
-        self.assertEqual(heads(page, "<h3>2号</h3>"), ["時点", bs.KOTOBA[suji.KANKEI_ATO], bs.KOTOBA[suji.KANKEI_TOCHU], bs.KOTOBA[suji.KANKEI_MAE]])
-        self.assertEqual([chips(c) for c in cells(page, "2023年度", "<h3>2号</h3>")], [[], [], ["40"]])
-        self.assertEqual([chips(c) for c in cells(page, "2024年度", "<h3>2号</h3>")], [[], ["41"], []])
-        self.assertEqual([chips(c) for c in cells(page, "2025年度", "<h3>2号</h3>")], [["42"], [], []])
-        # 区分ごとに表を分ける。列は、定義の中に1行でもある関係の列（区分ごとには減らさない）
-        self.assertEqual(heads(page, "<h3>3号</h3>"), ["時点", bs.KOTOBA[suji.KANKEI_ATO], bs.KOTOBA[suji.KANKEI_TOCHU], bs.KOTOBA[suji.KANKEI_MAE]])
-        self.assertEqual([chips(c) for c in cells(page, "2024年度", "<h3>3号</h3>")], [[], ["40"], []])
-        self.assertIn("年度を、その年の4月から翌年の3月までの期間として扱っています", page)
+        self.assertEqual(heads(page, "：2号</h3>"), [JIKI, go("ato"), go("tochu"), go("mae")])
+        self.assertEqual([chips(c) for c in cells(page, "2023年度", "：2号</h3>")], [[], [], ["40"]])
+        self.assertEqual([chips(c) for c in cells(page, "2024年度", "：2号</h3>")], [[], ["41"], []])
+        self.assertEqual([chips(c) for c in cells(page, "2025年度", "：2号</h3>")], [["42"], [], []])
+        # kubun ごとに表を分ける。列は、定義の中に1行でもある印の列（kubun ごとには減らさない）
+        self.assertIn(f"<h3>{D.kotoba('数値の表 kubun')}：2号</h3>", page)
+        self.assertEqual(heads(page, "：3号</h3>"), [JIKI, go("ato"), go("tochu"), go("mae")])
+        self.assertEqual([chips(c) for c in cells(page, "2024年度", "：3号</h3>")], [[], ["40"], []])
+        self.assertIn(D.bun("nendo-kikan"), page)
 
     def test_not_shown_rows(self):
         page, info = self.build()
         self.assertEqual(info["kankei"][None], 3)
-        i = page.index("<h3>時点の関係を出していない数値</h3>")
-        order = [page.index(f"理由：{r}", i) for r in (bs.RIYU_NENDO, bs.RIYU_HIDUKE, bs.RIYU_SHIRYO)]
-        self.assertEqual(order, sorted(order))
-        self.assertIn(f"理由：{bs.RIYU_NENDO}（1行）", page)
-        self.assertIn(f"理由：{bs.RIYU_HIDUKE}（1行）", page)
-        self.assertIn(f"理由：{bs.RIYU_SHIRYO}（1行）", page)
+        i = page.index(f"<h3>{D.bun('midashi-nai')}</h3>")
+        riyu = [D.kotoba("数値の表 nendo が空"), D.kotoba("文書の表 hiduke が空"), D.kotoba("数値の表 shiryo が空")]
+        kensu = [D.bun("kensu", riyu=r, n=1) for r in riyu]
+        order = [page.index(k, i) for k in kensu]
+        self.assertEqual(order, sorted(order))                         # 理由ごとに、決めた順に並べる
         self.assertIn("会議録と計画を「待機」で探した", page)
 
     def test_chigau(self):
         page, info = self.build()
-        self.assertIn("資料の間で、数値が一致していません", cells(page, "2024年4月")[1])
+        self.assertIn(D.bun("chigau"), cells(page, "2024年4月")[1])
         self.assertEqual(info["chigau"], 1)
         rows = taiki_rows()
         rows[2] = atai_row(atai="8", shiryo=f"sp:{SID}", inyo="令和6年4月の待機児童は8名でした。")
         inp = fake()
         inp._st[SID] = ("森弘一郎", "令和6年4月の待機児童は8名でした。")
         page, info = self.build(tables(atai_rows=rows), inp=inp)
-        self.assertNotIn("資料の間で、数値が一致していません", page)     # 「目標」の 5 は比較しない
+        self.assertNotIn(D.bun("chigau"), page)     # shurui が「目標」の 5 は比較しない
         self.assertEqual(info["chigau"], 0)
 
     def test_hiduke_order_when_no_kankei(self):
@@ -153,22 +165,30 @@ class TestFake(unittest.TestCase):
                 atai_row(suji="kaien", jiten="資料C", nendo="", atai="3", inyo="令和7年4月 2 2 11 15 3",
                          shiryo="pt:youho/honpen/2")]
         page, _ = self.build(tables([t], rows), "kaien")
-        self.assertNotIn("<h2>年ごとの数値</h2>", page)
-        self.assertIn("並べ方は、まだ決まっていません", page)
-        body = page[page.index("<h2>資料の日付の順に並べた数値</h2>"):page.index("<h2>数値ごとの")]
+        self.assertNotIn(f"<h2>{D.bun('midashi-hyo')}</h2>", page)
+        self.assertNotIn("並べ方は、まだ決まっていません", page)        # docs/design.md 4節（2026-11-21 の依頼者の決定）
+        body = page[page.index(f"<h2>{D.bun('midashi-hiduke')}</h2>"):page.index(f"<h2>{D.bun('midashi-shosai')}</h2>")]
         self.assertEqual(re.findall(r"<tr><td>(.*?)</td>", body),
-                         ["2024年12月13日", "2025年3月", "資料に日付の記述がありません"])
+                         ["2024年12月13日", "2025年3月", D.kotoba("文書の表 hiduke が空")])
+        # shurui がどの行にも無ければ、その列を出さない
+        self.assertNotIn(D.kotoba("数値の表 shurui"), heads(page, f"<h2>{D.bun('midashi-hiduke')}</h2>"))
 
     def test_detail(self):
         page, _ = self.build()
         self.assertIn("<dt>区分</dt><dd>議会での答弁</dd>", page)
         self.assertIn("<dt>区分</dt><dd>町の資料</dd>", page)
-        self.assertIn("<dt>資料の中の位置</dt><dd>まだ指していません（ページまで）</dd>", page)
+        tokoro = D.kotoba("文書の部分（bubun・retsu から親をたどった並び）")
+        self.assertIn(f"<dt>{tokoro}</dt><dd>{D.kotoba('bubun が空')}</dd>", page)
         self.assertIn("https://example.jp/p.pdf#page=2", page)
         self.assertIn(f"#sid={SID}", page)
-        self.assertIn("<dt>状態</dt><dd>調べた範囲に見つからない</dd>", page)
-        self.assertIn("<dt>調べた日</dt><dd>2026年11月19日</dd>", page)
+        self.assertIn(f"<dt>{D.kotoba('数値の表 jotai が「数値がある」でない')}</dt><dd>調べた範囲に見つからない</dd>", page)
+        self.assertIn(f"<dt>{D.kotoba('数値の表 kakunin')}</dt><dd>2026年11月19日</dd>", page)
         self.assertNotIn("根拠：全ページを探した", page)            # 文書の表の chu は出さない
+        self.assertNotIn("日付：全ページを探した", page)
+        # 出さない欄：時点の関係の欄。shurui が空の行の、shurui の欄
+        self.assertNotIn("時点の関係", page)
+        sec = page[page.index("<section id='g2'>"):page.index("</section>", page.index("<section id='g2'>"))]
+        self.assertNotIn(D.kotoba("数値の表 shurui"), sec)
 
     def test_stop_word(self):
         with self.assertRaises(bs.Stop) as c:
@@ -224,7 +244,7 @@ class TestReal(unittest.TestCase):
 
     def page(self, sid):
         if sid not in self.pages:
-            self.pages[sid] = bs.build(self.inp, self.tables, sid, self.kotoba, TODAY, self.read_problems)
+            self.pages[sid] = bs.build(self.inp, self.tables, sid, self.kotoba, TODAY, self.read_problems, D)
         return self.pages[sid]
 
     def test_pages(self):
@@ -238,7 +258,7 @@ class TestReal(unittest.TestCase):
 
     def test_taiki_2025(self):
         page, _ = self.page("taiki")
-        self.assertEqual(heads(page), ["時点", bs.KOTOBA[suji.KANKEI_ATO], bs.KOTOBA[suji.KANKEI_MAE]])
+        self.assertEqual(heads(page), [JIKI, go("ato"), go("mae")])
         ato, mae = cells(page, "2025年4月")
         self.assertEqual(len(re.findall("class=chip", ato)), 3)
         self.assertEqual(len(re.findall("class=chip", mae)), 2)
@@ -249,7 +269,15 @@ class TestReal(unittest.TestCase):
     def test_kaien(self):
         page, info = self.page("kaien")
         self.assertEqual(info["kankei"][None], info["gyo"])
-        self.assertIn("並べ方は、まだ決まっていません", page)
+        self.assertNotIn("並べ方は、まだ決まっていません", page)
+
+    def test_no_chu_of_bunsho_and_bubun(self):
+        # 文書の表と文書の部分の表の chu は、どのページにも出さない
+        chus = {r["chu"] for r in self.tables["bunsho"] + self.tables["bubun"] if len(r["chu"]) >= 6}
+        for sid in ("taiki", "fusoku", "kakuho", "kaien"):
+            page, _ = self.page(sid)
+            with self.subTest(sid=sid):
+                self.assertEqual([c for c in chus if c in page], [])
 
     def test_stop_table_changed(self):
         t = dict(self.tables)
@@ -257,7 +285,7 @@ class TestReal(unittest.TestCase):
         r = next(r for r in t["atai"] if r["suji"] == "taiki" and r["jiten"] == "令和7年4月" and r["bubun"] == "12")
         r["atai"] = "4"
         with self.assertRaises(bs.Stop) as c:
-            bs.build(self.inp, t, "taiki", self.kotoba, TODAY, self.read_problems)
+            bs.build(self.inp, t, "taiki", self.kotoba, TODAY, self.read_problems, D)
         self.assertEqual({k for k, _ in c.exception.problems}, {"(a) 表の検査"})
 
 

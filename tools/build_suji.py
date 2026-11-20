@@ -1,18 +1,33 @@
-"""数値の表から、定義1つのページを作る（SCHEMA.md §6・§7）。
+"""数値の表から、定義1つのページを作る（SCHEMA.md §6・§7、docs/design.md 3節・4節）。
 
 実行：python3 -B tools/build_suji.py <定義の id>   （例 taiki → build/suji/taiki.html）
 中身は teigi/suji.tsv・atai.tsv・bunsho.tsv・bubun.tsv と、lock の版の入力だけから作る。hino-ronten の記録は使わない。
-列は、tools/suji.py の jiten_kankei が返す時点の関係で分ける。単語で数値の意味や種類を決めない。数値を計算しない。
+列は、tools/suji.py の jiten_kankei が返す印（ato・mae・tochu）で分ける。単語で数値の意味や種類を決めない。数値を計算しない。
+画面に出す言葉は、すべて docs/design.md の3節の2つの表から読む。このファイルには、画面の言葉を書かない
+（HTML のタグとスタイル、記号は除く）。表の行は、左の列の字を鍵として、次の4つの呼び出しで引く。
+  D.kotoba(鍵)          1つ目の表（データの構造との対応）の、画面の言葉
+  D.retsu_setsumei(鍵)  1つ目の表の、出し方の列にある列の説明「」の中の字
+  D.dasanai(鍵)         1つ目の表の、画面に出さないと決めた行（何も返さない）
+  D.bun(鍵, 名前=字)     2つ目の表（見出しと決まった文）の文。{名前} に字を入れる
 
 作る前の検査（1つでも当たれば、件数と該当行を示して、ページを作らずに止まる。終了コード 1）：
   (a) 表の検査（tools/suji.py の check_all。inyo の照合、文書の部分の検査を含む）で問題がある
-  (b) 画面に出る文に、SKILL.md §2 の「使わない」言葉が残っている（資料からの文は除く。tools/build_note.py の印と検査）
+  (b) 画面に出る文に、docs/design.md 2節の「使わない」言葉が残っている（資料からの文は除く。tools/build_note.py の印と検査）
   (c) 定義の id が定義の表に無い
   (d) lock と入力が合わない
+  (e) docs/design.md 3節の表と、このツールが合わない（design_problems。次の6つ）
+      - データの側が返す印（suji.KANKEI）に、1つ目の表の行が無い
+      - 1つ目の表の左の列が、SCHEMA.md にある列（suji.py の列の並び）か印でない
+      - このツールが引く鍵が表に無い。表にあって、このツールが引かない行がある
+      - D.bun に渡す名前と、文の中の {名前} が合わない
+      - このツールの中に、表の画面の言葉と文（4字以上のもの）が書かれている（1つ目の表の左の列の字は鍵として除く）
+      - 呼び出しの鍵が、字のままでない（検査できない）
 """
+import ast
 import datetime
 import os
 import re
+import string
 import sys
 from collections import Counter
 
@@ -26,23 +41,179 @@ import shogo  # noqa: E402
 import suji as sj  # noqa: E402
 
 OUT_DIR = os.path.join(inputs.ROOT, "build", "suji")
+DESIGN_PATH = os.path.join(inputs.ROOT, "docs", "design.md")
+SRC_PATH = os.path.abspath(__file__)
 A, B = bn.A, bn.B
 E, S = bn.E, bn.S
 Stop = bn.Stop
 
-# 時点の関係を出していない理由（suji.jiten_kankei が None を返す場合。SCHEMA.md §7.3）。並べる順
-RIYU_NENDO = "対象の年度が無い"
-RIYU_HIDUKE = "資料に日付が無い"
-RIYU_SHIRYO = "資料が無い"
-RIYU = (RIYU_NENDO, RIYU_HIDUKE, RIYU_SHIRYO)
-# 列の順（SCHEMA.md §7.3 の3つの関係）
-KANKEI = (sj.KANKEI_ATO, sj.KANKEI_TOCHU, sj.KANKEI_MAE)       # 列の順
-# 時点の関係の印 → 画面の言葉。画面の言葉は、データの構造（tools/suji.py・SCHEMA.md）に書かず、画面の側で持つ
-KOTOBA = {sj.KANKEI_ATO: "資料の日付より後の時点について書いた数値",
-          sj.KANKEI_MAE: "資料の日付より前か同じ時点について書いた数値",
-          sj.KANKEI_TOCHU: "年度の途中に出た資料の数値"}
-# 「資料の間で、数値が一致していません」を出すときに比較する行の、資料の字での種類（空か「実績」）
-HIKAKU_SHURUI = ("", "実績")
+# ---- docs/design.md 3節を読む ----
+
+SETSU3 = "## 3. "
+HEAD1 = "| データの側 | 画面の言葉 | 出し方 |"
+HEAD2 = "| 鍵 | 文 |"
+RE_KAGI2 = re.compile(r"[a-z]+(?:-[a-z]+)*")
+RE_SETSUMEI = re.compile(r"列の説明「([^」]*)」")
+RE_DASANAI = re.compile(r"（[^（）]*出さない）")           # 画面に出さないと決めた行の、画面の言葉の形
+RE_KAGIKAKKO = re.compile(r"「([^」]*)」")
+CALLS1 = ("kotoba", "retsu_setsumei", "dasanai")             # 1つ目の表を引く呼び出し
+CALLS2 = ("bun",)                                            # 2つ目の表を引く呼び出し
+NAGASA = 4                                                   # このツールの中に書かれていないことを確認する、字の長さの下限
+
+# 1つ目の表の左の列の形（SCHEMA.md の表の名前 → 列の並び）
+HYO_COLUMNS = (("定義の表", sj.SUJI_COLUMNS), ("数値の表", sj.ATAI_COLUMNS),
+               ("文書の部分の表", sj.BUBUN_COLUMNS), ("文書の表", sj.BUNSHO_COLUMNS))
+RE_HYO_RETSU = re.compile(r"(定義の表|数値の表|文書の部分の表|文書の表) ([a-z_]+)")
+RE_KANKEI = re.compile(r"時点の関係 (\S+)")
+KANKEI_NASHI = "無し"
+# 上の形に当てはまらない左の列（決めた形の一覧）→ その字が指す、数値の表の列
+KATACHI = {"shiryo が発言": ("shiryo",),
+           "shiryo が計画・町の資料": ("shiryo",),
+           "文書の部分（bubun・retsu から親をたどった並び）": ("bubun", "retsu"),
+           "bubun が空": ("bubun",)}
+
+
+class Design:
+    """docs/design.md 3節の2つの表。h1：鍵 → (画面の言葉, 出し方)。h2：鍵 → 文。"""
+
+    def __init__(self, h1, h2):
+        self.h1, self.h2 = h1, h2
+
+    def kotoba(self, key):
+        return self.h1[key][0]
+
+    def retsu_setsumei(self, key):
+        return RE_SETSUMEI.search(self.h1[key][1]).group(1)
+
+    def dasanai(self, key):
+        """画面に出さないと決めた行。引いたことを示すだけで、何も返さない。"""
+        return None
+
+    def bun(self, key, **kw):
+        return self.h2[key].format(**kw)
+
+
+def _table(lines, head, ncol, path):
+    try:
+        i = lines.index(head)
+    except ValueError:
+        raise inputs.InputError(f"{path}：3節に表の見出しの行（{head}）が無い")
+    out = {}
+    for line in lines[i + 2:]:
+        if not line.startswith("|"):
+            break
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) != ncol or not all(cells[:2]):
+            raise inputs.InputError(f"{path}：表の行の形が違う（{line}）")
+        if cells[0] in out:
+            raise inputs.InputError(f"{path}：表の左の列が重なっている（{cells[0]}）")
+        out[cells[0]] = tuple(cells[1:]) if ncol > 2 else cells[1]
+    if not out:
+        raise inputs.InputError(f"{path}：表に行が無い（{head}）")
+    return out
+
+
+def read_design(path=DESIGN_PATH):
+    """docs/design.md 3節の2つの表を読む。→ Design。読めなければ inputs.InputError。"""
+    with open(path, encoding="utf-8") as f:
+        lines = f.read().splitlines()
+    s = next((i for i, x in enumerate(lines) if x.startswith(SETSU3)), None)
+    if s is None:
+        raise inputs.InputError(f"{path}：3節の見出しが無い")
+    e = next((j for j in range(s + 1, len(lines)) if lines[j].startswith("## ")), len(lines))
+    lines = lines[s:e]
+    return Design(_table(lines, HEAD1, 3, path), _table(lines, HEAD2, 2, path))
+
+
+def _names(text):
+    return {f for _, f, _, _ in string.Formatter().parse(text) if f is not None}
+
+
+def _fragments(text):
+    return re.split(r"\{[^{}]*\}", text)
+
+
+def hidari_problems(key):
+    """1つ目の表の左の列が、SCHEMA.md にある列か印であるか。→ 問題の並び。"""
+    out = []
+    m = RE_KANKEI.fullmatch(key)
+    if m:
+        if m.group(1) not in sj.KANKEI and m.group(1) != KANKEI_NASHI:
+            out.append(f"「{key}」：印が suji.KANKEI に無い")
+        return out
+    refs = [(h, c) for h, c in RE_HYO_RETSU.findall(key)]
+    if any(key.startswith(h + " ") for h, _ in HYO_COLUMNS):
+        pass
+    elif key in KATACHI:
+        refs += [("数値の表", c) for c in KATACHI[key]]
+    else:
+        out.append(f"「{key}」：決めた形（表の名前と列、時点の関係と印、決めた形の一覧）のどれでもない")
+    cols = dict(HYO_COLUMNS)
+    for h, c in refs:
+        if c not in cols[h]:
+            out.append(f"「{key}」：{c} が{h}の列に無い")
+    return out
+
+
+def scan_calls(src):
+    """このツールの文 → (1つ目の表の鍵の集まり, 2つ目の表の鍵 → 渡す名前の集まりの並び, 字のままでない呼び出しの行)。"""
+    k1, k2, bad = set(), {}, []
+    for node in ast.walk(ast.parse(src)):
+        if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                and node.func.attr in CALLS1 + CALLS2):
+            continue
+        if isinstance(node.func.value, ast.Name) and node.func.value.id == "self":
+            continue
+        if not (node.args and isinstance(node.args[0], ast.Constant) and isinstance(node.args[0].value, str)):
+            bad.append(node.lineno)
+            continue
+        k = node.args[0].value
+        if node.func.attr in CALLS1:
+            k1.add(k)
+        else:
+            k2.setdefault(k, []).append({x.arg for x in node.keywords})
+    return k1, k2, bad
+
+
+def design_problems(d, src=None):
+    """docs/design.md 3節の表と、このツールが合うか。→ 問題の並び（字）。"""
+    if src is None:
+        with open(SRC_PATH, encoding="utf-8") as f:
+            src = f.read()
+    out = []
+    for k in sj.KANKEI:
+        if f"時点の関係 {k}" not in d.h1:
+            out.append(f"データの側が返す印 {k} に、1つ目の表の行が無い")
+    for key in d.h1:
+        out += hidari_problems(key)
+    k1, k2, bad = scan_calls(src)
+    out += [f"このツールの {n} 行目：鍵が字のままでない" for n in bad]
+    out += [f"このツールが引く鍵「{k}」が、1つ目の表に無い" for k in sorted(k1 - set(d.h1))]
+    out += [f"1つ目の表の行「{k}」を、このツールが引いていない" for k in d.h1 if k not in k1]
+    out += [f"このツールが引く鍵「{k}」が、2つ目の表に無い" for k in sorted(set(k2) - set(d.h2))]
+    out += [f"2つ目の表の行「{k}」を、このツールが引いていない" for k in d.h2 if k not in k2]
+    for k, uses in k2.items():
+        if k in d.h2:
+            want = _names(d.h2[k])
+            out += [f"2つ目の表の行「{k}」：文の中の名前 {sorted(want)} と、渡す名前 {sorted(u)} が合わない"
+                    for u in uses if u != want]
+    words = []
+    for k, (w, how) in d.h1.items():
+        if RE_DASANAI.fullmatch(w):
+            continue
+        if _names(w):
+            out.append(f"1つ目の表の行「{k}」：画面の言葉に {{}} がある")
+        words += [w] + RE_KAGIKAKKO.findall(w) + RE_SETSUMEI.findall(how)
+    for k, t in d.h2.items():
+        words += _fragments(t) + RE_KAGIKAKKO.findall(t)
+    # 1つ目の表の左の列（データの側の名前）は鍵なので、ツールに書いてよい。鍵の字を除いてから探す
+    rest = src
+    for k in sorted(d.h1, key=len, reverse=True):
+        rest = rest.replace(k, "")
+    for w in sorted({w for w in words if len(w) >= NAGASA}):
+        if w in rest:
+            out.append(f"このツールの中に、表の字「{w}」が書かれている")
+    return out
 
 
 # ---- 表を読む ----
@@ -72,32 +243,48 @@ def mondai_str(m):
 
 # ---- 行ごとの中身 ----
 
-def riyu_of(r, by):
-    """時点の関係を出していない行の理由。jiten_kankei と同じ順で見る。"""
+# 印が無い行の理由（suji.jiten_kankei が None を返す場合。SCHEMA.md §7.3）。並べる順
+RIYU = ("nendo", "hiduke", "shiryo")
+# 列の順（docs/design.md 4節）
+KANKEI = (sj.KANKEI_ATO, sj.KANKEI_TOCHU, sj.KANKEI_MAE)
+# 一致しない数値を出すときに比較する行の shurui（空か、資料の字の「実績」）
+HIKAKU_SHURUI = ("", "実績")
+
+
+def riyu_of(r):
+    """印が無い行の理由。jiten_kankei と同じ順で見る。"""
     if not r["nendo"].strip():
-        return RIYU_NENDO
+        return "nendo"
     if not r["shiryo"].strip():
-        return RIYU_SHIRYO
-    return RIYU_HIDUKE
+        return "shiryo"
+    return "hiduke"
 
 
-def toki_of(r, teigi):
-    """表の行の時点 → (並べる順の鍵, 表に出す字)。時点の関係を出す行（nendo がある行）に使う。"""
+def hi_str(D, h):
+    """YYYY-MM か YYYY-MM-DD → 画面の字（2つ目の表の書式）。"""
+    p = [int(x) for x in h.split("-")]
+    if len(p) == 2:
+        return D.bun("nengetsu", nen=p[0], tsuki=p[1])
+    return D.bun("nengappi", nen=p[0], tsuki=p[1], hi=p[2])
+
+
+def toki_of(D, r, teigi):
+    """行の jiten と nendo → (並べる順の鍵, 表に出す字)。印がある行（nendo がある行）に使う。"""
     m = sj.RE_NENGETSU.fullmatch(r["jiten"].strip())
     if m:
         y, mo = sj.GENGO[m.group(1)] + (1 if m.group(2) == "元" else int(m.group(2))), int(m.group(3))
-        return (y, mo, 0), f"{y}年{mo}月"
+        return (y, mo, 0), D.bun("nengetsu", nen=y, tsuki=mo)
     nendo = int(r["nendo"])
     t = teigi.get("nendo_tsuki", "")
     if t in sj.NENDO_TSUKI:
         t = int(t)
         y = nendo if t >= 4 else nendo + 1
-        return (y, t, 0), f"{y}年{t}月"
-    return (nendo, 4, 1), f"{nendo}年度"
+        return (y, t, 0), D.bun("nengetsu", nen=y, tsuki=t)
+    return (nendo, 4, 1), D.bun("nendo", nendo=nendo)
 
 
-def hiduke_of(shiryo, by):
-    """資料の日付 → (並べる順の鍵, 表に出す字)。発言は発言の日、ほかは文書の表の hiduke。無ければ None。"""
+def hiduke_of(D, shiryo, by):
+    """shiryo → (並べる順の鍵, 表に出す字)。発言は発言の日、ほかは文書の表の hiduke。無ければ None。"""
     try:
         kind, g = keys.parse(shiryo)
     except keys.KeyFormError:
@@ -110,7 +297,7 @@ def hiduke_of(shiryo, by):
             return None
     if not h:
         return None
-    return tuple(int(x) for x in h.split("-")) + (0,) * (3 - len(h.split("-"))), keys.ymd(h)
+    return tuple(int(x) for x in h.split("-")) + (0,) * (3 - len(h.split("-"))), hi_str(D, h)
 
 
 def para_range(bubun):
@@ -119,13 +306,13 @@ def para_range(bubun):
     return int(g[1]), int(g[2] or g[1])
 
 
-def ichi_of(r, index):
-    """資料の中の位置（文書の部分の表から、親をたどる）。→ (HTML, 未確認の部分があるか)。指していなければ ("", False)。"""
+def ichi_of(D, r, index):
+    """bubun・retsu から親をたどった並び → (HTML, torikata が「読んだ」の部分があるか)。bubun が空なら ("", False)。"""
     if not r["bubun"]:
         return "", False
     if r["shiryo"].startswith("sp:"):
         a, z = para_range(r["bubun"])
-        return (f"発言の段落{a}" if a == z else f"発言の段落{a}〜{z}"), False
+        return (D.bun("danraku", n=a) if a == z else D.bun("danraku-hani", a=a, z=z)), False
     b = sj.bunsho_of(r["shiryo"])
     chain, n = [], r["bubun"]
     while n:
@@ -135,34 +322,40 @@ def ichi_of(r, index):
     chain.reverse()
     if r["retsu"]:
         chain.append(index[(b, r["retsu"])])
-    mikakunin = any(x["torikata"] == sj.YONDA for x in chain)
-    head = {sj.HYO: "表", sj.GYO: "行", sj.RETSU: "列"}
-    parts = [f"{head.get(x['shu'], '')}「{S(x['name'])}」" + ("（未確認）" if x["torikata"] == sj.YONDA else "")
+    D.dasanai("文書の部分の表 shu が「見出し」")
+    head = {sj.MIDASHI: "",
+            sj.HYO: D.kotoba("文書の部分の表 shu が「表」"),
+            sj.GYO: D.kotoba("文書の部分の表 shu が「行」"),
+            sj.RETSU: D.kotoba("文書の部分の表 shu が「列」")}
+    yonda = D.kotoba("文書の部分の表 torikata が「読んだ」")
+    D.dasanai("文書の表 chu、文書の部分の表 chu")
+    parts = [f"{E(head[x['shu']])}「{S(x['name'])}」" + (E(yonda) if x["torikata"] == sj.YONDA else "")
              for x in chain]
-    return " ＞ ".join(parts), mikakunin
+    return " ＞ ".join(parts), any(x["torikata"] == sj.YONDA for x in chain)
 
 
 class Entry:
     """数値の表の1行と、ページに出す中身。"""
 
-    def __init__(self, r, teigi, inp, by, index):
+    def __init__(self, D, r, teigi, inp, by, index):
+        self.D = D
         self.r, self.gyo, self.id = r, r["_gyo"], f"g{r['_gyo']}"
         self.kankei = sj.jiten_kankei(r, teigi, by)
-        self.riyu = None if self.kankei else riyu_of(r, by)
-        self.toki = toki_of(r, teigi) if self.kankei else None
+        self.riyu = None if self.kankei else riyu_of(r)
+        self.toki = toki_of(D, r, teigi) if self.kankei else None
         self.label = self.toki[1] if self.toki else r["jiten"]
         sh = r["shiryo"].strip()
         self.sp = sh.startswith("sp:")
-        self.hiduke = hiduke_of(sh, by) if sh else None
+        self.hiduke = hiduke_of(D, sh, by) if sh else None
         self.namae = self.page = self.url = self.konkyo = ""
-        self.ichi, self.mikakunin = ichi_of(r, index) if sh else ("", False)
+        self.ichi, self.mikakunin = ichi_of(D, r, index) if sh else ("", False)
         if not sh:
             return
         kind, g = keys.parse(sh)
         if self.sp:
             d = keys.sid_date(g[0])
             sp_name = inp.speaker(g[0])
-            self.namae = f"会議録 {keys.ymd(d)} {S(sp_name)}" if d and sp_name else ""
+            self.namae = D.bun("kaigiroku", hi=hi_str(D, d), hito=S(sp_name)) if d and sp_name else ""
         else:
             row = by.get(sj.bunsho_of(sh))
             if row and row["namae"]:
@@ -171,22 +364,27 @@ class Entry:
                 n = keys.source_name(inp, sh)
                 self.namae = S(n) if n else ""
             if kind in ("pt", "doc"):
-                self.page = f"{g[-1]}ページ"
+                self.page = D.bun("page", n=g[-1])
             if row and row["konkyo"]:
-                self.konkyo = f"「{S(row['konkyo'])}」（{sj.page_no(row['konkyo_tokoro'])}ページ）"
+                self.konkyo = f"「{S(row['konkyo'])}」（{D.bun('page', n=sj.page_no(row['konkyo_tokoro']))}）"
         para = para_range(r["bubun"])[0] if self.sp and r["bubun"] else None
         self.url = keys.source_url(inp, sh, para)
 
     @property
     def atai(self):
-        """数値の字（資料の字。印で囲む）。数値が無い行は状態の字。"""
+        """atai の字（資料の字。印で囲む）。atai が空の行は jotai の字。"""
         return S(self.r["atai"]) if self.r["atai"] else E(self.r["jotai"])
 
+    @property
+    def hiduke_ji(self):
+        return self.hiduke[1] if self.hiduke else E(self.D.kotoba("文書の表 hiduke が空"))
+
     def chip(self):
-        ji = f"<span class=ji>資料の字：{S(self.r['shurui'])}</span>" if self.r["shurui"] else ""
+        D = self.D
+        ji = (f"<span class=ji>{E(D.kotoba('数値の表 shurui'))}：{S(self.r['shurui'])}</span>"
+              if self.r["shurui"] else "")
         if self.r["shiryo"].strip():
-            hi = self.hiduke[1] if self.hiduke else "資料に日付の記述がありません"
-            moto = f"<span class=moto>{self.namae}（{hi}）</span>"
+            moto = f"<span class=moto>{self.namae}（{self.hiduke_ji}）</span>"
         else:
             moto = f"<span class=moto>{E(self.r['jotai'])}</span>" if self.r["atai"] else ""
         kubun = f"<span class=moto>{E(self.r['kubun'])}</span>" if self.r["kubun"] and not self.toki else ""
@@ -198,7 +396,7 @@ class Entry:
 STYLE = """body{font-family:sans-serif;line-height:1.7;max-width:60rem;margin:1.5rem auto;padding:0 1rem;color:#222}
 h1{font-size:1.4rem} h2{font-size:1.15rem;border-bottom:1px solid #999;margin-top:2rem} h3{font-size:1rem;margin:1rem 0 .3rem}
 table{border-collapse:collapse;width:100%} th,td{border:1px solid #bbb;padding:.4rem .6rem;vertical-align:top;text-align:left}
-thead th{background:#f0f0f0} tbody th{white-space:nowrap;width:6.5rem}
+thead th{background:#f0f0f0} tbody th{white-space:nowrap;width:6.5rem} .setsumei{display:block;font-weight:normal;font-size:.8rem}
 .chip{margin:.15rem 0} .chip b{font-size:1.1rem} .ji{margin-left:.5rem;border:1px solid #777;padding:0 .3rem;font-size:.8rem}
 .moto{margin-left:.5rem;font-size:.85rem;color:#555} .chigau{margin-top:.3rem;font-size:.85rem;border-left:3px solid #555;padding-left:.5rem}
 .nai{font-size:.85rem;color:#555} .note{background:#f6f6f6;padding:.6rem .9rem;font-size:.9rem}
@@ -209,32 +407,48 @@ dt{color:#555;font-size:.85rem} dd{margin:0}
 
 
 class Page:
-    def __init__(self, teigi, entries):
-        self.t, self.es = teigi, entries
+    def __init__(self, D, teigi, entries):
+        self.D, self.t, self.es = D, teigi, entries
         self.chigau = 0
+        D.dasanai("時点の関係 無し")                          # 印が無い行は、表の列に入れない
+        self.kotoba = {sj.KANKEI_ATO: D.kotoba("時点の関係 ato"),
+                       sj.KANKEI_MAE: D.kotoba("時点の関係 mae"),
+                       sj.KANKEI_TOCHU: D.kotoba("時点の関係 tochu")}
+        self.setsumei = {sj.KANKEI_ATO: D.retsu_setsumei("時点の関係 ato"),
+                         sj.KANKEI_MAE: D.retsu_setsumei("時点の関係 mae")}
+        self.riyu = {"nendo": D.kotoba("数値の表 nendo が空"),
+                     "hiduke": D.kotoba("文書の表 hiduke が空"),
+                     "shiryo": D.kotoba("数値の表 shiryo が空")}
 
     def head(self):
-        t = self.t
-        an = "数値の定義は、まだ案です。" if t["kettei"] == "案" else ""
-        dl = "".join(f"<dt>{k}</dt><dd>{E(t[c])}</dd>" for k, c in (
-            ("数えているもの", "nani"), ("単位", "tani"), ("いつの数値として並べるか", "toki"),
-            ("資料での言い方", "iikata"), ("注意", "chui")))
-        return (f"<h1>{E(t['name'])}（試作）</h1>\n"
-                f"<p class=note>非公式の試作です。日野町が公開している資料と会議録をもとに、数値と、もとの資料の位置を並べたものです。"
-                f"良し悪しは書いていません。{an}</p>\n<h2>何を数えた数値か</h2>\n<dl>{dl}</dl>\n")
+        D, t = self.D, self.t
+        an = E(D.kotoba("定義の表 kettei が「案」")) + "。" if t["kettei"] == "案" else ""
+        items = [(D.kotoba("定義の表 nani"), t["nani"])]
+        if t["tani"]:
+            items.append((D.kotoba("定義の表 tani"), t["tani"]))
+        items += [(D.kotoba("定義の表 toki"), t["toki"]), (D.kotoba("定義の表 iikata"), t["iikata"]),
+                  (D.kotoba("定義の表 chui"), t["chui"])]
+        dl = "".join(f"<dt>{E(k)}</dt><dd>{E(v)}</dd>" for k, v in items)
+        return (f"<h1>{D.bun('dai', name=E(t['name']))}</h1>\n"
+                f"<p class=note>{E(D.bun('atama'))}{an}</p>\n<h2>{E(D.bun('midashi-teigi'))}</h2>\n<dl>{dl}</dl>\n")
 
     def cell_mae(self, es):
-        """前か同じ時点の列の中身。資料の字が空か「実績」の数値どうしで、字が違えば、一致していないことを書く。"""
+        """mae の列の中身。shurui が空か「実績」の数値どうしで、字が違えば、一致していないことを書く。"""
         h = "".join(e.chip() for e in es)
         hikaku = {shogo.norm(e.r["atai"]) for e in es
                   if e.r["jotai"] == sj.ARU and e.r["shurui"].strip() in HIKAKU_SHURUI}
         if len(hikaku) > 1:
             self.chigau += 1
-            h += "<div class=chigau>資料の間で、数値が一致していません</div>"
+            h += f"<div class=chigau>{E(self.D.bun('chigau'))}</div>"
         return h
 
+    def th(self, k):
+        s = self.setsumei.get(k)
+        return f"<th>{E(self.kotoba[k])}" + (f"<span class=setsumei>{E(s)}</span>" if s else "") + "</th>"
+
     def nen(self):
-        """年ごとの数値の表（区分ごとに分ける）。"""
+        """印がある行の表（kubun ごとに分ける）。"""
+        D = self.D
         kes = [e for e in self.es if e.kankei]
         cols = [k for k in KANKEI if any(e.kankei == k for e in kes)]
         kubuns = list(dict.fromkeys(e.r["kubun"] for e in kes))
@@ -249,141 +463,156 @@ class Page:
                     xs = [e for e in es if e.toki[1] == label and e.kankei == k]
                     cells.append(self.cell_mae(xs) if k == sj.KANKEI_MAE else "".join(e.chip() for e in xs))
                 rows.append(f"<tr><th>{E(label)}</th>" + "".join(f"<td>{c}</td>" for c in cells) + "</tr>")
-            head = "".join(f"<th>{E(KOTOBA[k])}</th>" for k in cols)
-            out.append((f"<h3>{E(kb)}</h3>" if kb else "")
-                       + f"<table>\n<thead><tr><th>時点</th>{head}</tr></thead>\n<tbody>{''.join(rows)}</tbody>\n</table>")
+            head = "".join(self.th(k) for k in cols)
+            out.append((f"<h3>{E(D.kotoba('数値の表 kubun'))}：{E(kb)}</h3>" if kb else "")
+                       + f"<table>\n<thead><tr><th>{E(D.bun('hyo-jiki'))}</th>{head}</tr></thead>\n"
+                       f"<tbody>{''.join(rows)}</tbody>\n</table>")
         t = self.t["nendo_tsuki"]
         if t in sj.NENDO_TSUKI:
-            nendo = f"年度で書かれた数値は、定義の決まりにより、その年度の{int(t)}月の数値として並べています。"
+            nendo = D.bun("nendo-tsuki", tsuki=int(t))
         elif any(not sj.RE_NENGETSU.fullmatch(e.r["jiten"].strip()) for e in kes):
-            nendo = "年度で書かれた数値は、年度を、その年の4月から翌年の3月までの期間として扱っています。"
+            nendo = D.bun("nendo-kikan")
         else:
             nendo = ""
-        setsumei = (f"<p>列は、数値の時点と、資料の日付（答弁は発言の日）の2つから、ツールで分けています。"
-                    f"資料の言葉（「目標」「実績」など）では分けていません。{nendo}"
-                    "資料がその数値について種類を書いている場合は、「資料の字」として添えています。"
-                    "数値を選ぶと、下の「数値ごとの、もとの資料」に移ります。</p>")
+        setsumei = (f"<p>{E(D.bun('retsu-setsumei'))}{E(nendo)}{E(D.bun('yobikata-setsumei'))}"
+                    f"{E(D.bun('erabu'))}</p>")
         body = "\n".join(out)
-        chigau = ("<p class=note>「資料の間で、数値が一致していません」は、同じ時点の"
-                  f"「{KOTOBA[sj.KANKEI_MAE]}」のうち、資料の字が無いか「実績」の数値どうしで、字が違うときに出しています。</p>"
-                  if self.chigau else "")
-        return f"<h2>年ごとの数値</h2>\n{setsumei}\n{body}\n{chigau}\n{self.nai()}"
+        chigau = f"<p class=note>{E(D.bun('chigau-setsumei'))}</p>" if self.chigau else ""
+        return f"<h2>{E(D.bun('midashi-hyo'))}</h2>\n{setsumei}\n{body}\n{chigau}\n{self.nai()}"
 
     def nai(self):
-        """時点の関係を出していない数値を、理由ごとに並べる。"""
+        """印が無い数値を、理由ごとに並べる。"""
+        D = self.D
         es = [e for e in self.es if not e.kankei]
         if not es:
             return ""
-        out = ["<h3>時点の関係を出していない数値</h3>"]
+        out = [f"<h3>{E(D.bun('midashi-nai'))}</h3>", f"<p>{E(D.bun('nai-setsumei'))}</p>"]
+        hani, kakunin = D.kotoba("数値の表 hani"), D.kotoba("数値の表 kakunin")
         for riyu in RIYU:
             xs = [e for e in es if e.riyu == riyu]
             if not xs:
                 continue
             li = "".join(f"<li>{E(e.label)}{'（' + E(e.r['kubun']) + '）' if e.r['kubun'] else ''}：{e.chip()}"
-                         + (f"<div class=nai>{E(e.r['hani'])}（{E(e.r['kakunin'])} に調べた）</div>"
-                            if e.r["jotai"] != sj.ARU and e.r["hani"] else "")
+                         + (f"<div class=nai>{E(hani)}：{E(e.r['hani'])}"
+                            + (f"　{E(kakunin)}：{hi_str(D, e.r['kakunin'])}" if e.r["kakunin"] else "")
+                            + "</div>" if e.r["jotai"] != sj.ARU and e.r["hani"] else "")
                          + "</li>" for e in xs)
-            out.append(f"<p>理由：{riyu}（{len(xs)}行）</p><ul>{li}</ul>")
+            out.append(f"<p>{E(D.bun('kensu', riyu=self.riyu[riyu], n=len(xs)))}</p><ul>{li}</ul>")
         return "\n".join(out)
 
     def hiduke_jun(self):
-        """どの行も時点の関係を出さない定義：資料の日付の順（古い順）に並べた表。日付の無い行は終わりに置く。"""
+        """どの行にも印が無い定義：hiduke の古い順に並べた表。hiduke の無い行は終わりに置く（docs/design.md 4節）。"""
+        D = self.D
         es = sorted(self.es, key=lambda e: (e.hiduke is None, e.hiduke[0] if e.hiduke else (), e.gyo))
+        shurui = any(e.r["shurui"] for e in es)
         rows = "".join(
-            f"<tr><td>{e.hiduke[1] if e.hiduke else '資料に日付の記述がありません'}</td>"
+            f"<tr><td>{e.hiduke_ji}</td>"
             f"<td><a href='#{e.id}'><b>{e.atai}</b></a></td>"
-            f"<td>{S(e.r['shurui']) if e.r['shurui'] else ''}</td>"
-            f"<td>{e.namae}{'　' + e.page if e.page else ''}</td></tr>" for e in es)
-        riyu = Counter(e.riyu for e in self.es)
-        r = "、".join(f"{x}（{riyu[x]}行）" for x in RIYU if riyu[x])
-        return (f"<h2>資料の日付の順に並べた数値</h2>\n"
-                f"<p>どの数値にも、時点の関係を出していません（理由：{r}）。そのため、資料の日付（答弁は発言の日）の古い順に並べています。"
-                "並べ方は、まだ決まっていません。数値を選ぶと、下の「数値ごとの、もとの資料」に移ります。</p>\n"
-                f"<table>\n<thead><tr><th>資料の日付</th><th>数値</th><th>資料の字での種類</th><th>もとの資料</th></tr></thead>\n"
+            + (f"<td>{S(e.r['shurui']) if e.r['shurui'] else ''}</td>" if shurui else "")
+            + f"<td>{e.namae}{'　' + e.page if e.page else ''}</td></tr>" for e in es)
+        heads = [D.kotoba("文書の表 hiduke、発言の日"), D.kotoba("数値の表 atai")]
+        heads += [D.kotoba("数値の表 shurui")] if shurui else []
+        heads += [D.kotoba("文書の表 namae と、shiryo のページ")]
+        return (f"<h2>{E(D.bun('midashi-hiduke'))}</h2>\n"
+                f"<p>{E(D.bun('hiduke-setsumei'))}{E(D.bun('erabu'))}</p>\n"
+                f"<table>\n<thead><tr>{''.join(f'<th>{E(h)}</th>' for h in heads)}</tr></thead>\n"
                 f"<tbody>{rows}</tbody>\n</table>")
 
     def detail(self, e):
-        r = e.r
-        items = [("いつの数値か", E(r["jiten"]))]
+        D, r = self.D, e.r
+        items = [(D.kotoba("数値の表 jiten"), E(r["jiten"]))]
         if r["kubun"]:
-            items.append(("内訳", E(r["kubun"])))
+            items.append((D.kotoba("数値の表 kubun"), E(r["kubun"])))
         if r["shiryo"].strip():
-            items += [("区分", "議会での答弁" if e.sp else "町の資料"),
-                      ("もとの資料", e.namae + (f"　{e.page}" if e.page else "")),
-                      ("資料の日付", e.hiduke[1] if e.hiduke else "資料に日付の記述がありません"),
-                      ("資料の中の位置", e.ichi or ("まだ指していません（ページまで）" if e.page else "まだ指していません")),
-                      ("資料の文", f"「{S(r['inyo'])}」" if r["inyo"] else "引用はありません")]
-        items.append(("資料の字での種類", S(r["shurui"]) if r["shurui"] else "資料に、種類を示す字はありません"))
-        items.append(("時点の関係", E(KOTOBA[e.kankei]) if e.kankei else f"出していません（{e.riyu}）"))
+            kubun = D.kotoba("shiryo が発言") if e.sp else D.kotoba("shiryo が計画・町の資料")
+            m = RE_KAGIKAKKO.search(kubun)
+            items.append((kubun[:m.start()], E(m.group(1))))
+            items.append((D.kotoba("文書の表 namae と、shiryo のページ"), e.namae + (f"　{e.page}" if e.page else "")))
+            items.append((D.kotoba("文書の表 hiduke、発言の日"), e.hiduke_ji))
+            tokoro = D.kotoba("文書の部分（bubun・retsu から親をたどった並び）")
+            if e.ichi:
+                items.append((tokoro, e.ichi))
+            elif e.page:
+                items.append((tokoro, E(D.kotoba("bubun が空"))))
+            if r["inyo"]:
+                items.append((D.kotoba("数値の表 inyo"), f"「{S(r['inyo'])}」"))
+        if r["shurui"]:
+            items.append((D.kotoba("数値の表 shurui"), S(r["shurui"])))
         if e.konkyo:
-            items.append(("資料の根拠（資料の文）", e.konkyo))
+            items.append((D.kotoba("文書の表 konkyo"), e.konkyo))
         if r["chu"]:
-            items.append(("確認の状態", E(r["chu"])))
+            items.append((D.kotoba("数値の表 chu"), E(r["chu"])))
         if r["jotai"] != sj.ARU:
-            items.append(("状態", E(r["jotai"])))
+            items.append((D.kotoba("数値の表 jotai が「数値がある」でない"), E(r["jotai"])))
             if r["hani"]:
-                items.append(("調べた範囲", E(r["hani"])))
-            if r["kakunin"]:
-                items.append(("調べた日", keys.ymd(r["kakunin"])))
-        dl = "".join(f"<dt>{k}</dt><dd>{v}</dd>" for k, v in items)
+                items.append((D.kotoba("数値の表 hani"), E(r["hani"])))
+                if r["kakunin"]:
+                    items.append((D.kotoba("数値の表 kakunin"), hi_str(D, r["kakunin"])))
+        dl = "".join(f"<dt>{E(k)}</dt><dd>{v}</dd>" for k, v in items)
         if r["shiryo"].strip():
-            link = (f"<p><a href='{E(e.url)}'>もとの資料を確認できます</a></p>" if e.url
-                    else "<p>もとの資料へのリンクは、まだありません</p>")
+            link = (f"<p><a href='{E(e.url)}'>{E(D.bun('link'))}</a></p>" if e.url
+                    else f"<p>{E(D.bun('link-nashi'))}</p>")
         else:
             link = ""
         kb = f"{E(r['kubun'])}　" if r["kubun"] else ""
         return f"<section id='{e.id}'><h3>{kb}{E(e.label)}：{e.atai}</h3><dl>{dl}</dl>{link}</section>"
 
-    def dashite_inai(self):
-        """このページで、まだ出していないもの。その定義の行に当てはまるものだけ。"""
+    def nosete_inai(self):
+        """このページで出していないもの。その定義の行に当てはまるものだけ。"""
+        D = self.D
         li = []
         if any(e.sp for e in self.es):
-            li.append("答弁が、何を問われての答えか（質問した議員と題）。")
+            li.append(E(D.bun("nosete-inai-toi")))
         nashi = list(dict.fromkeys(e.namae for e in self.es if e.r["shiryo"].strip() and not e.sp and not e.r["bubun"]))
         if nashi:
-            li.append("次の資料の数値の、資料の中の位置（表の行と列など）：" + "、".join(nashi) + "。")
+            li.append(D.bun("nosete-inai-tokoro", shiryo="、".join(nashi)))
         docs = {sj.bunsho_of(e.r["shiryo"]) or e.r["shiryo"] for e in self.es if e.r["shiryo"].strip()}
         if len(docs) > 1:
-            li.append("資料どうしの関係（計画の版、ほかのページを指す記述）。")
+            li.append(E(D.bun("nosete-inai-kankei")))
         if not li:
             return ""
-        return "<h2>このページで、まだ出していないもの</h2>\n<ul>" + "".join(f"<li>{x}</li>" for x in li) + "</ul>"
+        return (f"<h2>{E(D.bun('midashi-nosete-inai'))}</h2>\n<ul>"
+                + "".join(f"<li>{x}</li>" for x in li) + "</ul>")
 
     def render(self, today):
+        D = self.D
         if any(e.kankei for e in self.es):
             main = self.nen()
         else:
             main = self.hiduke_jun()
-        mikakunin = ("<p class=note>資料の中の位置に「（未確認）」とある部分は、生成AIが資料を読んで決めた位置で、まだ確認していません。</p>"
+        mikakunin = (f"<p class=note>{E(D.bun('mikakunin-setsumei'))}</p>"
                      if any(e.mikakunin for e in self.es) else "")
         details = "".join(self.detail(e) for e in self.es)
-        note = ("<p class=note><b>このページについて</b><br>町と町議会が公開している資料（会議録、計画、町の資料）をもとに作成しています。"
-                "「資料の文」は資料からの引用で、要約や言い換えは行っていません。「何を数えた数値か」と「確認の状態」は、作成者が書いた文です。"
-                "数値の足し算や割合の計算は行っていません。正確な内容は、もとの資料で確認してください。"
-                "個人による試作であり、日野町および日野町議会の公式のものではありません。"
-                f"（{today.year}年{today.month}月{today.day}日作成）</p>")
+        hi = hi_str(D, today.isoformat())
+        note = (f"<p class=note><b>{E(D.bun('midashi-owari'))}</b><br>{E(D.bun('owari'))}"
+                f"{E(D.bun('sakusei-bi', hi=hi))}</p>")
         return f"""<!DOCTYPE html>
 <html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{E(self.t['name'])}（試作）</title>
+<title>{D.bun('dai', name=E(self.t['name']))}</title>
 <style>
 {STYLE}
 </style></head><body>
 {self.head()}
 {main}
-<h2>数値ごとの、もとの資料</h2>
+<h2>{E(D.bun('midashi-shosai'))}</h2>
 {mikakunin}{details}
-{self.dashite_inai()}
+{self.nosete_inai()}
 {note}
 </body></html>
 """
 
 
-def build(inp, tables, sid, kotoba, today, read_problems=()):
+def build(inp, tables, sid, kotoba, today, read_problems=(), design=None):
     """検査を通ればページ（印を消した HTML）と件数を返す。当たれば Stop。
 
     tables は {"suji", "atai", "bunsho", "bubun"} → 行の並び（tools/suji.py の read_* で読んだ物）。
+    design は docs/design.md 3節の表（read_design で読んだ物）。None なら読む。
     """
-    problems = [("(a) 表の検査", mondai_str(m)) for m in read_problems]
+    D = design or read_design()
+    problems = [("(e) デザインシステムとの対応", m) for m in design_problems(D)]
+    if problems:
+        raise Stop(problems)
+    problems += [("(a) 表の検査", mondai_str(m)) for m in read_problems]
     mondai, _, _ = sj.check_all(inp, tables["suji"], tables["atai"], tables["bunsho"], tables["bubun"])
     problems += [("(a) 表の検査", mondai_str(m)) for m in mondai]
     teigi = next((r for r in tables["suji"] if r["id"] == sid), None)
@@ -393,13 +622,13 @@ def build(inp, tables, sid, kotoba, today, read_problems=()):
         raise Stop(problems)
     by = {r["bunsho"]: r for r in tables["bunsho"]}
     index = {(r["bunsho"], r["n"]): r for r in tables["bubun"]}
-    entries = [Entry(r, teigi, inp, by, index) for r in tables["atai"] if r["suji"] == sid]
+    entries = [Entry(D, r, teigi, inp, by, index) for r in tables["atai"] if r["suji"] == sid]
     for e in entries:
         if e.r["shiryo"].strip() and not e.namae:
-            problems.append(("(a) 表の検査", f"{sj.ATAI_NAME} の {e.gyo} 行目：もとの資料の名前が作れない（{e.r['shiryo']}）"))
+            problems.append(("(a) 表の検査", f"{sj.ATAI_NAME} の {e.gyo} 行目：shiryo の名前が作れない（{e.r['shiryo']}）"))
     if problems:
         raise Stop(problems)
-    p = Page(teigi, entries)
+    p = Page(D, teigi, entries)
     page = p.render(today)
     problems = bn.kotoba_problems(page, *kotoba)
     if problems:
@@ -418,7 +647,8 @@ def main(argv=None, teigi_dir=None):
     try:
         inp = inputs.Inputs()                                   # (d) lock と入力
         tables, read_problems = read_tables(teigi_dir)
-        page, info = build(inp, tables, sid, bn.read_kotoba(), datetime.date.today(), read_problems)
+        page, info = build(inp, tables, sid, bn.read_kotoba(), datetime.date.today(), read_problems,
+                           read_design())
     except (inputs.InputError, OSError, UnicodeDecodeError) as e:
         print(f"止めた：(d) lock と入力、または表を読めない\n{e}", file=sys.stderr)
         return 1
@@ -433,9 +663,9 @@ def main(argv=None, teigi_dir=None):
         f.write(page)
     k = info["kankei"]
     print(f"{os.path.relpath(out, inputs.ROOT)}（{os.path.getsize(out)} バイト、{info['ji']} 字）")
-    print(f"数値の行：{info['gyo']}（後の時点 {k[sj.KANKEI_ATO]}、年度の途中 {k[sj.KANKEI_TOCHU]}、"
-          f"前か同じ時点 {k[sj.KANKEI_MAE]}、時点の関係を出していない {k[None]}）")
-    print(f"資料の間で数値が一致していない時点：{info['chigau']}")
+    print(f"数値の行：{info['gyo']}（ato {k[sj.KANKEI_ATO]}、tochu {k[sj.KANKEI_TOCHU]}、"
+          f"mae {k[sj.KANKEI_MAE]}、印が無い {k[None]}）")
+    print(f"資料の間で数値が一致していない時期：{info['chigau']}")
     return 0
 
 
