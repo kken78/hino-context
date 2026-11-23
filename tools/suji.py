@@ -380,6 +380,20 @@ MIDASHI, HYO, GYO, RETSU = "見出し", "表", "行", "列"
 SHU = (MIDASHI, HYO, GYO, RETSU)
 KIKAI, YONDA = "機械", "読んだ"
 TORIKATA = (KIKAI, YONDA)
+
+
+def kakunin_ari(chu):
+    """chu に確認の記録（「依頼者が PDF で確認（YYYY-MM-DD）」か「2者が画像で確認（YYYY-MM-DD）」）があり、
+    日付の形が合っているか。日付の形が違う記録は、無いものとする（SCHEMA.md §7.2・§7.4）。"""
+    return has_kakunin(chu) or has_nisha(chu)
+
+
+def mikakunin(r):
+    """文書の部分の行に、未確認の印を付けるか（SCHEMA.md §7.2）。torikata が「読んだ」で、chu に確認の記録が無い行。
+    印を付ける条件は、この関数だけで判定する（tools/build_hyo.py と tools/build_suji.py が使う）。"""
+    return r["torikata"] == YONDA and not kakunin_ari(r["chu"])
+
+
 # 部分の種類ごとに、親にできる種類（SCHEMA.md §7.2。見出し → 見出し → 表 → 行・列）。None は親が無いこと。
 OYA_SHU = {MIDASHI: (None, MIDASHI), HYO: (None, MIDASHI), GYO: (HYO,), RETSU: (HYO,)}
 
@@ -573,6 +587,8 @@ def check_bubun(inp, rows, bunsho_names):
             out.append(Mondai(BUBUN_NAME, g, f"shu が {'・'.join(SHU)} のどれでもない（{r['shu']}）"))
         if r["torikata"] not in TORIKATA:
             out.append(Mondai(BUBUN_NAME, g, f"torikata が {'・'.join(TORIKATA)} のどちらでもない（{r['torikata']}）"))
+        elif r["torikata"] == KIKAI and kakunin_ari(r["chu"]):
+            out.append(Mondai(BUBUN_NAME, g, "torikata が「機械」の行の chu に、確認の記録がある"))
         oya = None
         if r["oya"]:
             cand = index.get((b, r["oya"])) or []

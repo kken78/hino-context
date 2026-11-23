@@ -332,7 +332,8 @@ def para_range(bubun):
 
 
 def ichi_of(D, r, index):
-    """bubun・retsu から親をたどった並び → (HTML, torikata が「読んだ」の部分があるか)。bubun が空なら ("", False)。"""
+    """bubun・retsu から親をたどった並び → (HTML, 未確認の印を付けた部分があるか)。bubun が空なら ("", False)。
+    印は、torikata が「読んだ」で、chu に確認の記録が無い部分に付ける（判定は tools/suji.py の mikakunin）。"""
     if not r["bubun"]:
         return "", False
     if r["shiryo"].startswith("sp:"):
@@ -352,11 +353,11 @@ def ichi_of(D, r, index):
             sj.HYO: D.kotoba("文書の部分の表 shu が「表」"),
             sj.GYO: D.kotoba("文書の部分の表 shu が「行」"),
             sj.RETSU: D.kotoba("文書の部分の表 shu が「列」")}
-    yonda = D.kotoba("文書の部分の表 torikata が「読んだ」")
+    yonda = D.kotoba("文書の部分の表 torikata が「読んだ」で、chu に確認の記録が無い")
     D.dasanai("文書の表 chu、文書の部分の表 chu")
-    parts = [f"{E(head[x['shu']])}「{S(x['name'])}」" + (E(yonda) if x["torikata"] == sj.YONDA else "")
+    parts = [f"{E(head[x['shu']])}「{S(x['name'])}」" + (E(yonda) if sj.mikakunin(x) else "")
              for x in chain]
-    return " ＞ ".join(parts), any(x["torikata"] == sj.YONDA for x in chain)
+    return " ＞ ".join(parts), any(sj.mikakunin(x) for x in chain)
 
 
 class Entry:

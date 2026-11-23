@@ -94,7 +94,7 @@ def body_rows(page):
 
 
 D = bs.read_design()
-YONDA = D.kotoba("文書の部分の表 torikata が「読んだ」")
+YONDA = D.kotoba("文書の部分の表 torikata が「読んだ」で、chu に確認の記録が無い")
 
 
 def marks(page):
@@ -247,6 +247,35 @@ class TestFake(unittest.TestCase):
         self.assertIn(f"<th>①求職{YONDA}</th><th>②特定</th>", page)
         self.assertIn(f"<p class=s>第５章 量の見込み{YONDA}</p>", page)
         self.assertEqual(marks(page), 2)
+        self.assertIn(D.bun("mikakunin-hyo"), page)
+
+    def test_kakunin_ari(self):
+        # torikata が「読んだ」で、chu に「2者が画像で確認（2026-11-23）」がある行は、印が付かない（SCHEMA.md §7.2）
+        rows = change(bubun_rows(), "6", torikata="読んだ", chu="2者が画像で確認（2026-11-23）")
+        page, _ = self.build(tables(bubun=rows))
+        self.assertIn("<th>①求職</th><th>②特定</th>", page)
+        self.assertEqual(marks(page), 0)
+        self.assertNotIn(D.bun("mikakunin-hyo"), page)
+        # 注のあとに記録を足した行も、印が付かない
+        rows = change(bubun_rows(), "6", torikata="読んだ", chu="原典の文字では2行に分かれている。2者が画像で確認（2026-11-23）")
+        page, _ = self.build(tables(bubun=rows))
+        self.assertEqual(marks(page), 0)
+
+    def test_kakunin_nashi(self):
+        # torikata が「読んだ」で、chu に記録が無い行は、印が付く
+        for chu in ("", "原典の文字では2行に分かれている"):
+            with self.subTest(chu=chu):
+                page, _ = self.build(tables(bubun=change(bubun_rows(), "6", torikata="読んだ", chu=chu)))
+                self.assertIn(f"<th>①求職{YONDA}</th>", page)
+                self.assertEqual(marks(page), 1)
+                self.assertIn(D.bun("mikakunin-hyo"), page)
+
+    def test_kakunin_hiduke(self):
+        # 日付の形が違う記録は、記録が無いものとして、印が付く
+        rows = change(bubun_rows(), "6", torikata="読んだ", chu="2者が画像で確認（2026-13-40）")
+        page, _ = self.build(tables(bubun=rows))
+        self.assertIn(f"<th>①求職{YONDA}</th>", page)
+        self.assertEqual(marks(page), 1)
         self.assertIn(D.bun("mikakunin-hyo"), page)
 
     def test_stop_word(self):
