@@ -20,6 +20,13 @@ TD = "hino-town-docs"
 CD = "council-dashboard"
 RT = "hino-ronten"
 REPOS = (CD, HS, SP, TD, RT)
+# hino-ronten の施設の参照表と施設の記録（SCHEMA.md §1・§2）
+SHISETSU = "ref/shisetsu.tsv"
+SHISETSU_COLUMNS = ["key", "name", "aliases", "district", "source", "reviewer", "date", "note"]
+SHISETSU_KIROKU = "records/shisetsu.tsv"
+SHISETSU_KIROKU_COLUMNS = ["facility", "aspect", "value", "source", "source_date", "quote", "target", "kind", "prev",
+                           "status", "reviewer", "date", "note"]
+CONFIRMED = "confirmed"
 
 
 class InputError(ValueError):
@@ -230,6 +237,19 @@ class Inputs:
 
     def ronten_tsv(self, path):
         return read_tsv(self.read_bytes(RT, path), f"{RT} {path}")
+
+    def shisetsu(self):
+        """施設の参照表（hino-ronten ref/shisetsu.tsv）の行。status の列は無い（SCHEMA.md §1・§2）。"""
+        if "shisetsu" not in self._cache:
+            self._cache["shisetsu"] = read_tsv(self.read_bytes(RT, SHISETSU), f"{RT} {SHISETSU}", SHISETSU_COLUMNS)
+        return self._cache["shisetsu"]
+
+    def shisetsu_kiroku(self):
+        """施設の記録（hino-ronten records/shisetsu.tsv）のうち、status が confirmed の行（SCHEMA.md §1）。"""
+        if "shisetsu_kiroku" not in self._cache:
+            rows = read_tsv(self.read_bytes(RT, SHISETSU_KIROKU), f"{RT} {SHISETSU_KIROKU}", SHISETSU_KIROKU_COLUMNS)
+            self._cache["shisetsu_kiroku"] = [r for r in rows if r["status"] == CONFIRMED]
+        return self._cache["shisetsu_kiroku"]
 
 
 def paragraphs(text):
