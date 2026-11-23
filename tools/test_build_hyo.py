@@ -151,6 +151,15 @@ class TestFake(unittest.TestCase):
                       page)
         self.assertIn(f"<p>{NAMAE}（2026年6月）　", page)
 
+    def test_onaji_han(self):
+        # 同じ定義の数値がある資料の一覧でも、版の表記があれば、資料の名前のあとの括弧に版の表記と資料の日付を出す
+        inp = fake()
+        inp._doc_texts[("jigyo-1", "text")] = f"{DOC_NAMAE}\n改訂版\f令和7年4月 3 人"
+        b = bunsho_rows()
+        b[1].update(han="改訂版", han_tokoro="doc:jigyo-1/1")
+        page, _ = self.build(tables(bunsho=b), inp=inp)
+        self.assertIn(f"<li>{DOC_NAMAE}（改訂版、2025年4月）　{D.bun('page', n=2)}</li>", page)
+
     def test_stop_table_check(self):
         # 数値の表の atai が、原典の文字の行の数値と違えば止まる（表の検査で止まる）
         rows = atai_rows()
@@ -211,6 +220,25 @@ class TestFake(unittest.TestCase):
         self.assertIn(f"<h1>◆待機児童数の推移{YONDA}</h1>", page)
         self.assertEqual(marks(page), 1)
         self.assertIn(f"</table>\n<p class=s>{D.bun('mikakunin-hyo')}</p>", page)
+
+    def test_yonda_no_range(self):
+        # 表の torikata が「読んだ」の表は、原典の文字の表の範囲を使わない（表の題がページの最後の行にあり、範囲が空）。
+        # 行は文書の部分の表の番号の順（令和7年4月 が先）に並べ、欄は数値の表の atai を出す
+        inp = fake()
+        raw = RAW.replace("◆待機児童数の推移\n", "").replace("■別の表\n平成30年4月 9 9", "◆待機児童数の推移")
+        inp._pt[("x", "honpen", "text_raw")] = raw
+        inp._pt[("x", "honpen", "text")] = raw
+        rows = [dict(r, torikata="読んだ") if r["oya"] == "2" or r["n"] == "2" else r
+                for r in bubun_rows() if r["n"] != "9"]
+        vals = {"4": ["2", "11", "13", "3"], "5": ["0", "4", "4", "1"]}
+        at = [dict(atai_rows()[0], jiten=g, atai=v, inyo="", chu="2者が画像で確認（2026-11-23）", bubun=g_n, retsu=r_n)
+              for g_n, g in (("4", "令和7年4月"), ("5", "平成30年4月"))
+              for r_n, v in zip(("6", "7", "8", "3"), vals[g_n])]
+        page, info = self.build(tables(bubun=rows, atai=at), inp=inp)
+        self.assertEqual(body_rows(page), [(f"令和7年4月{YONDA}", ["2", "11", "13", "3"]),
+                                           (f"平成30年4月{YONDA}", ["0", "4", "4", "1"])])
+        self.assertEqual((info["moji"], info["atai"]), (0, 8))
+        self.assertEqual(marks(page), 1 + 2 + 4)
 
     def test_yonda_retsu_gyo(self):
         # 「読んだ」の列と見出しにも印を付ける（列だけが「読んだ」の表は、原典の文字から数える）
@@ -294,6 +322,22 @@ class TestReal(unittest.TestCase):
         self.assertIn(D.kotoba("文書の表 konkyo"), page)
         self.assertNotIn(YONDA, page)
         self.assertNotIn(D.bun("mikakunin-hyo"), page)
+
+    def test_taiki_kousou_kodomo(self):
+        # 画像で読んだ2つの表（基本構想の18ページ、子ども・子育て支援事業計画の19ページ）。欄は全部、数値の表の行から出す
+        for bkey, n, hajime in (("doc:jigyo-shinkodomoen-kousou", "4", "2021年（R3）"),
+                                ("pt:kodomo/honpen", "37", "2020年度（R2）")):
+            with self.subTest(bkey=bkey):
+                page, info = self.build(bkey, n)
+                self.assertEqual((info["gyo"], info["retsu"], info["ran"], info["moji"], info["atai"]), (7, 5, 35, 0, 35))
+                rows = body_rows(page)
+                self.assertEqual(rows[0][0], f"待機児童数（人）{YONDA}")
+                self.assertEqual(len(rows), 7)
+                self.assertIn(f"<th>{hajime}{YONDA}</th>", page)
+                self.assertEqual(marks(page), 1 + 7 + 5)
+                # 一覧の再編整備計画の2つの版は、版の表記で分かれる
+                self.assertIn("<li>日野町幼児教育保育施設再編整備計画（令和８年６月一部改正、2026年6月）", page)
+                self.assertIn("<li>日野町幼児教育保育施設再編整備計画（2025年3月）", page)
 
 
 if __name__ == "__main__":

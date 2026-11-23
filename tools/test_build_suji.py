@@ -261,10 +261,18 @@ class TestReal(unittest.TestCase):
         self.assertEqual(heads(page), [JIKI, go("ato"), go("mae")])
         ato, mae = cells(page, "2025年4月")
         self.assertEqual(len(re.findall("class=chip", ato)), 3)
-        self.assertEqual(len(re.findall("class=chip", mae)), 2)
-        # 行は中身で選ぶ：後の時点の列に総合計画の目標、前か同じ時点の列に再編整備計画の表の行
+        self.assertEqual(len(re.findall("class=chip", mae)), 3)
+        # 行は中身で選ぶ：後の時点の列に総合計画の目標、前か同じ時点の列に再編整備計画の表の行と基本構想の表の行
         self.assertIn("第6次日野町総合計画", ato)
         self.assertIn("日野町幼児教育保育施設再編整備計画", mae)
+        self.assertIn("日野町認定こども園整備基本構想", mae)
+
+    def test_taiki_kubun(self):
+        # 年齢別の行（kubun が「うち0歳児」〜「うち5歳児」）は、内訳ごとに表を分ける。年齢別の数値は、資料の間で一致する
+        page, info = self.page("taiki")
+        for i in range(6):
+            self.assertIn(f"<h3>{D.kotoba('数値の表 kubun')}：うち{i}歳児</h3>", page)
+        self.assertEqual(info["chigau"], 1)
 
     def test_kaien(self):
         page, info = self.page("kaien")
