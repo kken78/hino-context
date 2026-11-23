@@ -1,56 +1,60 @@
-bunsho	n	oya	shu	name	tokoro	jun	torikata	chu
-pt:kodomo/honpen	1		見出し	第５章 教育・保育の量の見込みと提供体制	pt:kodomo/honpen/64		機械	
-pt:kodomo/honpen	2	1	見出し	４ 教育・保育の量の見込みと確保の内容	pt:kodomo/honpen/71		機械	
-pt:kodomo/honpen	3	2	見出し	（２）幼児期の教育・保育の量の見込みと確保の内容及び時期	pt:kodomo/honpen/72		機械	
-pt:kodomo/honpen	4	3	表	②２号認定〔３歳児から５歳児で保育を必要とする〕	pt:kodomo/honpen/72		機械	
-pt:kodomo/honpen	5	4	行	②確保方策（保育所、認定こども園）	pt:kodomo/honpen/72		機械	
-pt:kodomo/honpen	6	4	行	不足分（②－①）	pt:kodomo/honpen/72		機械	
-pt:kodomo/honpen	7	4	列	2025 年（R7）	pt:kodomo/honpen/72	1	機械	原典の文字では「2025 年」と「（R7）」の2行に分かれている。name は2行をつないだ字
-pt:kodomo/honpen	8	4	列	2026 年（R8）	pt:kodomo/honpen/72	2	機械	原典の文字では「2026 年」と「（R8）」の2行に分かれている。name は2行をつないだ字
-pt:kodomo/honpen	9	4	列	2027 年（R9）	pt:kodomo/honpen/72	3	機械	原典の文字では「2027 年」と「（R9）」の2行に分かれている。name は2行をつないだ字
-pt:kodomo/honpen	10	4	列	2028 年（R10）	pt:kodomo/honpen/72	4	機械	原典の文字では「2028 年」と「（R10）」の2行に分かれている。name は2行をつないだ字
-pt:kodomo/honpen	11	4	列	2029 年（R11）	pt:kodomo/honpen/72	5	機械	原典の文字では「2029 年」と「（R11）」の2行に分かれている。name は2行をつないだ字
-pt:kodomo/honpen	12	3	表	③３号認定〔０歳児で保育を必要とする〕	pt:kodomo/honpen/72		機械	
-pt:kodomo/honpen	13	12	行	不足分（②－①）	pt:kodomo/honpen/72		機械	
-pt:kodomo/honpen	14	12	列	2025 年（R7）	pt:kodomo/honpen/72	1	機械	原典の文字では「2025 年」と「（R7）」の2行に分かれている。name は2行をつないだ字
-pt:kodomo/honpen	15	12	列	2026 年（R8）	pt:kodomo/honpen/72	2	機械	原典の文字では「2026 年」と「（R8）」の2行に分かれている。name は2行をつないだ字
-pt:kodomo/honpen	16	12	列	2027 年（R9）	pt:kodomo/honpen/72	3	機械	原典の文字では「2027 年」と「（R9）」の2行に分かれている。name は2行をつないだ字
-pt:kodomo/honpen	17	12	列	2028 年（R10）	pt:kodomo/honpen/72	4	機械	原典の文字では「2028 年」と「（R10）」の2行に分かれている。name は2行をつないだ字
-pt:kodomo/honpen	18	12	列	2029 年（R11）	pt:kodomo/honpen/72	5	機械	原典の文字では「2029 年」と「（R11）」の2行に分かれている。name は2行をつないだ字
-pt:kodomo/honpen	19	3	表	④３号認定〔１歳児で保育を必要とする〕	pt:kodomo/honpen/73		機械	
-pt:kodomo/honpen	20	19	行	不足分（②－①）	pt:kodomo/honpen/73		機械	
-pt:kodomo/honpen	21	19	列	2025 年（R7）	pt:kodomo/honpen/73	1	機械	原典の文字では「2025 年」と「（R7）」の2行に分かれている。name は2行をつないだ字
-pt:kodomo/honpen	22	19	列	2026 年（R8）	pt:kodomo/honpen/73	2	機械	原典の文字では「2026 年」と「（R8）」の2行に分かれている。name は2行をつないだ字
-pt:kodomo/honpen	23	19	列	2027 年（R9）	pt:kodomo/honpen/73	3	機械	原典の文字では「2027 年」と「（R9）」の2行に分かれている。name は2行をつないだ字
-pt:kodomo/honpen	24	19	列	2028 年（R10）	pt:kodomo/honpen/73	4	機械	原典の文字では「2028 年」と「（R10）」の2行に分かれている。name は2行をつないだ字
-pt:kodomo/honpen	25	19	列	2029 年（R11）	pt:kodomo/honpen/73	5	機械	原典の文字では「2029 年」と「（R11）」の2行に分かれている。name は2行をつないだ字
-pt:kodomo/honpen	26	3	表	⑤３号認定〔２歳児で保育を必要とする〕	pt:kodomo/honpen/73		機械	
-pt:kodomo/honpen	27	26	行	不足分（②－①）	pt:kodomo/honpen/73		機械	
-pt:kodomo/honpen	28	26	列	2025 年（R7）	pt:kodomo/honpen/73	1	機械	原典の文字では「2025 年」と「（R7）」の2行に分かれている。name は2行をつないだ字
-pt:kodomo/honpen	29	26	列	2026 年（R8）	pt:kodomo/honpen/73	2	機械	原典の文字では「2026 年」と「（R8）」の2行に分かれている。name は2行をつないだ字
-pt:kodomo/honpen	30	26	列	2027 年（R9）	pt:kodomo/honpen/73	3	機械	原典の文字では「2027 年」と「（R9）」の2行に分かれている。name は2行をつないだ字
-pt:kodomo/honpen	31	26	列	2028 年（R10）	pt:kodomo/honpen/73	4	機械	原典の文字では「2028 年」と「（R10）」の2行に分かれている。name は2行をつないだ字
-pt:kodomo/honpen	32	26	列	2029 年（R11）	pt:kodomo/honpen/73	5	機械	原典の文字では「2029 年」と「（R11）」の2行に分かれている。name は2行をつないだ字
-pt:youho/honpen	1		見出し	第２章 日野町の幼稚園・保育所をめぐる状況	pt:youho/honpen/5		機械	
-pt:youho/honpen	2	1	見出し	２ 教育・保育の状況	pt:youho/honpen/9		機械	
-pt:youho/honpen	3	2	見出し	（４）待機児童の状況	pt:youho/honpen/11		機械	
-pt:youho/honpen	4	3	表	◆日野町の待機児童数の推移	pt:youho/honpen/11		機械	原典の文字（text_raw）では、表の題のあとに「（５）町の幼児教育・保育施設等の変遷」の見出しと表が入り、そのあとに、この表の列の見出しと行が続く
-pt:youho/honpen	5	4	行	平成30年4月	pt:youho/honpen/11		機械	
-pt:youho/honpen	6	4	行	平成31年4月	pt:youho/honpen/11		機械	
-pt:youho/honpen	7	4	行	令和2年4月	pt:youho/honpen/11		機械	
-pt:youho/honpen	8	4	行	令和3年4月	pt:youho/honpen/11		機械	
-pt:youho/honpen	9	4	行	令和4年4月	pt:youho/honpen/11		機械	
-pt:youho/honpen	10	4	行	令和5年4月	pt:youho/honpen/11		機械	
-pt:youho/honpen	11	4	行	令和6年4月	pt:youho/honpen/11		機械	
-pt:youho/honpen	12	4	行	令和7年4月	pt:youho/honpen/11		機械	
-pt:youho/honpen	13	4	列	小計①+②+③	pt:youho/honpen/11	4	読んだ	原典の文字では「小計」と「①+②+③」が2行に分かれ、「小計」は「③育児休業中」に続く「の方」と同じ行にある。原典の文字（text_raw）では、列の見出しが行の数値と別の所に出る。何番目の数値の列かは、text_raw の見出しの並び（①、②、③、小計、表の行のあと、待機児童数から除かれる者、待機児童数）を読んで決めた。PDF では確認していない
-pt:youho/honpen	14	4	列	待機児童数	pt:youho/honpen/11	5	読んだ	原典の文字では「待 機」と「児 童 数」の2行に分かれ、表の行のあとに出る。原典の文字（text_raw）では、列の見出しが行の数値と別の所に出る。何番目の数値の列かは、text_raw の見出しの並び（①、②、③、小計、表の行のあと、待機児童数から除かれる者、待機児童数）を読んで決めた。PDF では確認していない
-pt:youho/honpen	15		見出し	第３章 日野町幼児教育保育施設の再編整備計画	pt:youho/honpen/25		機械	
-pt:youho/honpen	16	15	見出し	４ 再編整備スケジュール	pt:youho/honpen/34		機械	
-pt:youho/honpen-202503	1		見出し	第３章 日野町幼児教育保育施設の再編整備計画	pt:youho/honpen-202503/25		機械	
-pt:youho/honpen-202503	2	1	見出し	４ 再編整備スケジュール	pt:youho/honpen-202503/34		機械	
-pt:senryaku2/x1	1		見出し	基本目標１．結婚・出産・子育ての希望をみんなで支えてかなえる	pt:senryaku2/x1/16		機械	
-pt:senryaku2/x1	2	1	表	③ 具体的な取り組み・取り組みごとの重要業績評価指標	pt:senryaku2/x1/16		機械	列の見出しの行は「№ 重要業績評価指標（KPI）指標名 基準値 目標値(Ｒ7) 担当部署」
-pt:senryaku2/x1	3	2	行	保育所等待機児童数	pt:senryaku2/x1/16		読んだ	行の字が「R1：1件 0件」で、数値だけの並びでないので、行と列の数え方の検査から外れる
-pt:senryaku2/x1	4	2	列	基準値	pt:senryaku2/x1/16	1	読んだ	
-pt:senryaku2/x1	5	2	列	目標値(Ｒ7)	pt:senryaku2/x1/16	2	読んだ	
+bunsho	n	oya	shu	name	tokoro	jun	matome	torikata	chu
+pt:kodomo/honpen	1		見出し	第５章 教育・保育の量の見込みと提供体制	pt:kodomo/honpen/64			機械	
+pt:kodomo/honpen	2	1	見出し	４ 教育・保育の量の見込みと確保の内容	pt:kodomo/honpen/71			機械	
+pt:kodomo/honpen	3	2	見出し	（２）幼児期の教育・保育の量の見込みと確保の内容及び時期	pt:kodomo/honpen/72			機械	
+pt:kodomo/honpen	4	3	表	②２号認定〔３歳児から５歳児で保育を必要とする〕	pt:kodomo/honpen/72			機械	
+pt:kodomo/honpen	5	4	行	②確保方策（保育所、認定こども園）	pt:kodomo/honpen/72			機械	
+pt:kodomo/honpen	6	4	行	不足分（②－①）	pt:kodomo/honpen/72			機械	
+pt:kodomo/honpen	7	4	列	2025 年（R7）	pt:kodomo/honpen/72	1		機械	原典の文字では「2025 年」と「（R7）」の2行に分かれている。name は2行をつないだ字
+pt:kodomo/honpen	8	4	列	2026 年（R8）	pt:kodomo/honpen/72	2		機械	原典の文字では「2026 年」と「（R8）」の2行に分かれている。name は2行をつないだ字
+pt:kodomo/honpen	9	4	列	2027 年（R9）	pt:kodomo/honpen/72	3		機械	原典の文字では「2027 年」と「（R9）」の2行に分かれている。name は2行をつないだ字
+pt:kodomo/honpen	10	4	列	2028 年（R10）	pt:kodomo/honpen/72	4		機械	原典の文字では「2028 年」と「（R10）」の2行に分かれている。name は2行をつないだ字
+pt:kodomo/honpen	11	4	列	2029 年（R11）	pt:kodomo/honpen/72	5		機械	原典の文字では「2029 年」と「（R11）」の2行に分かれている。name は2行をつないだ字
+pt:kodomo/honpen	12	3	表	③３号認定〔０歳児で保育を必要とする〕	pt:kodomo/honpen/72			機械	
+pt:kodomo/honpen	13	12	行	不足分（②－①）	pt:kodomo/honpen/72			機械	
+pt:kodomo/honpen	14	12	列	2025 年（R7）	pt:kodomo/honpen/72	1		機械	原典の文字では「2025 年」と「（R7）」の2行に分かれている。name は2行をつないだ字
+pt:kodomo/honpen	15	12	列	2026 年（R8）	pt:kodomo/honpen/72	2		機械	原典の文字では「2026 年」と「（R8）」の2行に分かれている。name は2行をつないだ字
+pt:kodomo/honpen	16	12	列	2027 年（R9）	pt:kodomo/honpen/72	3		機械	原典の文字では「2027 年」と「（R9）」の2行に分かれている。name は2行をつないだ字
+pt:kodomo/honpen	17	12	列	2028 年（R10）	pt:kodomo/honpen/72	4		機械	原典の文字では「2028 年」と「（R10）」の2行に分かれている。name は2行をつないだ字
+pt:kodomo/honpen	18	12	列	2029 年（R11）	pt:kodomo/honpen/72	5		機械	原典の文字では「2029 年」と「（R11）」の2行に分かれている。name は2行をつないだ字
+pt:kodomo/honpen	19	3	表	④３号認定〔１歳児で保育を必要とする〕	pt:kodomo/honpen/73			機械	
+pt:kodomo/honpen	20	19	行	不足分（②－①）	pt:kodomo/honpen/73			機械	
+pt:kodomo/honpen	21	19	列	2025 年（R7）	pt:kodomo/honpen/73	1		機械	原典の文字では「2025 年」と「（R7）」の2行に分かれている。name は2行をつないだ字
+pt:kodomo/honpen	22	19	列	2026 年（R8）	pt:kodomo/honpen/73	2		機械	原典の文字では「2026 年」と「（R8）」の2行に分かれている。name は2行をつないだ字
+pt:kodomo/honpen	23	19	列	2027 年（R9）	pt:kodomo/honpen/73	3		機械	原典の文字では「2027 年」と「（R9）」の2行に分かれている。name は2行をつないだ字
+pt:kodomo/honpen	24	19	列	2028 年（R10）	pt:kodomo/honpen/73	4		機械	原典の文字では「2028 年」と「（R10）」の2行に分かれている。name は2行をつないだ字
+pt:kodomo/honpen	25	19	列	2029 年（R11）	pt:kodomo/honpen/73	5		機械	原典の文字では「2029 年」と「（R11）」の2行に分かれている。name は2行をつないだ字
+pt:kodomo/honpen	26	3	表	⑤３号認定〔２歳児で保育を必要とする〕	pt:kodomo/honpen/73			機械	
+pt:kodomo/honpen	27	26	行	不足分（②－①）	pt:kodomo/honpen/73			機械	
+pt:kodomo/honpen	28	26	列	2025 年（R7）	pt:kodomo/honpen/73	1		機械	原典の文字では「2025 年」と「（R7）」の2行に分かれている。name は2行をつないだ字
+pt:kodomo/honpen	29	26	列	2026 年（R8）	pt:kodomo/honpen/73	2		機械	原典の文字では「2026 年」と「（R8）」の2行に分かれている。name は2行をつないだ字
+pt:kodomo/honpen	30	26	列	2027 年（R9）	pt:kodomo/honpen/73	3		機械	原典の文字では「2027 年」と「（R9）」の2行に分かれている。name は2行をつないだ字
+pt:kodomo/honpen	31	26	列	2028 年（R10）	pt:kodomo/honpen/73	4		機械	原典の文字では「2028 年」と「（R10）」の2行に分かれている。name は2行をつないだ字
+pt:kodomo/honpen	32	26	列	2029 年（R11）	pt:kodomo/honpen/73	5		機械	原典の文字では「2029 年」と「（R11）」の2行に分かれている。name は2行をつないだ字
+pt:kodomo/honpen	33	4	行	①量の見込み	pt:kodomo/honpen/72			機械	
+pt:youho/honpen	1		見出し	第２章 日野町の幼稚園・保育所をめぐる状況	pt:youho/honpen/5			機械	
+pt:youho/honpen	2	1	見出し	２ 教育・保育の状況	pt:youho/honpen/9			機械	
+pt:youho/honpen	3	2	見出し	（４）待機児童の状況	pt:youho/honpen/11			機械	
+pt:youho/honpen	4	3	表	◆日野町の待機児童数の推移	pt:youho/honpen/11			機械	原典の文字（text_raw）では、表の題のあとに「（５）町の幼児教育・保育施設等の変遷」の見出しと表が入り、そのあとに、この表の列の見出しと行が続く
+pt:youho/honpen	5	4	行	平成30年4月	pt:youho/honpen/11			機械	
+pt:youho/honpen	6	4	行	平成31年4月	pt:youho/honpen/11			機械	
+pt:youho/honpen	7	4	行	令和2年4月	pt:youho/honpen/11			機械	
+pt:youho/honpen	8	4	行	令和3年4月	pt:youho/honpen/11			機械	
+pt:youho/honpen	9	4	行	令和4年4月	pt:youho/honpen/11			機械	
+pt:youho/honpen	10	4	行	令和5年4月	pt:youho/honpen/11			機械	
+pt:youho/honpen	11	4	行	令和6年4月	pt:youho/honpen/11			機械	
+pt:youho/honpen	12	4	行	令和7年4月	pt:youho/honpen/11			機械	
+pt:youho/honpen	13	4	列	小計①+②+③	pt:youho/honpen/11	4	待機児童数から除かれる者	読んだ	原典の文字では「小計」と「①+②+③」が2行に分かれ、「小計」は「③育児休業中」に続く「の方」と同じ行にある。原典の文字（text_raw）では、列の見出しが行の数値と別の所に出る。何番目の数値の列かは、text_raw の見出しの並び（①、②、③、小計、表の行のあと、待機児童数から除かれる者、待機児童数）を読んで決めた。PDF では確認していない
+pt:youho/honpen	14	4	列	待機児童数	pt:youho/honpen/11	5		読んだ	原典の文字では「待 機」と「児 童 数」の2行に分かれ、表の行のあとに出る。原典の文字（text_raw）では、列の見出しが行の数値と別の所に出る。何番目の数値の列かは、text_raw の見出しの並び（①、②、③、小計、表の行のあと、待機児童数から除かれる者、待機児童数）を読んで決めた。PDF では確認していない
+pt:youho/honpen	15		見出し	第３章 日野町幼児教育保育施設の再編整備計画	pt:youho/honpen/25			機械	
+pt:youho/honpen	16	15	見出し	４ 再編整備スケジュール	pt:youho/honpen/34			機械	
+pt:youho/honpen	17	4	列	①求職活動中のうち求職活動を中止している方	pt:youho/honpen/11	1	待機児童数から除かれる者	読んだ	
+pt:youho/honpen	18	4	列	②特定の保育園等を希望している方	pt:youho/honpen/11	2	待機児童数から除かれる者	読んだ	
+pt:youho/honpen	19	4	列	③育児休業中の方	pt:youho/honpen/11	3	待機児童数から除かれる者	読んだ	
+pt:youho/honpen-202503	1		見出し	第３章 日野町幼児教育保育施設の再編整備計画	pt:youho/honpen-202503/25			機械	
+pt:youho/honpen-202503	2	1	見出し	４ 再編整備スケジュール	pt:youho/honpen-202503/34			機械	
+pt:senryaku2/x1	1		見出し	基本目標１．結婚・出産・子育ての希望をみんなで支えてかなえる	pt:senryaku2/x1/16			機械	
+pt:senryaku2/x1	2	1	表	③ 具体的な取り組み・取り組みごとの重要業績評価指標	pt:senryaku2/x1/16			機械	列の見出しの行は「№ 重要業績評価指標（KPI）指標名 基準値 目標値(Ｒ7) 担当部署」
+pt:senryaku2/x1	3	2	行	保育所等待機児童数	pt:senryaku2/x1/16			読んだ	行の字が「R1：1件 0件」で、数値だけの並びでないので、行と列の数え方の検査から外れる
+pt:senryaku2/x1	4	2	列	基準値	pt:senryaku2/x1/16	1		読んだ	
+pt:senryaku2/x1	5	2	列	目標値(Ｒ7)	pt:senryaku2/x1/16	2		読んだ	

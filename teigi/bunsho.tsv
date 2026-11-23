@@ -1,19 +1,19 @@
-bunsho	namae	shurui	konkyo	konkyo_tokoro	hiduke	hiduke_moto	chu
-pt:kodomo/honpen	第３期日野町子ども・子育て支援事業計画	keikaku	本計画は、子ども・子育て支援法第 61 条に基づく「市町村子ども・子育て支援事業計画」として策定するものです。	pt:kodomo/honpen/8	2025-03	pt:kodomo/honpen/1	
-pt:youho/honpen	日野町幼児教育保育施設再編整備計画	keikaku			2026-06	pt:youho/honpen/1	令和８年６月一部改正のあとの版。1ページに「令和７年３月」と「令和８年６月一部改正」があり、hiduke は改正の月。根拠：法令・手続き・上位の計画を根拠とする記載は見つからない（3ページ「２ 計画の位置づけ」を見た。関連計画と「整合・連携を図りながら」とある）
-pt:youho/honpen-202503	日野町幼児教育保育施設再編整備計画	keikaku			2025-03	pt:youho/honpen-202503/1	令和７年３月策定の版。根拠：法令・手続き・上位の計画を根拠とする記載は見つからない（3ページ「２ 計画の位置づけ」を見た。関連計画と「整合・連携を図りながら」とある）
-pt:jisshi/honpen	第６次日野町総合計画 実施計画 令和８年度～令和１０年度	keikaku			2026-04	pt:jisshi/honpen/1	1ページの「実 施 計 画」は字の間に空白がある。根拠：記載は見つからない（1・18ページを読み、全ページを「基づ」「法」の字で探した。「基づ」の字は事業の説明の中だけにある）
-doc:hyoka-r4-senryaku-kensho	日野町くらし安心ひとづくり総合戦略（第２期）施策検証結果報告書（令和４年度）	hyoka	毎年度の事業完了後に基本目標と施策についての取り組み状況を外部有識者等の参画のもとに効果検証する	doc:hyoka-r4-senryaku-kensho/3	2023-11	doc:hyoka-r4-senryaku-kensho/1	1ページに、作成者として「日野町総合計画懇話会」とある
-doc:hyoka-r5-senryaku-kensho	日野町くらし安心ひとづくり総合戦略（第２期）施策検証結果報告書（令和５年度）	hyoka	毎年度の事業完了後に基本目標と施策についての取り組み状況を外部有識者等の参画のもとに効果検証する	doc:hyoka-r5-senryaku-kensho/3	2024-10	doc:hyoka-r5-senryaku-kensho/1	1ページに、作成者として「日野町総合計画懇話会」とある
-doc:hyoka-r6-senryaku-kensho	日野町くらし安心ひとづくり総合戦略（第２期）施策検証結果報告書（令和６年度）	hyoka	毎年度の事業完了後に基本目標と施策についての取り組み状況を外部有識者等の参画のもとに効果検証する	doc:hyoka-r6-senryaku-kensho/3	2025-10	doc:hyoka-r6-senryaku-kensho/1	1ページに、作成者として「日野町総合計画懇話会」とある。hino-town-docs の sources.tsv の title は「（令和7年度）」で、表紙の字と違う
-doc:yosan-r6-fuhyo	令和６年度当初予算（案）の概要 附表 令和６年度に取り組む主な事業	yosan					日付：文書に記載が見つからない（全ページを見た）。hino-town-docs の sources.tsv の date も空。根拠：記載は見つからない（全ページを「基づ」「法」の字で探した。「基づ」の字は事業の説明の中だけにある）
-doc:yosan-r8-fuhyo	令和８年度当初予算の概要 附表 令和８年度に取り組む主な事業	yosan					日付：文書に記載が見つからない（全ページを見た）。hino-town-docs の sources.tsv の date も空。根拠：記載は見つからない（全ページを「基づ」「法」の字で探した。「基づ」の字は事業の説明の中だけにある）
-doc:yosan-r6-hosei-03	令和６年度３月補正予算の概要について	yosan			2025-03-24	doc:yosan-r6-hosei-03/1	根拠：記載は見つからない（全ページを「基づ」「法」の字で探し、1ページを読んだ）
-doc:yosan-r7-hosei-09	令和７年度９月補正予算の概要について	yosan			2025-09-26	doc:yosan-r7-hosei-09/1	根拠：記載は見つからない（全ページを「基づ」「法」の字で探し、1ページを読んだ）
-doc:yosan-r7-hosei-12	令和７年度１２月補正予算の概要について	yosan			2025-12-23	doc:yosan-r7-hosei-12/1	根拠：記載は見つからない（全ページを「基づ」「法」の字で探し、1ページを読んだ）
-doc:yosan-r7-hosei-03	令和７年度３月補正予算の概要について	yosan			2026-03-23	doc:yosan-r7-hosei-03/1	根拠：記載は見つからない（全ページを「基づ」「法」の字で探し、1ページを読んだ）
-doc:koho-no792-04	町の未来を担う子どもたちのために 幼児教育保育環境の再編整備を進めています	koho			2026-07	doc:koho-no792-04/1	広報ひの 2026年7月号の記事（6・7ページ）。1ページに「2026.07 広報ひの」とある。根拠：記載は見つからない（記事の全体を見た）
-doc:jigyo-shinkodomoen-kousou	日野町認定こども園整備基本構想	jigyo	本基本構想は、「第６次日野町総合計画」及び「第３期日野町子ども・子育て支援事業計画」を上位計画とし	doc:jigyo-shinkodomoen-kousou/5	2025-08	doc:jigyo-shinkodomoen-kousou/1	
-doc:jigyo-shinkodomoen-pabu	「日野町認定こども園整備基本構想（案）」におけるパブリックコメントの実施結果	jigyo					日付：文書に記載が見つからない（1〜4ページを見た）。hino-town-docs の sources.tsv の date も空。1ページに意見募集期間「令和７年７月１１日（金）から８月８日（金）まで」がある。根拠：意見募集を定めた法令・要綱の記載は見つからない（1ページ「１．はじめに」を見た）
-plan:sogo6	第6次日野町総合計画	keikaku			2021-03	shiga-hino-plans data/plans/sogo6.json	原典の文字が入力に無い。名前は data/plans/sogo6.json の meta.name、日付は meta.posted「2021年3月発行」から取った（原典の文字では確認していない）。根拠：原典の文字が入力に無いので探していない
-pt:senryaku2/x1	日野町くらし安心ひとづくり総合戦略	keikaku	本戦略は、まち・ひと・しごと創生法第１０条に基づき、国の総合戦略等の方向性を踏まえ、策定するものです。	pt:senryaku2/x1/8	2021-03	pt:senryaku2/x1/1	第２期（令和3年度〜令和7年度）。令和３年３月の版。計画ライブラリには、令和4年12月改訂の版（sougousenryaku2_r4-12ver）と令和6年3月改訂の版（honpen）もある
+bunsho	namae	shurui	konkyo	konkyo_tokoro	hiduke	hiduke_moto	han	han_tokoro	chu
+pt:kodomo/honpen	第３期日野町子ども・子育て支援事業計画	keikaku	本計画は、子ども・子育て支援法第 61 条に基づく「市町村子ども・子育て支援事業計画」として策定するものです。	pt:kodomo/honpen/8	2025-03	pt:kodomo/honpen/1			
+pt:youho/honpen	日野町幼児教育保育施設再編整備計画	keikaku			2026-06	pt:youho/honpen/1	令和８年６月一部改正	pt:youho/honpen/1	令和８年６月一部改正のあとの版。1ページに「令和７年３月」と「令和８年６月一部改正」があり、hiduke は改正の月。根拠：法令・手続き・上位の計画を根拠とする記載は見つからない（3ページ「２ 計画の位置づけ」を見た。関連計画と「整合・連携を図りながら」とある）
+pt:youho/honpen-202503	日野町幼児教育保育施設再編整備計画	keikaku			2025-03	pt:youho/honpen-202503/1			令和７年３月策定の版。根拠：法令・手続き・上位の計画を根拠とする記載は見つからない（3ページ「２ 計画の位置づけ」を見た。関連計画と「整合・連携を図りながら」とある）
+pt:jisshi/honpen	第６次日野町総合計画 実施計画 令和８年度～令和１０年度	keikaku			2026-04	pt:jisshi/honpen/1			1ページの「実 施 計 画」は字の間に空白がある。根拠：記載は見つからない（1・18ページを読み、全ページを「基づ」「法」の字で探した。「基づ」の字は事業の説明の中だけにある）
+doc:hyoka-r4-senryaku-kensho	日野町くらし安心ひとづくり総合戦略（第２期）施策検証結果報告書（令和４年度）	hyoka	毎年度の事業完了後に基本目標と施策についての取り組み状況を外部有識者等の参画のもとに効果検証する	doc:hyoka-r4-senryaku-kensho/3	2023-11	doc:hyoka-r4-senryaku-kensho/1			1ページに、作成者として「日野町総合計画懇話会」とある
+doc:hyoka-r5-senryaku-kensho	日野町くらし安心ひとづくり総合戦略（第２期）施策検証結果報告書（令和５年度）	hyoka	毎年度の事業完了後に基本目標と施策についての取り組み状況を外部有識者等の参画のもとに効果検証する	doc:hyoka-r5-senryaku-kensho/3	2024-10	doc:hyoka-r5-senryaku-kensho/1			1ページに、作成者として「日野町総合計画懇話会」とある
+doc:hyoka-r6-senryaku-kensho	日野町くらし安心ひとづくり総合戦略（第２期）施策検証結果報告書（令和６年度）	hyoka	毎年度の事業完了後に基本目標と施策についての取り組み状況を外部有識者等の参画のもとに効果検証する	doc:hyoka-r6-senryaku-kensho/3	2025-10	doc:hyoka-r6-senryaku-kensho/1			1ページに、作成者として「日野町総合計画懇話会」とある。hino-town-docs の sources.tsv の title は「（令和7年度）」で、表紙の字と違う
+doc:yosan-r6-fuhyo	令和６年度当初予算（案）の概要 附表 令和６年度に取り組む主な事業	yosan							日付：文書に記載が見つからない（全ページを見た）。hino-town-docs の sources.tsv の date も空。根拠：記載は見つからない（全ページを「基づ」「法」の字で探した。「基づ」の字は事業の説明の中だけにある）
+doc:yosan-r8-fuhyo	令和８年度当初予算の概要 附表 令和８年度に取り組む主な事業	yosan							日付：文書に記載が見つからない（全ページを見た）。hino-town-docs の sources.tsv の date も空。根拠：記載は見つからない（全ページを「基づ」「法」の字で探した。「基づ」の字は事業の説明の中だけにある）
+doc:yosan-r6-hosei-03	令和６年度３月補正予算の概要について	yosan			2025-03-24	doc:yosan-r6-hosei-03/1			根拠：記載は見つからない（全ページを「基づ」「法」の字で探し、1ページを読んだ）
+doc:yosan-r7-hosei-09	令和７年度９月補正予算の概要について	yosan			2025-09-26	doc:yosan-r7-hosei-09/1			根拠：記載は見つからない（全ページを「基づ」「法」の字で探し、1ページを読んだ）
+doc:yosan-r7-hosei-12	令和７年度１２月補正予算の概要について	yosan			2025-12-23	doc:yosan-r7-hosei-12/1			根拠：記載は見つからない（全ページを「基づ」「法」の字で探し、1ページを読んだ）
+doc:yosan-r7-hosei-03	令和７年度３月補正予算の概要について	yosan			2026-03-23	doc:yosan-r7-hosei-03/1			根拠：記載は見つからない（全ページを「基づ」「法」の字で探し、1ページを読んだ）
+doc:koho-no792-04	町の未来を担う子どもたちのために 幼児教育保育環境の再編整備を進めています	koho			2026-07	doc:koho-no792-04/1			広報ひの 2026年7月号の記事（6・7ページ）。1ページに「2026.07 広報ひの」とある。根拠：記載は見つからない（記事の全体を見た）
+doc:jigyo-shinkodomoen-kousou	日野町認定こども園整備基本構想	jigyo	本基本構想は、「第６次日野町総合計画」及び「第３期日野町子ども・子育て支援事業計画」を上位計画とし	doc:jigyo-shinkodomoen-kousou/5	2025-08	doc:jigyo-shinkodomoen-kousou/1			
+doc:jigyo-shinkodomoen-pabu	「日野町認定こども園整備基本構想（案）」におけるパブリックコメントの実施結果	jigyo							日付：文書に記載が見つからない（1〜4ページを見た）。hino-town-docs の sources.tsv の date も空。1ページに意見募集期間「令和７年７月１１日（金）から８月８日（金）まで」がある。根拠：意見募集を定めた法令・要綱の記載は見つからない（1ページ「１．はじめに」を見た）
+plan:sogo6	第6次日野町総合計画	keikaku			2021-03	shiga-hino-plans data/plans/sogo6.json			原典の文字が入力に無い。名前は data/plans/sogo6.json の meta.name、日付は meta.posted「2021年3月発行」から取った（原典の文字では確認していない）。根拠：原典の文字が入力に無いので探していない
+pt:senryaku2/x1	日野町くらし安心ひとづくり総合戦略	keikaku	本戦略は、まち・ひと・しごと創生法第１０条に基づき、国の総合戦略等の方向性を踏まえ、策定するものです。	pt:senryaku2/x1/8	2021-03	pt:senryaku2/x1/1			第２期（令和3年度〜令和7年度）。令和３年３月の版。計画ライブラリには、令和4年12月改訂の版（sougousenryaku2_r4-12ver）と令和6年3月改訂の版（honpen）もある
