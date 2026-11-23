@@ -94,6 +94,12 @@ def body_rows(page):
 
 
 D = bs.read_design()
+YONDA = D.kotoba("文書の部分の表 torikata が「読んだ」")
+
+
+def marks(page):
+    """見出しに付いた未確認の印の数（表の下の、印の意味を書いた文の中の印は数えない）。"""
+    return page.replace(D.bun("mikakunin-hyo"), "").count(YONDA)
 
 
 class TestFake(unittest.TestCase):
@@ -130,6 +136,11 @@ class TestFake(unittest.TestCase):
         self.assertNotIn("根拠：全ページを探した", page)
         self.assertNotIn(bn.A, page)
         self.assertNotIn(bn.B, page)
+        # このページについて：表のページの文。数値のページの文は使わない。印が無ければ、印の文も出さない
+        self.assertIn(D.bun("owari-hyo") + D.bun("sakusei-bi", hi="2026年11月23日"), page)
+        self.assertNotIn(D.bun("owari"), page)
+        self.assertNotIn(YONDA, page)
+        self.assertNotIn(D.bun("mikakunin-hyo"), page)
         self.assertEqual(bh.out_name(K, "2"), "pt_x_honpen_2.html")
 
     def test_no_matome_no_han(self):
@@ -196,6 +207,19 @@ class TestFake(unittest.TestCase):
         page, info = self.build(tables(bubun=rows))
         self.assertEqual(body_rows(page), [("令和7年4月", ["3"])])
         self.assertEqual((info["moji"], info["atai"]), (0, 1))
+        # 「読んだ」の表の見出しに印を付け、表の下に印の文を出す
+        self.assertIn(f"<h1>◆待機児童数の推移{YONDA}</h1>", page)
+        self.assertEqual(marks(page), 1)
+        self.assertIn(f"</table>\n<p class=s>{D.bun('mikakunin-hyo')}</p>", page)
+
+    def test_yonda_retsu_gyo(self):
+        # 「読んだ」の列と見出しにも印を付ける（列だけが「読んだ」の表は、原典の文字から数える）
+        rows = change(change(bubun_rows(), "6", torikata="読んだ"), "1", torikata="読んだ")
+        page, _ = self.build(tables(bubun=rows))
+        self.assertIn(f"<th>①求職{YONDA}</th><th>②特定</th>", page)
+        self.assertIn(f"<p class=s>第５章 量の見込み{YONDA}</p>", page)
+        self.assertEqual(marks(page), 2)
+        self.assertIn(D.bun("mikakunin-hyo"), page)
 
     def test_stop_word(self):
         d = copy.deepcopy(D)
@@ -249,7 +273,12 @@ class TestReal(unittest.TestCase):
         self.assertEqual([g for g, _ in rows][0], "平成30年4月")
         self.assertEqual(rows[0][1], ["0", "0", "4", "4", "1"])
         self.assertEqual(rows[-1], ("令和7年4月", ["2", "2", "11", "15", "3"]))
-        self.assertIn("<th class=m colspan=4>待機児童数から除かれる者</th><th rowspan=2>待機児童数</th>", page)
+        self.assertIn(f"<th class=m colspan=4>待機児童数から除かれる者</th><th rowspan=2>待機児童数{YONDA}</th>", page)
+        # 「読んだ」の列は5つ（①、②、③、小計、待機児童数）。印は5つで、表の下に印の文
+        self.assertEqual(marks(page), 5)
+        self.assertIn(f"<th>③育児休業中の方{YONDA}</th><th>小計①+②+③{YONDA}</th>", page)
+        self.assertIn(D.bun("mikakunin-hyo"), page)
+        self.assertIn(D.bun("owari-hyo"), page)
         self.assertIn("日野町幼児教育保育施設再編整備計画（令和８年６月一部改正、2026年6月）", page)
         self.assertTrue(page.startswith("<!DOCTYPE html>"))
         self.assertNotIn("<script", page)
@@ -263,6 +292,8 @@ class TestReal(unittest.TestCase):
                                            ("不足分（②－①）", ["▲5", "▲4", "▲4", "0", "0"])])
         self.assertNotIn("colspan", page)
         self.assertIn(D.kotoba("文書の表 konkyo"), page)
+        self.assertNotIn(YONDA, page)
+        self.assertNotIn(D.bun("mikakunin-hyo"), page)
 
 
 if __name__ == "__main__":

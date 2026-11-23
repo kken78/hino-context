@@ -9,6 +9,7 @@
 欄の数値は、原典の文字（text_raw）の表の範囲の、行の見出しに続く数値から、列の jun の順で取る（SCHEMA.md §7.3）。
 数値の表に、その欄を指す行があれば、取った数値と atai が一致することを確認する。
 親の表か行の torikata が「読んだ」の表は、原典の文字から数えられないので、数値の表に行がある欄だけを出せる。
+torikata が「読んだ」の表・行・列・見出しには、数値のページと同じ未確認の印を付け、表の下に決まった文を出す。
 画面に出す言葉は、docs/design.md 3節の2つの表から読む（tools/build_suji.py の read_design と同じ読み方）。
 
 作る前の検査（1つでも当たれば、件数と該当行を示して、ページを作らずに止まる。終了コード 1）：
@@ -144,11 +145,11 @@ class Hyo:
         return at[0] if at else None
 
     def midashi(self):
-        """表の親をたどった見出しの並び（上から）。"""
+        """表の親をたどった見出しの行の並び（上から）。"""
         out, oya = [], self.hyo["oya"]
         while oya:
             x = self.by_n[oya]
-            out.insert(0, x["name"])
+            out.insert(0, x)
             oya = x["oya"]
         return out
 
@@ -167,16 +168,23 @@ def hiduke_ji(D, h):
     return bs.hi_str(D, h) if sj.RE_HIDUKE.fullmatch(h or "") else D.kotoba("文書の表 hiduke が空")
 
 
+def midashi_ji(D, r):
+    """文書の部分の行 → 画面に出す見出し。torikata が「読んだ」の部分には、未確認の印を付ける。"""
+    if r["torikata"] == sj.YONDA:
+        return S(r["name"]) + E(D.kotoba("文書の部分の表 torikata が「読んだ」"))
+    return S(r["name"])
+
+
 def thead(D, retsu):
     """列の見出し。matome がある列は、見出しの上の行に、同じ matome が続く列をまとめて出す。"""
     D.dasanai("文書の部分の表 matome")
     if not any(c["matome"] for c in retsu):
-        return "<tr><th class=g></th>" + "".join(f"<th>{S(c['name'])}</th>" for c in retsu) + "</tr>"
+        return "<tr><th class=g></th>" + "".join(f"<th>{midashi_ji(D, c)}</th>" for c in retsu) + "</tr>"
     ue, i = [], 0
     while i < len(retsu):
         m = retsu[i]["matome"]
         if not m:
-            ue.append(f"<th rowspan=2>{S(retsu[i]['name'])}</th>")
+            ue.append(f"<th rowspan=2>{midashi_ji(D, retsu[i])}</th>")
             i += 1
             continue
         k = i
@@ -184,7 +192,7 @@ def thead(D, retsu):
             k += 1
         ue.append(f"<th class=m colspan={k - i}>{S(m)}</th>")
         i = k
-    shita = "".join(f"<th>{S(c['name'])}</th>" for c in retsu if c["matome"])
+    shita = "".join(f"<th>{midashi_ji(D, c)}</th>" for c in retsu if c["matome"])
     return f"<tr><th class=g rowspan=2></th>{''.join(ue)}</tr>\n<tr>{shita}</tr>"
 
 
@@ -208,16 +216,18 @@ def render(D, inp, tables, h, bkey, today):
     kakko = f"{S(b['han'])}、{E(hi)}" if b["han"] else E(hi)
     page = D.bun("page", n=sj.page_no(hyo["tokoro"]))
     o = [f"<p class=s>{E(D.bun('atama-hyo'))}</p>",
-         f"<h1>{S(hyo['name'])}</h1>",
+         f"<h1>{midashi_ji(D, hyo)}</h1>",
          f"<p>{S(b['namae'])}（{kakko}）　{E(page)}</p>"]
     mi = h.midashi()
     if mi:
-        o.append("<p class=s>" + "　".join(S(x) for x in mi) + "</p>")
+        o.append("<p class=s>" + "　".join(midashi_ji(D, x) for x in mi) + "</p>")
     rows = []
     for g in h.gyo:
         tds = "".join(f"<td>{S(h.cell[(g['n'], c['n'])])}</td>" for c in h.retsu)
-        rows.append(f"<tr><th class=g>{S(g['name'])}</th>{tds}</tr>")
+        rows.append(f"<tr><th class=g>{midashi_ji(D, g)}</th>{tds}</tr>")
     o.append(f"<table>\n<thead>{thead(D, h.retsu)}</thead>\n<tbody>\n" + "\n".join(rows) + "\n</tbody>\n</table>")
+    if any(x["torikata"] == sj.YONDA for x in [hyo] + mi + h.gyo + h.retsu):
+        o.append(f"<p class=s>{E(D.bun('mikakunin-hyo'))}</p>")
     url = keys.source_url(inp, hyo["tokoro"])
     o.append(f"<p><a href='{E(url)}'>{E(D.bun('link'))}</a></p>" if url else f"<p>{E(D.bun('link-nashi'))}</p>")
     if b["konkyo"]:
@@ -233,7 +243,7 @@ def render(D, inp, tables, h, bkey, today):
             li.append(f"<li>{S(by[k]['namae'])}（{E(hiduke_ji(D, by[k]['hiduke']))}）"
                       + (f"　{E(D.bun('page', n=pp))}" if pp else "") + "</li>")
         o.append(f"<h2>{E(D.bun('midashi-onaji'))}</h2>\n<ul>\n" + "\n".join(li) + "\n</ul>")
-    o.append(f"<h2>{E(D.bun('midashi-owari'))}</h2><p class=s>{E(D.bun('owari'))}"
+    o.append(f"<h2>{E(D.bun('midashi-owari'))}</h2><p class=s>{E(D.bun('owari-hyo'))}"
              f"{E(D.bun('sakusei-bi', hi=bs.hi_str(D, today.isoformat())))}</p>")
     body = "\n".join(o)
     return f"""<!DOCTYPE html>
