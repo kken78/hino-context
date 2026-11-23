@@ -388,6 +388,18 @@ class TestBunsho(unittest.TestCase):
         p, _ = run7(bunsho=[bunsho_row(hiduke="", hiduke_moto="")])
         self.assertEqual(p, ["hiduke が空なのに、chu に理由が無い"])
 
+    def test_han(self):
+        """版の表記（SCHEMA.md §7.1・§7.4）：han が han_tokoro のページの原典の文字にある。"""
+        self.assertEqual(run7(bunsho=[bunsho_row(han="令和７年３月", han_tokoro="pt:kodomo/honpen/1")])[0], [])
+        p, _ = run7(bunsho=[bunsho_row(han="令和８年６月一部改正", han_tokoro="pt:kodomo/honpen/1")])
+        self.assertEqual(p, ["han が、han_tokoro のページの原典の文字に無い（令和８年６月一部改正）"])
+        p, _ = run7(bunsho=[bunsho_row(han="令和７年３月", han_tokoro="pt:youho/honpen/1")])
+        self.assertEqual(p, ["han_tokoro が、この文書のページの鍵でない（pt:youho/honpen/1）"])
+        p, _ = run7(bunsho=[bunsho_row(han="令和７年３月", han_tokoro="")])
+        self.assertEqual(p, ["han_tokoro が、この文書のページの鍵でない（）"])
+        p, _ = run7(bunsho=[bunsho_row(han="", han_tokoro="pt:kodomo/honpen/1")])
+        self.assertEqual(p, ["han が空なのに、han_tokoro がある"])
+
 
 class TestBubun(unittest.TestCase):
     def test_key_and_parent(self):
@@ -426,6 +438,15 @@ class TestBubun(unittest.TestCase):
         self.assertEqual(p, ["列でない行に jun がある（1）"])
         p, _ = run7(bubun=change(rows, "5", jun="1"))
         self.assertIn("同じ表に、jun が同じ列がある（1）", p)
+
+    def test_matome(self):
+        """列のまとまりの見出し（SCHEMA.md §7.2・§7.4）：列の行だけに書け、tokoro のページの原典の文字にある。"""
+        rows = bubun_rows()
+        self.assertEqual(run7(bubun=change(change(rows, "4", matome="（R7）"), "5", matome="（R7）"))[0], [])
+        p, _ = run7(bubun=change(rows, "4", matome="待機児童数から除かれる者"))
+        self.assertEqual(p, ["matome が、tokoro のページの原典の文字に無い（待機児童数から除かれる者）"])
+        p, _ = run7(bubun=change(rows, "6", matome="第５章 量の見込み"))
+        self.assertEqual(p, ["列でない行に matome がある（第５章 量の見込み）"])
 
     def test_table_range(self):
         rows = bubun_rows()

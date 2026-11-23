@@ -55,8 +55,8 @@ class TestDesign(unittest.TestCase):
         d.h1["数値の表 nendo"] = ("対象の年度", "数値ごとの欄")
         d.h2["midashi-yobi"] = "予備の見出し"
         p = problems(d)
-        self.assertIn("1つ目の表の行「数値の表 nendo」を、このツールが引いていない", p)
-        self.assertIn("2つ目の表の行「midashi-yobi」を、このツールが引いていない", p)
+        self.assertIn("1つ目の表の行「数値の表 nendo」を、ページを作るツールのどれも引いていない", p)
+        self.assertIn("2つ目の表の行「midashi-yobi」を、ページを作るツールのどれも引いていない", p)
 
     def test_missing_row(self):
         d = design()

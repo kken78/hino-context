@@ -30,8 +30,9 @@ ATAI_COLUMNS = ["suji", "kubun", "jiten", "nendo", "atai", "shurui", "jotai", "s
                 "chu", "bubun", "retsu"]
 BUNSHO_NAME = "teigi/bunsho.tsv"
 BUBUN_NAME = "teigi/bubun.tsv"
-BUNSHO_COLUMNS = ["bunsho", "namae", "shurui", "konkyo", "konkyo_tokoro", "hiduke", "hiduke_moto", "chu"]
-BUBUN_COLUMNS = ["bunsho", "n", "oya", "shu", "name", "tokoro", "jun", "torikata", "chu"]
+BUNSHO_COLUMNS = ["bunsho", "namae", "shurui", "konkyo", "konkyo_tokoro", "hiduke", "hiduke_moto", "han", "han_tokoro",
+                  "chu"]
+BUBUN_COLUMNS = ["bunsho", "n", "oya", "shu", "name", "tokoro", "jun", "matome", "torikata", "chu"]
 
 ARU = "数値がある"
 KARA = "欄が空"
@@ -493,7 +494,21 @@ def check_bunsho(inp, rows):
                 out.append(Mondai(BUNSHO_NAME, n, f"hiduke_moto が、ページの鍵でも、入力の台帳の名前でもない（{hm}）"))
         elif not r["chu"].strip():
             out.append(Mondai(BUNSHO_NAME, n, "hiduke が空なのに、chu に理由が無い"))
+        out += check_han(inp, r)
     return out, names
+
+
+def check_han(inp, r):
+    """文書の表の han と han_tokoro（SCHEMA.md §7.4）。han があれば、han_tokoro がこの文書のページの鍵で、
+    han がそのページの原典の文字にある。han が空なら、han_tokoro も空。"""
+    n, b, han, t = r["_gyo"], r["bunsho"], r["han"], r["han_tokoro"]
+    if not han.strip():
+        return [Mondai(BUNSHO_NAME, n, "han が空なのに、han_tokoro がある")] if t.strip() else []
+    if bunsho_of(t) != b or page_no(t) is None:
+        return [Mondai(BUNSHO_NAME, n, f"han_tokoro が、この文書のページの鍵でない（{t}）")]
+    if not on_page(inp, han, t):
+        return [Mondai(BUNSHO_NAME, n, f"han が、han_tokoro のページの原典の文字に無い（{han}）")]
+    return []
 
 
 def table_range(inp, bubun_rows, hyo):
@@ -585,6 +600,11 @@ def check_bubun(inp, rows, bunsho_names):
             out.append(Mondai(BUBUN_NAME, g, f"列の行で、jun が1からの整数でない（{r['jun']}）"))
         if r["shu"] != RETSU and r["jun"]:
             out.append(Mondai(BUBUN_NAME, g, f"列でない行に jun がある（{r['jun']}）"))
+        if r["matome"].strip():
+            if r["shu"] != RETSU:
+                out.append(Mondai(BUBUN_NAME, g, f"列でない行に matome がある（{r['matome']}）"))
+            elif bunsho_of(t) == b and page_no(t) is not None and not on_page(inp, r["matome"], t):
+                out.append(Mondai(BUBUN_NAME, g, f"matome が、tokoro のページの原典の文字に無い（{r['matome']}）"))
     out += check_tables(inp, rows, index)
     return out, index
 
