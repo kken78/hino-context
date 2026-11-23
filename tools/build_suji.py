@@ -18,7 +18,7 @@
   (e) docs/design.md 3節の表と、このツールが合わない（design_problems。次の6つ）
       - データの側が返す印（suji.KANKEI）に、1つ目の表の行が無い
       - 1つ目の表の左の列が、SCHEMA.md にある列（suji.py の列の並び）か印でない
-      - このツールが引く鍵が表に無い。表にあって、このツールが引かない行がある
+      - このツールが引く鍵が表に無い。表にあって、ページを作るツール（PAGE_TOOLS）のどれも引かない行がある
       - D.bun に渡す名前と、文の中の {名前} が合わない
       - このツールの中に、表の画面の言葉と文（4字以上のもの）が書かれている（1つ目の表の左の列の字は鍵として除く）
       - 呼び出しの鍵が、字のままでない（検査できない）
@@ -70,7 +70,10 @@ KANKEI_NASHI = "無し"
 KATACHI = {"shiryo が発言": ("shiryo",),
            "shiryo が計画・町の資料": ("shiryo",),
            "文書の部分（bubun・retsu から親をたどった並び）": ("bubun", "retsu"),
-           "bubun が空": ("bubun",)}
+           "bubun が空": ("bubun",),
+           "同じ定義の数値がある、ほかの文書": ("suji", "shiryo")}
+# docs/design.md 3節の表を引く、ページを作るツール。表の行は、このどれかが引いていればよい
+PAGE_TOOLS = ("build_suji.py", "build_hyo.py")
 
 
 class Design:
@@ -175,11 +178,28 @@ def scan_calls(src):
     return k1, k2, bad
 
 
-def design_problems(d, src=None):
-    """docs/design.md 3節の表と、このツールが合うか。→ 問題の並び（字）。"""
+def tool_sources(path):
+    """PAGE_TOOLS のうち、path でないツールの文の並び。ファイルが無いツールは除く。"""
+    out = []
+    for name in PAGE_TOOLS:
+        p = os.path.join(HERE, name)
+        if os.path.abspath(p) != os.path.abspath(path) and os.path.exists(p):
+            with open(p, encoding="utf-8") as f:
+                out.append(f.read())
+    return out
+
+
+def design_problems(d, src=None, path=SRC_PATH, others=None):
+    """docs/design.md 3節の表と、ツール（path。src はその文）が合うか。→ 問題の並び。
+
+    表にあって引いていない行は、ページを作るツール（PAGE_TOOLS）のどれも引いていない行だけを出す。
+    others は、ほかのツールの文の並び。None なら PAGE_TOOLS のファイルを読む。
+    """
     if src is None:
-        with open(SRC_PATH, encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             src = f.read()
+    if others is None:
+        others = tool_sources(path)
     out = []
     for k in sj.KANKEI:
         if f"時点の関係 {k}" not in d.h1:
@@ -187,11 +207,16 @@ def design_problems(d, src=None):
     for key in d.h1:
         out += hidari_problems(key)
     k1, k2, bad = scan_calls(src)
+    all1, all2 = set(k1), set(k2)
+    for o in others:
+        o1, o2, _ = scan_calls(o)
+        all1 |= o1
+        all2 |= set(o2)
     out += [f"このツールの {n} 行目：鍵が字のままでない" for n in bad]
     out += [f"このツールが引く鍵「{k}」が、1つ目の表に無い" for k in sorted(k1 - set(d.h1))]
-    out += [f"1つ目の表の行「{k}」を、このツールが引いていない" for k in d.h1 if k not in k1]
+    out += [f"1つ目の表の行「{k}」を、ページを作るツールのどれも引いていない" for k in d.h1 if k not in all1]
     out += [f"このツールが引く鍵「{k}」が、2つ目の表に無い" for k in sorted(set(k2) - set(d.h2))]
-    out += [f"2つ目の表の行「{k}」を、このツールが引いていない" for k in d.h2 if k not in k2]
+    out += [f"2つ目の表の行「{k}」を、ページを作るツールのどれも引いていない" for k in d.h2 if k not in all2]
     for k, uses in k2.items():
         if k in d.h2:
             want = _names(d.h2[k])

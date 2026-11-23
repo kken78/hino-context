@@ -6,6 +6,8 @@
   3. 数値の表と、文書の表・文書の部分の表の検査（tools/suji.py）
   4. 試作のページの作成（tools/build_note.py hoiku）
   5. 数値のページの作成（tools/build_suji.py taiki）
+  6. 資料の表のページの作成（tools/build_hyo.py pt:youho/honpen 4）
+  7. 資料の表のページの作成（tools/build_hyo.py pt:kodomo/honpen 4）
 
 使い方：
   python3 -B tools/kensa.py
@@ -26,6 +28,9 @@ STEPS = [
     ("表の検査", PY + [os.path.join(TOOLS, "suji.py")]),
     ("試作のページの作成", PY + [os.path.join(TOOLS, "build_note.py"), "hoiku"]),
     ("数値のページの作成", PY + [os.path.join(TOOLS, "build_suji.py"), "taiki"]),
+    ("資料の表のページの作成（再編整備計画の表4）", PY + [os.path.join(TOOLS, "build_hyo.py"), "pt:youho/honpen", "4"]),
+    ("資料の表のページの作成（子ども・子育て支援事業計画の表4）",
+     PY + [os.path.join(TOOLS, "build_hyo.py"), "pt:kodomo/honpen", "4"]),
 ]
 
 
