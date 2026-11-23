@@ -49,6 +49,8 @@ RE_SUJI = re.compile(r"[▲△\-−]?[0-9](?:[0-9,.]*[0-9])?")
 
 # 依頼者が PDF で数値を確認した記録（SCHEMA.md §6.3）。chu にこの字が要る行がある。
 RE_KAKUNIN = re.compile(r"依頼者が PDF で確認（([0-9]{4}-[0-9]{2}-[0-9]{2})）")
+# 生成AIの2者が、画像から別々に読んで一致した記録（SCHEMA.md §6.3）。inyo が空の行は、どちらかの記録が要る。
+RE_NISHA = re.compile(r"2者が画像で確認（([0-9]{4}-[0-9]{2}-[0-9]{2})）")
 KOHO = "koho"   # hino-town-docs の sources.tsv の category。広報ひの
 KEIKAKU = "keikaku"   # 計画ライブラリの文書（pt・plan の鍵）の shurui（SCHEMA.md §7.1）
 
@@ -143,6 +145,11 @@ def has_kakunin(chu):
     return any(is_ymd(d) for d in RE_KAKUNIN.findall(chu or ""))
 
 
+def has_nisha(chu):
+    """chu に「2者が画像で確認（YYYY-MM-DD）」があり、日付の形が合っているか。"""
+    return any(is_ymd(d) for d in RE_NISHA.findall(chu or ""))
+
+
 def is_koho(inp, shiryo):
     """shiryo が、広報ひの（sources.tsv の category が koho）の資料か。鍵の形が違う行・doc でない行は False。"""
     try:
@@ -155,16 +162,26 @@ def is_koho(inp, shiryo):
 
 
 def check_kakunin(inp, rows):
-    """「数値がある」の行で、広報ひのを出典にした行と、inyo が空の行に、確認の記録があるか（SCHEMA.md §6.4）。"""
+    """「数値がある」の行で、広報ひのを出典にした行と、inyo が空の行に、確認の記録があるか（SCHEMA.md §6.4）。
+
+    広報ひのは、依頼者の確認だけを認める。inyo が空の行は、依頼者の確認か、2者が画像で確認した記録のどちらかを認める。
+    """
     out = []
     for r in rows:
         if r["jotai"] != ARU or has_kakunin(r["chu"]):
             continue
+        koho = is_koho(inp, r["shiryo"])
         if not r["inyo"].strip():
-            if r["chu"].strip():      # chu が空の行は、check_atai が「理由が無い」として出す
+            if not r["chu"].strip():      # chu が空の行は、check_atai が「理由が無い」として出す
+                continue
+            if koho:                      # 広報ひのは、依頼者の確認だけを認める
                 out.append(Mondai(ATAI_NAME, r["_gyo"],
-                                  "「数値がある」の行で、inyo が空なのに、chu に「依頼者が PDF で確認（YYYY-MM-DD）」が無い"))
-        elif is_koho(inp, r["shiryo"]):
+                                  "広報ひのを出典にした「数値がある」の行で、chu に「依頼者が PDF で確認（YYYY-MM-DD）」が無い"))
+            elif not has_nisha(r["chu"]):
+                out.append(Mondai(ATAI_NAME, r["_gyo"],
+                                  "「数値がある」の行で、inyo が空なのに、chu に「依頼者が PDF で確認（YYYY-MM-DD）」と"
+                                  "「2者が画像で確認（YYYY-MM-DD）」のどちらも無い"))
+        elif koho:
             out.append(Mondai(ATAI_NAME, r["_gyo"],
                               "広報ひのを出典にした「数値がある」の行で、chu に「依頼者が PDF で確認（YYYY-MM-DD）」が無い"))
     return out

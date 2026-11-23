@@ -155,6 +155,25 @@ class TestAtai(unittest.TestCase):
         self.assertEqual(run(atai=[atai_row(jotai=suji.SETSUMEI, atai="", shiryo="doc:koho-1/1",
                                             inyo="開園時期")], inp=inp), [])
 
+    def test_nisha(self):
+        # inyo が空の行は、2者が画像で確認した記録でも通る（SCHEMA.md §6.3・§6.4）
+        ng = ("「数値がある」の行で、inyo が空なのに、chu に「依頼者が PDF で確認（YYYY-MM-DD）」と"
+              "「2者が画像で確認（YYYY-MM-DD）」のどちらも無い")
+        row = dict(shiryo="plan:sougou", inyo="")
+        self.assertEqual(run(atai=[atai_row(chu="図の中の数値。2者が画像で確認（2026-11-23）", **row)]), [])
+        self.assertEqual(run(atai=[atai_row(chu="図の中の数値。PDF で未確認", **row)]), [ng])
+        # 日付の形が違う記録は、無いものとする
+        self.assertEqual(run(atai=[atai_row(chu="2者が画像で確認（2026-13-40）", **row)]), [ng])
+        # 広報ひのは、依頼者の確認だけを認める（inyo がある行も、空の行も）
+        inp = fake()
+        inp._docs["koho-1"] = {"id": "koho-1", "category": "koho", "title": "広報", "url": "https://example.jp/k.pdf",
+                               "archive_url": ""}
+        inp._doc_texts[("koho-1", "text")] = "開園時期：令和11年４月（予定）"
+        ng_koho = "広報ひのを出典にした「数値がある」の行で、chu に「依頼者が PDF で確認（YYYY-MM-DD）」が無い"
+        koho = dict(atai="令和11年4月", shiryo="doc:koho-1/1", chu="2者が画像で確認（2026-11-23）")
+        self.assertEqual(run(atai=[atai_row(inyo="開園時期：令和11年４月（予定）", **koho)], inp=inp), [ng_koho])
+        self.assertEqual(run(atai=[atai_row(inyo="", **koho)], inp=inp), [ng_koho])
+
     def test_hatsugen_bun(self):
         # 発言を出典にした行の inyo は、文の頭から「。」まで（SCHEMA.md §6.2・§6.4）
         ng = "発言を出典にした行で、inyo が、文の頭から「。」までになっていない"
@@ -185,7 +204,8 @@ class TestAtai(unittest.TestCase):
         # 資料の本文が入力に無い行（plan:）は、inyo を空にでき、その場合は chu が必須
         ok = "総合計画の原文の文字が入力に無い。依頼者が PDF で確認（2026-11-20）"
         self.assertEqual(run(atai=[atai_row(shiryo="plan:sougou", inyo="", chu=ok)]), [])
-        ng = "「数値がある」の行で、inyo が空なのに、chu に「依頼者が PDF で確認（YYYY-MM-DD）」が無い"
+        ng = ("「数値がある」の行で、inyo が空なのに、chu に「依頼者が PDF で確認（YYYY-MM-DD）」と"
+              "「2者が画像で確認（YYYY-MM-DD）」のどちらも無い")
         self.assertEqual(run(atai=[atai_row(shiryo="plan:sougou", inyo="", chu="総合計画の原文の文字が入力に無い")]), [ng])
         # 日付の形が違う記録は、無いものとする
         self.assertEqual(run(atai=[atai_row(shiryo="plan:sougou", inyo="", chu="依頼者が PDF で確認（2026-13-40）")]), [ng])
