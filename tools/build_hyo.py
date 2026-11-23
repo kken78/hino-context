@@ -9,6 +9,8 @@
 欄の数値は、原典の文字（text_raw）の表の範囲の、行の見出しに続く数値から、列の jun の順で取る（SCHEMA.md §7.3）。
 数値の表に、その欄を指す行があれば、取った数値と atai が一致することを確認する。
 親の表か行の torikata が「読んだ」の表は、原典の文字から数えられないので、数値の表に行がある欄だけを出せる。
+表の torikata が「読んだ」の表は、原典の文字の表の範囲を使わない（表の題が行のあとに出るなど、範囲が決まらないため）。
+行は、文書の部分の表の番号の順に並べる。
 torikata が「読んだ」の表・行・列・見出しには、数値のページと同じ未確認の印を付け、表の下に決まった文を出す。
 画面に出す言葉は、docs/design.md 3節の2つの表から読む（tools/build_suji.py の read_design と同じ読み方）。
 
@@ -87,10 +89,12 @@ class Hyo:
         for r in tables["atai"]:
             if sj.bunsho_of(r["shiryo"]) == bkey and r["bubun"] in gn and r["retsu"] in rn:
                 self.atai.setdefault((r["bubun"], r["retsu"]), []).append(r)
-        lines, why = sj.table_range(inp, tables["bubun"], self.hyo)
-        if lines is None:
-            self.stop("(f) 表の範囲", why)
-            return
+        lines = None
+        if self.hyo["torikata"] != sj.YONDA:
+            lines, why = sj.table_range(inp, tables["bubun"], self.hyo)
+            if lines is None:
+                self.stop("(f) 表の範囲", why)
+                return
         self.cell, ichi = {}, {}
         self.n_moji = 0            # 原典の文字から取った欄の数
         for g in self.gyo:
@@ -127,9 +131,12 @@ class Hyo:
         return hits[0]
 
     def read_row(self, lines, g):
-        """torikata が「読んだ」の表か行：数値の表の行だけを使う。→ 行の位置。"""
+        """torikata が「読んだ」の表か行：数値の表の行だけを使う。→ 行の位置。
+
+        lines が None（表の torikata が「読んだ」）なら、文書の部分の表の番号を、行の位置とする。
+        """
         q = shogo.norm(g["name"])
-        at = [i for i, ln in enumerate(lines) if q and shogo.norm(ln).startswith(q)]
+        at = [int(g["n"])] if lines is None else [i for i, ln in enumerate(lines) if q and shogo.norm(ln).startswith(q)]
         if not at:
             self.stop("(f) 行", f"{sj.BUBUN_NAME} の {g['_gyo']} 行目：行の見出しが、表の範囲に無い（{g['name']}）")
         for c in self.retsu:
@@ -209,11 +216,16 @@ def hoka_bunsho(tables, h, bkey):
     return out
 
 
-def render(D, inp, tables, h, bkey, today):
-    b, hyo = h.bunsho, h.hyo
+def kakko_ji(D, b):
+    """文書の表の行 → 文書の名前のあとの括弧の中。han があれば han と hiduke、無ければ hiduke だけ（docs/design.md 3節）。"""
     D.dasanai("文書の表 han")
     hi = hiduke_ji(D, b["hiduke"])
-    kakko = f"{S(b['han'])}、{E(hi)}" if b["han"] else E(hi)
+    return f"{S(b['han'])}、{E(hi)}" if b["han"] else E(hi)
+
+
+def render(D, inp, tables, h, bkey, today):
+    b, hyo = h.bunsho, h.hyo
+    kakko = kakko_ji(D, b)
     page = D.bun("page", n=sj.page_no(hyo["tokoro"]))
     o = [f"<p class=s>{E(D.bun('atama-hyo'))}</p>",
          f"<h1>{midashi_ji(D, hyo)}</h1>",
@@ -240,7 +252,7 @@ def render(D, inp, tables, h, bkey, today):
         li = []
         for k in sorted(hoka, key=lambda k: (by[k]["hiduke"] or "9999", k)):
             pp = "、".join(str(p) for p in sorted(hoka[k]))
-            li.append(f"<li>{S(by[k]['namae'])}（{E(hiduke_ji(D, by[k]['hiduke']))}）"
+            li.append(f"<li>{S(by[k]['namae'])}（{kakko_ji(D, by[k])}）"
                       + (f"　{E(D.bun('page', n=pp))}" if pp else "") + "</li>")
         o.append(f"<h2>{E(D.bun('midashi-onaji'))}</h2>\n<ul>\n" + "\n".join(li) + "\n</ul>")
     o.append(f"<h2>{E(D.bun('midashi-owari'))}</h2><p class=s>{E(D.bun('owari-hyo'))}"

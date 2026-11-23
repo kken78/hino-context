@@ -90,3 +90,35 @@ doc:shingi-youho-teigen	13	4	列	③育児休業中の者	doc:shingi-youho-teige
 doc:shingi-youho-teigen	14	4	列	小計①＋②＋③	doc:shingi-youho-teigen/11	4	待機児童から除かれる者	機械	原典の文字では「小計」と「①＋②＋③」の2行に分かれている。name は2行をつないだ字
 doc:shingi-youho-teigen	15	4	列	待機児童数	doc:shingi-youho-teigen/11	5		読んだ	原典の文字では、①の列の見出しより前に出るので、列の順の検査を通らない。何番目の数値の列かは、text_raw の見出しの並び（待機児童から除かれる者、待機児童数、①、②、③、小計）と、一部改正の版の表の列の並びを読んで決めた。PDF では確認していない
 doc:shingi-youho-teigen	16	3	表	◆滋賀県内の待機児童数の推移（令和５年４月１日）	doc:shingi-youho-teigen/11			機械	日野町の待機児童数の推移の表（4）の範囲を、この表の題の前までにするために入れた。この表の行と列は入れていない
+doc:jigyo-shinkodomoen-kousou	1		見出し	第２章 幼児教育保育施設の現状と課題、今後の見通し	doc:jigyo-shinkodomoen-kousou/13			機械	
+doc:jigyo-shinkodomoen-kousou	2	1	見出し	１. 本町の幼児教育保育施設の現状と課題	doc:jigyo-shinkodomoen-kousou/13			機械	
+doc:jigyo-shinkodomoen-kousou	3	2	見出し	(5) 待機児童の状況	doc:jigyo-shinkodomoen-kousou/18			機械	
+doc:jigyo-shinkodomoen-kousou	4	3	表	■日野町の待機児童数の推移■	doc:jigyo-shinkodomoen-kousou/18			読んだ	原典の文字（text_raw）では、表の題がページの最後の行にあり、表の行と列はその前に出る。行と列と欄の数値は、2者が画像で読み、一致した（2026-11-23）
+doc:jigyo-shinkodomoen-kousou	5	4	行	待機児童数（人）	doc:jigyo-shinkodomoen-kousou/18			読んだ	原典の文字（text_raw）では、行の見出しが数値のあとに出る
+doc:jigyo-shinkodomoen-kousou	6	4	行	うち0歳児	doc:jigyo-shinkodomoen-kousou/18			読んだ	
+doc:jigyo-shinkodomoen-kousou	7	4	行	うち1歳児	doc:jigyo-shinkodomoen-kousou/18			読んだ	
+doc:jigyo-shinkodomoen-kousou	8	4	行	うち2歳児	doc:jigyo-shinkodomoen-kousou/18			読んだ	
+doc:jigyo-shinkodomoen-kousou	9	4	行	うち3歳児	doc:jigyo-shinkodomoen-kousou/18			読んだ	
+doc:jigyo-shinkodomoen-kousou	10	4	行	うち4歳児	doc:jigyo-shinkodomoen-kousou/18			読んだ	
+doc:jigyo-shinkodomoen-kousou	11	4	行	うち5歳児	doc:jigyo-shinkodomoen-kousou/18			読んだ	
+doc:jigyo-shinkodomoen-kousou	12	4	列	2021年（R3）	doc:jigyo-shinkodomoen-kousou/18	1		読んだ	原典の文字では「2021年」と「（R3）」の2行に分かれている
+doc:jigyo-shinkodomoen-kousou	13	4	列	2022年（R4）	doc:jigyo-shinkodomoen-kousou/18	2		読んだ	原典の文字では「2022年」と「（R4）」の2行に分かれている。原典の文字の括弧の中は「（Ｒ4）」
+doc:jigyo-shinkodomoen-kousou	14	4	列	2023年（R5）	doc:jigyo-shinkodomoen-kousou/18	3		読んだ	原典の文字では「2023年」と「（R5）」の2行に分かれている
+doc:jigyo-shinkodomoen-kousou	15	4	列	2024年（R6）	doc:jigyo-shinkodomoen-kousou/18	4		読んだ	原典の文字では「2024年」と「（R6）」の2行に分かれている
+doc:jigyo-shinkodomoen-kousou	16	4	列	2025年（R7）	doc:jigyo-shinkodomoen-kousou/18	5		読んだ	原典の文字では「2025年」と「（R7）」の2行に分かれている
+pt:kodomo/honpen	34		見出し	第２章 子ども・子育てを取り巻く現状と課題	pt:kodomo/honpen/10			機械	
+pt:kodomo/honpen	35	34	見出し	２ 教育・保育の状況	pt:kodomo/honpen/17			機械	
+pt:kodomo/honpen	36	35	見出し	（１）年度当初の保育所・幼稚園等の状況	pt:kodomo/honpen/17			機械	
+pt:kodomo/honpen	37	36	表	待機児童数	pt:kodomo/honpen/19			読んだ	原典の文字（text_raw）では、表の題がページの最後の行にあり、表の行と列はその前に出る。行と列と欄の数値は、2者が画像で読み、一致した（2026-11-23）
+pt:kodomo/honpen	38	37	行	待機児童数（人）	pt:kodomo/honpen/19			読んだ	原典の文字（text_raw）では、行の見出しが数値のあとに出る
+pt:kodomo/honpen	39	37	行	うち０歳児	pt:kodomo/honpen/19			読んだ	
+pt:kodomo/honpen	40	37	行	うち１歳児	pt:kodomo/honpen/19			読んだ	
+pt:kodomo/honpen	41	37	行	うち２歳児	pt:kodomo/honpen/19			読んだ	
+pt:kodomo/honpen	42	37	行	うち３歳児	pt:kodomo/honpen/19			読んだ	
+pt:kodomo/honpen	43	37	行	うち４歳児	pt:kodomo/honpen/19			読んだ	
+pt:kodomo/honpen	44	37	行	うち５歳児	pt:kodomo/honpen/19			読んだ	
+pt:kodomo/honpen	45	37	列	2020年度（R2）	pt:kodomo/honpen/19	1		読んだ	原典の文字では「2020年度（」と「R2）」の2行に分かれている
+pt:kodomo/honpen	46	37	列	2021年度（R3）	pt:kodomo/honpen/19	2		読んだ	原典の文字では「2021年度（」と「R3）」の2行に分かれている
+pt:kodomo/honpen	47	37	列	2022年度（R4）	pt:kodomo/honpen/19	3		読んだ	原典の文字では「2022年度（」と「R4）」の2行に分かれている
+pt:kodomo/honpen	48	37	列	2023年度（R5）	pt:kodomo/honpen/19	4		読んだ	原典の文字では「2023年度（」と「R5）」の2行に分かれている
+pt:kodomo/honpen	49	37	列	2024年度（R6）	pt:kodomo/honpen/19	5		読んだ	原典の文字では「2024年度（」と「R6）」の2行に分かれている
