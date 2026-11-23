@@ -8,6 +8,8 @@
   5. 数値のページの作成（tools/build_suji.py taiki）
   6. 資料の表のページの作成（tools/build_hyo.py pt:youho/honpen 4）
   7. 資料の表のページの作成（tools/build_hyo.py pt:kodomo/honpen 4）
+  8. 資料の表のページの作成（tools/build_hyo.py pt:youho/honpen-202503 6）
+  9. 資料の表のページの作成（tools/build_hyo.py doc:shingi-youho-teigen 4）
 
 使い方：
   python3 -B tools/kensa.py
@@ -31,6 +33,10 @@ STEPS = [
     ("資料の表のページの作成（再編整備計画の表4）", PY + [os.path.join(TOOLS, "build_hyo.py"), "pt:youho/honpen", "4"]),
     ("資料の表のページの作成（子ども・子育て支援事業計画の表4）",
      PY + [os.path.join(TOOLS, "build_hyo.py"), "pt:kodomo/honpen", "4"]),
+    ("資料の表のページの作成（再編整備計画 令和7年3月の版の表6）",
+     PY + [os.path.join(TOOLS, "build_hyo.py"), "pt:youho/honpen-202503", "6"]),
+    ("資料の表のページの作成（懇話会の提言の表4）",
+     PY + [os.path.join(TOOLS, "build_hyo.py"), "doc:shingi-youho-teigen", "4"]),
 ]
 
 
