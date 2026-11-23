@@ -11,7 +11,8 @@
 親の表か行の torikata が「読んだ」の表は、原典の文字から数えられないので、数値の表に行がある欄だけを出せる。
 表の torikata が「読んだ」の表は、原典の文字の表の範囲を使わない（表の題が行のあとに出るなど、範囲が決まらないため）。
 行は、文書の部分の表の番号の順に並べる。
-torikata が「読んだ」の表・行・列・見出しには、数値のページと同じ未確認の印を付け、表の下に決まった文を出す。
+torikata が「読んだ」で、chu に確認の記録が無い表・行・列・見出しには、数値のページと同じ未確認の印を付け、表の下に決まった文を出す
+（判定は tools/suji.py の mikakunin）。
 画面に出す言葉は、docs/design.md 3節の2つの表から読む（tools/build_suji.py の read_design と同じ読み方）。
 
 作る前の検査（1つでも当たれば、件数と該当行を示して、ページを作らずに止まる。終了コード 1）：
@@ -176,9 +177,9 @@ def hiduke_ji(D, h):
 
 
 def midashi_ji(D, r):
-    """文書の部分の行 → 画面に出す見出し。torikata が「読んだ」の部分には、未確認の印を付ける。"""
-    if r["torikata"] == sj.YONDA:
-        return S(r["name"]) + E(D.kotoba("文書の部分の表 torikata が「読んだ」"))
+    """文書の部分の行 → 画面に出す見出し。torikata が「読んだ」で、chu に確認の記録が無い部分には、未確認の印を付ける。"""
+    if sj.mikakunin(r):
+        return S(r["name"]) + E(D.kotoba("文書の部分の表 torikata が「読んだ」で、chu に確認の記録が無い"))
     return S(r["name"])
 
 
@@ -238,7 +239,7 @@ def render(D, inp, tables, h, bkey, today):
         tds = "".join(f"<td>{S(h.cell[(g['n'], c['n'])])}</td>" for c in h.retsu)
         rows.append(f"<tr><th class=g>{midashi_ji(D, g)}</th>{tds}</tr>")
     o.append(f"<table>\n<thead>{thead(D, h.retsu)}</thead>\n<tbody>\n" + "\n".join(rows) + "\n</tbody>\n</table>")
-    if any(x["torikata"] == sj.YONDA for x in [hyo] + mi + h.gyo + h.retsu):
+    if any(sj.mikakunin(x) for x in [hyo] + mi + h.gyo + h.retsu):
         o.append(f"<p class=s>{E(D.bun('mikakunin-hyo'))}</p>")
     url = keys.source_url(inp, hyo["tokoro"])
     o.append(f"<p><a href='{E(url)}'>{E(D.bun('link'))}</a></p>" if url else f"<p>{E(D.bun('link-nashi'))}</p>")

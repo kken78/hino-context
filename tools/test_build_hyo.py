@@ -94,7 +94,7 @@ def body_rows(page):
 
 
 D = bs.read_design()
-YONDA = D.kotoba("文書の部分の表 torikata が「読んだ」")
+YONDA = D.kotoba("文書の部分の表 torikata が「読んだ」で、chu に確認の記録が無い")
 
 
 def marks(page):
@@ -249,6 +249,35 @@ class TestFake(unittest.TestCase):
         self.assertEqual(marks(page), 2)
         self.assertIn(D.bun("mikakunin-hyo"), page)
 
+    def test_kakunin_ari(self):
+        # torikata が「読んだ」で、chu に「2者が画像で確認（2026-11-23）」がある行は、印が付かない（SCHEMA.md §7.2）
+        rows = change(bubun_rows(), "6", torikata="読んだ", chu="2者が画像で確認（2026-11-23）")
+        page, _ = self.build(tables(bubun=rows))
+        self.assertIn("<th>①求職</th><th>②特定</th>", page)
+        self.assertEqual(marks(page), 0)
+        self.assertNotIn(D.bun("mikakunin-hyo"), page)
+        # 注のあとに記録を足した行も、印が付かない
+        rows = change(bubun_rows(), "6", torikata="読んだ", chu="原典の文字では2行に分かれている。2者が画像で確認（2026-11-23）")
+        page, _ = self.build(tables(bubun=rows))
+        self.assertEqual(marks(page), 0)
+
+    def test_kakunin_nashi(self):
+        # torikata が「読んだ」で、chu に記録が無い行は、印が付く
+        for chu in ("", "原典の文字では2行に分かれている"):
+            with self.subTest(chu=chu):
+                page, _ = self.build(tables(bubun=change(bubun_rows(), "6", torikata="読んだ", chu=chu)))
+                self.assertIn(f"<th>①求職{YONDA}</th>", page)
+                self.assertEqual(marks(page), 1)
+                self.assertIn(D.bun("mikakunin-hyo"), page)
+
+    def test_kakunin_hiduke(self):
+        # 日付の形が違う記録は、記録が無いものとして、印が付く
+        rows = change(bubun_rows(), "6", torikata="読んだ", chu="2者が画像で確認（2026-13-40）")
+        page, _ = self.build(tables(bubun=rows))
+        self.assertIn(f"<th>①求職{YONDA}</th>", page)
+        self.assertEqual(marks(page), 1)
+        self.assertIn(D.bun("mikakunin-hyo"), page)
+
     def test_stop_word(self):
         d = copy.deepcopy(D)
         d.h2["atama-hyo"] = "資料の表の記載です。"
@@ -301,11 +330,11 @@ class TestReal(unittest.TestCase):
         self.assertEqual([g for g, _ in rows][0], "平成30年4月")
         self.assertEqual(rows[0][1], ["0", "0", "4", "4", "1"])
         self.assertEqual(rows[-1], ("令和7年4月", ["2", "2", "11", "15", "3"]))
-        self.assertIn(f"<th class=m colspan=4>待機児童数から除かれる者</th><th rowspan=2>待機児童数{YONDA}</th>", page)
-        # 「読んだ」の列は5つ（①、②、③、小計、待機児童数）。印は5つで、表の下に印の文
-        self.assertEqual(marks(page), 5)
-        self.assertIn(f"<th>③育児休業中の方{YONDA}</th><th>小計①+②+③{YONDA}</th>", page)
-        self.assertIn(D.bun("mikakunin-hyo"), page)
+        self.assertIn("<th class=m colspan=4>待機児童数から除かれる者</th><th rowspan=2>待機児童数</th>", page)
+        # 「読んだ」の列は5つ（①、②、③、小計、待機児童数）。どれも2者が画像で確認したので、印は無く、印の文も出さない
+        self.assertEqual(marks(page), 0)
+        self.assertIn("<th>③育児休業中の方</th><th>小計①+②+③</th>", page)
+        self.assertNotIn(D.bun("mikakunin-hyo"), page)
         self.assertIn(D.bun("owari-hyo"), page)
         self.assertIn("日野町幼児教育保育施設再編整備計画（令和８年６月一部改正、2026年6月）", page)
         self.assertTrue(page.startswith("<!DOCTYPE html>"))
@@ -331,10 +360,12 @@ class TestReal(unittest.TestCase):
                 page, info = self.build(bkey, n)
                 self.assertEqual((info["gyo"], info["retsu"], info["ran"], info["moji"], info["atai"]), (7, 5, 35, 0, 35))
                 rows = body_rows(page)
-                self.assertEqual(rows[0][0], f"待機児童数（人）{YONDA}")
+                # 表、行、列の13か所は、どれも2者が画像で確認したので、印は無く、印の文も出さない
+                self.assertEqual(rows[0][0], "待機児童数（人）")
                 self.assertEqual(len(rows), 7)
-                self.assertIn(f"<th>{hajime}{YONDA}</th>", page)
-                self.assertEqual(marks(page), 1 + 7 + 5)
+                self.assertIn(f"<th>{hajime}</th>", page)
+                self.assertEqual(marks(page), 0)
+                self.assertNotIn(D.bun("mikakunin-hyo"), page)
                 # 一覧の再編整備計画の2つの版は、版の表記で分かれる
                 self.assertIn("<li>日野町幼児教育保育施設再編整備計画（令和８年６月一部改正、2026年6月）", page)
                 self.assertIn("<li>日野町幼児教育保育施設再編整備計画（2025年3月）", page)

@@ -426,6 +426,17 @@ class TestBubun(unittest.TestCase):
         p, _ = run7(bubun=change(rows, "6", torikata="AI"))
         self.assertEqual(p, ["torikata が 機械・読んだ のどちらでもない（AI）"])
 
+    def test_kikai_kakunin(self):
+        """torikata が「機械」の行の chu に確認の記録があると止まる（SCHEMA.md §7.4）。日付の形が違う記録は、無いものとする。"""
+        rows = bubun_rows()
+        for chu in ("2者が画像で確認（2026-11-23）", "依頼者が PDF で確認（2026-11-23）", "注。2者が画像で確認（2026-11-23）"):
+            with self.subTest(chu=chu):
+                p, _ = run7(bubun=change(rows, "6", chu=chu))
+                self.assertEqual(p, ["torikata が「機械」の行の chu に、確認の記録がある"])
+        self.assertEqual(run7(bubun=change(rows, "6", chu="2者が画像で確認（2026-13-40）"))[0], [])
+        # 「読んだ」の行には書ける
+        self.assertEqual(run7(bubun=change(rows, "6", torikata="読んだ", chu="2者が画像で確認（2026-11-23）"))[0], [])
+
     def test_name_and_jun(self):
         rows = bubun_rows()
         p, _ = run7(bubun=change(rows, "1", name="第６章 量の見込み"))

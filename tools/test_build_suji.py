@@ -280,8 +280,10 @@ class TestReal(unittest.TestCase):
         self.assertNotIn("並べ方は、まだ決まっていません", page)
 
     def test_no_chu_of_bunsho_and_bubun(self):
-        # 文書の表と文書の部分の表の chu は、どのページにも出さない
+        # 文書の表と文書の部分の表の chu は、どのページにも出さない。数値の表の chu（確認の状態として出す）と
+        # 同じ字の chu（「2者が画像で確認（2026-11-23）」だけの chu など）は除く
         chus = {r["chu"] for r in self.tables["bunsho"] + self.tables["bubun"] if len(r["chu"]) >= 6}
+        chus -= {r["chu"] for r in self.tables["atai"]}
         for sid in ("taiki", "fusoku", "kakuho", "kaien"):
             page, _ = self.page(sid)
             with self.subTest(sid=sid):
