@@ -330,11 +330,11 @@ class TestReal(unittest.TestCase):
         self.assertEqual([g for g, _ in rows][0], "平成30年4月")
         self.assertEqual(rows[0][1], ["0", "0", "4", "4", "1"])
         self.assertEqual(rows[-1], ("令和7年4月", ["2", "2", "11", "15", "3"]))
-        self.assertIn(f"<th class=m colspan=4>待機児童数から除かれる者</th><th rowspan=2>待機児童数{YONDA}</th>", page)
-        # 「読んだ」の列は5つ（①、②、③、小計、待機児童数）。印は5つで、表の下に印の文
-        self.assertEqual(marks(page), 5)
-        self.assertIn(f"<th>③育児休業中の方{YONDA}</th><th>小計①+②+③{YONDA}</th>", page)
-        self.assertIn(D.bun("mikakunin-hyo"), page)
+        self.assertIn("<th class=m colspan=4>待機児童数から除かれる者</th><th rowspan=2>待機児童数</th>", page)
+        # 「読んだ」の列は5つ（①、②、③、小計、待機児童数）。どれも2者が画像で確認したので、印は無く、印の文も出さない
+        self.assertEqual(marks(page), 0)
+        self.assertIn("<th>③育児休業中の方</th><th>小計①+②+③</th>", page)
+        self.assertNotIn(D.bun("mikakunin-hyo"), page)
         self.assertIn(D.bun("owari-hyo"), page)
         self.assertIn("日野町幼児教育保育施設再編整備計画（令和８年６月一部改正、2026年6月）", page)
         self.assertTrue(page.startswith("<!DOCTYPE html>"))
@@ -360,10 +360,12 @@ class TestReal(unittest.TestCase):
                 page, info = self.build(bkey, n)
                 self.assertEqual((info["gyo"], info["retsu"], info["ran"], info["moji"], info["atai"]), (7, 5, 35, 0, 35))
                 rows = body_rows(page)
-                self.assertEqual(rows[0][0], f"待機児童数（人）{YONDA}")
+                # 表、行、列の13か所は、どれも2者が画像で確認したので、印は無く、印の文も出さない
+                self.assertEqual(rows[0][0], "待機児童数（人）")
                 self.assertEqual(len(rows), 7)
-                self.assertIn(f"<th>{hajime}{YONDA}</th>", page)
-                self.assertEqual(marks(page), 1 + 7 + 5)
+                self.assertIn(f"<th>{hajime}</th>", page)
+                self.assertEqual(marks(page), 0)
+                self.assertNotIn(D.bun("mikakunin-hyo"), page)
                 # 一覧の再編整備計画の2つの版は、版の表記で分かれる
                 self.assertIn("<li>日野町幼児教育保育施設再編整備計画（令和８年６月一部改正、2026年6月）", page)
                 self.assertIn("<li>日野町幼児教育保育施設再編整備計画（2025年3月）", page)
