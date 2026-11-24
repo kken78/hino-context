@@ -389,6 +389,10 @@ class TestReal(unittest.TestCase):
                                                    "<a href='#fa-shin-kodomoen'>新こども園</a>"), page)
         self.assertIn("<td>幼稚園</td><td>直営</td><td class=r>180</td><td class=r>69</td><td class=r>大窪331番地</td>",
                       page)
+        # nendo が空の数値（所在地）は、時期の括弧を出さない。nendo がある数値（定員）は出す
+        self.assertNotIn("の広報ひの）", page)
+        self.assertIn("所在地は、広報ひの 2024年10月号", page)
+        self.assertIn("（令和7年4月1日現在）", page)
 
 
 if __name__ == "__main__":

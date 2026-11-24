@@ -302,12 +302,16 @@ class Page:
                 if sid != t["id"]:
                     continue
                 for r in rs:
-                    moto.setdefault((sj.bunsho_of(r["shiryo"]) or r["shiryo"], r["jiten"]), set()).add(
+                    jiten = r["jiten"] if r["nendo"] else ""   # nendo が空の数値は、時期の括弧を出さない（docs/design.md 4節）
+                    moto.setdefault((sj.bunsho_of(r["shiryo"]) or r["shiryo"], jiten), set()).add(
                         sj.page_no(r["shiryo"]))
             for (b, jiten), pages in moto.items():
                 pp = "、".join(str(p) for p in sorted(p for p in pages if p))
                 shiryo = self.n.bunsho(b) + (f"　{E(D.bun('page', n=pp))}" if pp else "")
-                setsumei.append(D.bun("theme-suji", name=E(t["name"]), shiryo=shiryo, jiten=S(jiten)))
+                if jiten:
+                    setsumei.append(D.bun("theme-suji", name=E(t["name"]), shiryo=shiryo, jiten=S(jiten)))
+                else:
+                    setsumei.append(D.bun("theme-suji-jiki-nashi", name=E(t["name"]), shiryo=shiryo))
         unei = E(D.kotoba("施設の記録 aspect が「運営」"))
         if any(h.unei.values()):
             setsumei.append(D.bun("theme-unei", unei=unei))
