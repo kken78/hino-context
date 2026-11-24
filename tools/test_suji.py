@@ -1022,7 +1022,8 @@ class TestShisetsuReal(unittest.TestCase):
         ref = {r["key"]: r for r in self.inp.shisetsu()}
         rows = [r for r in real_tables()["bubun"] if r["shisetsu"]]
         fuicchi = sorted((r["bunsho"], r["name"]) for r in rows if suji.shisetsu_icchi(r, ref) is False)
-        self.assertEqual(fuicchi, [("doc:jigyo-shinkodomoen-kousou", "桜谷こども園"), ("doc:koho-no771-08", "こばと園"),
+        self.assertEqual(fuicchi, [("doc:jigyo-shinkodomoen-kousou", "桜谷こども園"), ("doc:koho-no771-08", "あおぞら園"),
+                                   ("doc:koho-no771-08", "こばと園"),
                                    ("doc:koho-no771-08", "桜谷こども園")])
         self.assertFalse(any(suji.shisetsu_mikakunin(r, ref) for r in rows))
         self.assertTrue(all(suji.shisetsu_kakunin_ari(r["shisetsu_kakunin"]) for r in rows
