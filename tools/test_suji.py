@@ -929,6 +929,55 @@ class TestShisetsuKakunin(unittest.TestCase):
         self.assertEqual(kazoe["shisetsu_icchi"], 1)
 
 
+class TestIchiShinai(unittest.TestCase):
+    """資料の間で数値が一致しないかの判定（SCHEMA.md §6.2）。施設が違う数値は比較しない。"""
+
+    K = "doc:k"
+    BUBUN = {(K, "1"): dict(shisetsu=""), (K, "2"): dict(shisetsu="fa:a"), (K, "3"): dict(shisetsu="fa:b"),
+             (K, "4"): dict(shisetsu="fa:a;fa:b"), (K, "5"): dict(shisetsu="fa:b;fa:a"), (K, "6"): dict(shisetsu="")}
+
+    def r(self, atai, bubun="1", retsu="", shurui="", shiryo="doc:k/1"):
+        return dict(atai=atai, bubun=bubun, retsu=retsu, shurui=shurui, jotai=suji.ARU, shiryo=shiryo)
+
+    def ichi(self, *rows):
+        return suji.ichi_shinai(list(rows), self.BUBUN)
+
+    def test_shisetsu_ga_chigau(self):
+        # 施設が違う2つの数値は、値が違っても不一致にならない（列の施設、行の施設のどちらでも）
+        self.assertFalse(self.ichi(self.r("180", "1", "2"), self.r("90", "1", "3")))
+        self.assertFalse(self.ichi(self.r("180", "2"), self.r("90", "3")))
+        # 施設がある数値と、施設が無い数値も比較しない
+        self.assertFalse(self.ichi(self.r("180", "1", "2"), self.r("90", "1", "6")))
+
+    def test_onaji_shisetsu(self):
+        # 同じ施設で値が違う2つの数値は不一致。鍵の並びの順は問わない
+        self.assertTrue(self.ichi(self.r("180", "1", "2"), self.r("90", "2")))
+        self.assertTrue(self.ichi(self.r("120", "1", "4"), self.r("90", "1", "5")))
+        self.assertFalse(self.ichi(self.r("120", "1", "4"), self.r("１２０", "1", "5")))
+
+    def test_shisetsu_nashi(self):
+        # 施設が無い数値は、これまでどおり比較する
+        self.assertTrue(self.ichi(self.r("3"), self.r("4", "6")))
+        self.assertFalse(self.ichi(self.r("3"), self.r("3", "6")))
+        self.assertTrue(self.ichi(self.r("3", shiryo="sp:0000004662_20190614_0094"), self.r("4")))
+        # 比較するのは shurui が空か「実績」の数値だけ
+        self.assertFalse(self.ichi(self.r("3"), self.r("4", shurui="目標")))
+        self.assertTrue(self.ichi(self.r("3"), self.r("4", shurui="実績")))
+
+    def test_jitsubutsu(self):
+        """実際の表：定員と園児在籍数は、同じ時点の10園の数値が一致しないとはしない。待機児童数は変わらない。"""
+        t = real_tables()
+        by = {(r["bunsho"], r["n"]): r for r in t["bubun"]}
+        for sid in ("teiin", "zaiseki"):
+            rows = [r for r in t["atai"] if r["suji"] == sid]
+            self.assertEqual(len(rows), 10)
+            self.assertEqual(len({suji.atai_shisetsu(r, by) for r in rows}), 10)
+            self.assertFalse(suji.ichi_shinai(rows, by), sid)
+        rows = [r for r in t["atai"] if r["suji"] == "taiki" and r["jiten"] == "令和7年4月" and r["kubun"] == ""]
+        self.assertEqual(suji.ichi_shinai(rows, by), len({r["atai"] for r in rows if r["jotai"] == suji.ARU
+                                                           and r["shurui"] in suji.HIKAKU_SHURUI}) > 1)
+
+
 class TestShisetsuReal(unittest.TestCase):
     """lock の版の hino-ronten の、施設の参照表と施設の記録（SCHEMA.md §1・§2）。"""
 

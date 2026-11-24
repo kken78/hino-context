@@ -759,6 +759,37 @@ def check_shisetsu(inp, rows):
     return out, kazoe
 
 
+# 資料の間で数値が一致しないかを比較する行の shurui（空か、資料の字の「実績」）
+HIKAKU_SHURUI = ("", "実績")
+
+
+def atai_shisetsu(r, bubun_by):
+    """数値の表の行 → その行が指す文書の部分（bubun の行と retsu の列）の shisetsu の鍵の並び（重なりを除き、並べ替えた tuple）。
+    bubun_by は (文書の鍵, 番号) → 文書の部分の行。shisetsu が無い行と、発言を指す行は、空の tuple（SCHEMA.md §6.2）。"""
+    b = bunsho_of(r["shiryo"]) if r["shiryo"].strip() else None
+    if b is None:
+        return ()
+    ks = []
+    for n in (r["bubun"], r["retsu"]):
+        x = bubun_by.get((b, n)) if n else None
+        if x:
+            ks += shisetsu_keys(x.get("shisetsu", ""))
+    return tuple(sorted(set(ks)))
+
+
+def ichi_shinai(rows, bubun_by):
+    """同じ定義・同じ時点の数値の行の並びで、資料の間で数値が一致しないか（SCHEMA.md §6.2）。
+
+    比較するのは「数値がある」で、shurui が空か「実績」の行。施設（atai_shisetsu）が同じ行どうしだけを比較する。
+    施設が無い行は、施設が無い行どうしで比較する。どれかの組で、atai の字（§3 の正規化のあと）が違えば True。
+    """
+    kumi = {}
+    for r in rows:
+        if r["jotai"] == ARU and r["shurui"].strip() in HIKAKU_SHURUI:
+            kumi.setdefault(atai_shisetsu(r, bubun_by), set()).add(shogo.norm(r["atai"]))
+    return any(len(v) > 1 for v in kumi.values())
+
+
 # ---------------------------------------------------------------- 文書どうしの関係（SCHEMA.md §7.6）
 
 def check_bunsho_kankei(inp, rows, bunsho_names):

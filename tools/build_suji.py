@@ -37,7 +37,6 @@ sys.path.insert(0, HERE)
 import build_note as bn  # noqa: E402
 import inputs  # noqa: E402
 import keys  # noqa: E402
-import shogo  # noqa: E402
 import suji as sj  # noqa: E402
 
 OUT_DIR = os.path.join(inputs.ROOT, "build", "suji")
@@ -272,8 +271,6 @@ def mondai_str(m):
 RIYU = ("nendo", "hiduke", "shiryo")
 # 列の順（docs/design.md 4節）
 KANKEI = (sj.KANKEI_ATO, sj.KANKEI_TOCHU, sj.KANKEI_MAE)
-# 一致しない数値を出すときに比較する行の shurui（空か、資料の字の「実績」）
-HIKAKU_SHURUI = ("", "実績")
 
 
 def riyu_of(r):
@@ -433,8 +430,9 @@ dt{color:#555;font-size:.85rem} dd{margin:0}
 
 
 class Page:
-    def __init__(self, D, teigi, entries):
+    def __init__(self, D, teigi, entries, index=None):
         self.D, self.t, self.es = D, teigi, entries
+        self.index = index or {}            # (文書の鍵, 番号) → 文書の部分の行。施設の判定に使う
         self.chigau = 0
         D.dasanai("時点の関係 無し")                          # 印が無い行は、表の列に入れない
         self.kotoba = {sj.KANKEI_ATO: D.kotoba("時点の関係 ato"),
@@ -459,11 +457,10 @@ class Page:
                 f"<p class=note>{E(D.bun('atama'))}{an}</p>\n<h2>{E(D.bun('midashi-teigi'))}</h2>\n<dl>{dl}</dl>\n")
 
     def cell_mae(self, es):
-        """mae の列の中身。shurui が空か「実績」の数値どうしで、字が違えば、一致していないことを書く。"""
+        """mae の列の中身。数値が一致しなければ（判定は tools/suji.py の ichi_shinai。施設が違う数値は比較しない）、
+        一致していないことを書く。"""
         h = "".join(e.chip() for e in es)
-        hikaku = {shogo.norm(e.r["atai"]) for e in es
-                  if e.r["jotai"] == sj.ARU and e.r["shurui"].strip() in HIKAKU_SHURUI}
-        if len(hikaku) > 1:
+        if sj.ichi_shinai([e.r for e in es], self.index):
             self.chigau += 1
             h += f"<div class=chigau>{E(self.D.bun('chigau'))}</div>"
         return h
@@ -654,7 +651,7 @@ def build(inp, tables, sid, kotoba, today, read_problems=(), design=None):
             problems.append(("(a) 表の検査", f"{sj.ATAI_NAME} の {e.gyo} 行目：shiryo の名前が作れない（{e.r['shiryo']}）"))
     if problems:
         raise Stop(problems)
-    p = Page(D, teigi, entries)
+    p = Page(D, teigi, entries, index)
     page = p.render(today)
     problems = bn.kotoba_problems(page, *kotoba)
     if problems:
