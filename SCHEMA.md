@@ -7,7 +7,9 @@
 - 5つの入力（hino-council-search・shiga-hino-plans・hino-town-docs・council-dashboard・hino-ronten）ごとに、コミットの SHA（40桁）と、読むファイルのパターン（files）を書く。`*` は1つの階層の中だけに当たる。
 - ツールは、読む前に、5つの入力の作業ツリーの HEAD が lock の SHA と同じかを確認する。違うとき、git のリポジトリでないとき、HEAD が取れないときは、読まずに止める。
 - 読むのは lock の SHA の、files に当たるファイルだけ（`git show <SHA>:<path>`）。入力の場所は、環境変数 `HINO_CONTEXT_INPUTS`（既定 `/tmp/inputs`。その下にリポジトリ名の4つ）と `HINO_CONTEXT_RONTEN`（既定 `/home/claude/hino-ronten`）で受ける。
-- hino-ronten から読むのは、題材の定義（ref/themes.tsv）、施設の参照表（ref/shisetsu.tsv）、事柄の記録（records/kotogara.tsv）、過程の記録（records/katei.tsv）、問いと事項の対応（records/taio.tsv）、施設の記録（records/shisetsu.tsv）である。records の4つの表は、status が confirmed の行だけを使う。ref の2つの表には status の列が無く、依頼者が決めた行だけが入っている（施設の参照表は 2026-10-27 と 2026-11-05 に依頼者が確定した。hino-ronten DESIGN.md ADR-23）。
+- hino-ronten から読むのは、題材の定義（ref/themes.tsv）、施設の参照表（ref/shisetsu.tsv）、系列の表（ref/lineage.tsv）、事柄の記録（records/kotogara.tsv）、過程の記録（records/katei.tsv）、問いと事項の対応（records/taio.tsv）、施設の記録（records/shisetsu.tsv）である。records の4つの表は、status が confirmed の行だけを使う。題材の定義と施設の参照表には status の列が無く、依頼者が決めた行だけが入っている（施設の参照表は 2026-10-27 と 2026-11-05 に依頼者が確定した。hino-ronten DESIGN.md ADR-23）。
+- 系列の表（ref/lineage.tsv。hino-ronten LINK_SCHEMA.md §8）にも status の列は無い。このリポジトリでは、題材の定義の kind「系列」の value（series）から、計画の鍵（plan の列。空の行は除く）を引くためだけに使う（7.7）。
+- 題材の定義は、画面では「テーマ」と書く（docs/design.md 2節）。この文書の 7.7 では、テーマの定義と書く。
 
 ## 2. 鍵
 
@@ -184,7 +186,7 @@
 - 画面で、種類（目標・実績など）をどう見せるかは、ページの構成を決めるときに決める。
 - 依頼者が確認したことは、いまは chu の字で持つ。当たる行が増えたら、確認した人と日の列を足すかを、比較して決める。
 
-## 7. オントロジー：文書と、文書の部分 `teigi/bunsho.tsv`・`teigi/bubun.tsv`・`teigi/bunsho-kankei.tsv`
+## 7. オントロジー：文書と、文書の部分 `teigi/bunsho.tsv`・`teigi/bubun.tsv`・`teigi/bunsho-kankei.tsv`・`teigi/theme.tsv`
 
 方針の文書の 4.2 の、物の種類「文書と、文書の部分」と、関係「文書が、事項について記す」を、表で持つ。数値の表（§6）の行は、「文書の部分が、定義について、ある時点の数値を記す」という関係を1つ書いたものとして扱い、引用の字とページだけでなく、文書の部分を指す（2026-11-21 の依頼者の決定）。
 
@@ -200,6 +202,10 @@
 | 答弁が、問いに答える | 表に書かない。ツールが、入力の質問の区切りの表から出す（7.3） |
 | 文書の部分が、施設について記す | 文書の部分の表の shisetsu（7.2）。施設は、hino-ronten の施設の参照表の鍵（§2 の fa）で指す |
 | 文書が、文書のもとになる | 文書どうしの関係の表の kara と e（7.6） |
+| 文書が、テーマについて説明する | テーマの表で shu が「説明の文」の行の theme と tokoro（7.7） |
+| 文書の表が、テーマの施設を並べる | テーマの表で shu が「施設の表」の行の theme と tokoro・hyo（7.7） |
+
+- テーマの範囲（テーマの施設と資料）は、hino-ronten のテーマの定義（ref/themes.tsv）から引き、このリポジトリには持たない。テーマの表（7.7）は、テーマの定義から引けない2つ（説明に使う資料の文と、施設の一覧に使う資料の表）だけを持つ。テーマの表にかかわる関係の図は 7.7 に書く。
 
 ```mermaid
 erDiagram
@@ -371,6 +377,9 @@ erDiagram
 - 施設（文書の部分の表の shisetsu）：shisetsu を「;」で区切った鍵が、どれも空でなく、施設の参照表（hino-ronten ref/shisetsu.tsv）の key にある。shisetsu がある行のうち、name が施設の name か aliases と一致する行と、一致しない行の数を出す（7.2 の判定の条件）。
 - 施設の確認の記録（文書の部分の表の shisetsu_kakunin）：shisetsu が空の行に、shisetsu_kakunin が書かれていない。name が施設の name か aliases と一致する行に、shisetsu_kakunin が書かれていない。shisetsu_kakunin を書いた行は、「依頼者が確認（YYYY-MM-DD）」か「2者の読みが一致（YYYY-MM-DD）」の形で、日付が正しい。一致しない行のうち、記録がある行と無い行（未確認の印を付ける行）の数を出す。
 - 文書どうしの関係の表（7.6）：kara と e が、文書の表にある。hyogen と inyo が空でない。tokoro が kara の文書のページの鍵で、inyo が tokoro のページの原典の文字にある（§3 の正規化）。hyogen が inyo の中にある（§3 の正規化）。
+- テーマの表（7.7）：theme が空でなく、テーマの定義に、その theme の kind「名前」の行がある。shu が「説明の文」か「施設の表」。jun が1からの整数で、同じ theme と shu の中で重ならない。tokoro が §2 の doc か pt のページの鍵で、その文書（ページを除いた部分）が文書の表にある。
+  - shu が「説明の文」の行：inyo が空でない。hyo が空。inyo が tokoro のページの原典の文字にある（§3 の正規化。文書どうしの関係の表の inyo と同じ照合）。tokoro が広報ひのの行は、chu に「依頼者が PDF で確認（YYYY-MM-DD）」があり、日付の形が合う（6.4 と同じ判定）。
+  - shu が「施設の表」の行：inyo が空。hyo が、tokoro の文書の、文書の部分の表の番号で、shu が「表」の行。その表の tokoro が、この行の tokoro と同じ。その表を親にする行か列のうち、shisetsu がある部分が1つ以上ある。テーマごとに、shu が「施設の表」の行は1つまで。
 
 ### 7.5 まだ決めていない点
 
@@ -397,7 +406,55 @@ erDiagram
 - 入れるのは、相手の文書（e）が、文書の表の1行に決まる文だけ。e をどう決めたかは chu に書く。
 - 検査は 7.4 に書く。
 
+### 7.7 テーマの表 `teigi/theme.tsv`
+
+テーマのページ（docs/design.md 4節）のうち、ほかの表から引けない2つを書く。テーマの説明に使う資料の文（説明の文）と、テーマの施設の一覧に使う資料の表（施設の表）である。テーマの範囲（テーマの名前、施設、資料）は、hino-ronten のテーマの定義（ref/themes.tsv）から引き、この表には書かない。
+
+| 列 | 中身 | 例 |
+| --- | --- | --- |
+| theme | テーマの鍵。hino-ronten のテーマの定義の theme | hoiku |
+| shu | 説明の文、施設の表 のどちらか | 施設の表 |
+| jun | 並べる順（1からの整数）。同じ theme と shu の中で重ならない | 1 |
+| inyo | shu が「説明の文」の行：資料の文。原典の字のまま。shu が「施設の表」の行：空 | （空） |
+| tokoro | ページの鍵（§2 の doc か pt）。shu が「説明の文」の行：inyo の字があるページ。shu が「施設の表」の行：表の題があるページ（文書の部分の表の、その表の tokoro と同じ） | `doc:jigyo-shinkodomoen-kousou/14` |
+| hyo | shu が「施設の表」の行：tokoro の文書の、文書の部分の表の番号（7.2）。shu が「説明の文」の行：空 | 18 |
+| chu | 注。広報ひのの文の確認の記録など。無ければ空 | （空） |
+
+- 説明の文は、こちらで書かない。資料の文を、そのまま持つ。どの資料のどの文を使うかは、依頼者が決める。
+- 広報ひの（hino-town-docs の sources.tsv で category が koho の資料）の文は、依頼者が PDF で確認してから入れ、chu に「依頼者が PDF で確認（YYYY-MM-DD）」と書く（6.3 と同じ書き方）。
+- 施設の表は、テーマごとに1つまで。表の行か列のうち、shisetsu（7.2）がある部分が、ページの施設の表の行になる。
+- 施設の表の行が tokoro と hyo の2つの列で表を指すのは、数値の表（6.2）が shiryo と bubun で文書の部分を指すのと同じ形にするためである。tokoro に `<文書の鍵>/<表の番号>` と書くと、§2 のページの鍵と区別できない。
+- テーマの名前と、テーマの施設と資料は、テーマの定義の kind「名前」「施設」「資料」「系列」の行から、ツールが引く。kind「系列」の value は、系列の表（ref/lineage.tsv）の series で、その行の plan の計画（`pt:<plan>/…` の文書）を、テーマの資料とする（§1）。
+
+```mermaid
+erDiagram
+  RONTEN_THEME ||--o{ THEME : "theme"
+  BUNSHO ||--o{ THEME : "説明の文"
+  BUBUN ||--o{ THEME : "施設の表"
+  THEME["テーマの表 theme.tsv"] {
+    string theme FK
+    string shu
+    int jun
+    string tokoro FK
+    int hyo FK
+  }
+  RONTEN_THEME["入力：テーマの定義"] {
+    string theme PK
+  }
+  BUNSHO["文書の表 bunsho.tsv"] {
+    string bunsho PK
+  }
+  BUBUN["文書の部分の表 bubun.tsv"] {
+    string bunsho PK, FK
+    int n PK
+  }
+```
+
+- 図は、7節の頭の図のうち、テーマの表にかかわる部分だけを書いたものである。テーマの定義（入力）は、テーマの表の theme の相手としてだけ書く。
+- 検査は 7.4 に書く。
+
 ## 8. まだ決めていない物
 
-- `teigi/` の表のうち、事項の種類・関係の表と、`taio/` の表（問いと事項の対応、事項ごとの記述）の形は、これから決める。セマンティック（数値の定義と数値）の表は §6、文書と、文書の部分の表は §7。
+- `teigi/` の表のうち、事項の種類・関係の表と、`taio/` の表（問いと事項の対応、事項ごとの記述）の形は、これから決める。セマンティック（数値の定義と数値）の表は §6、文書と、文書の部分の表、文書どうしの関係の表、テーマの表は §7。
+- テーマのページ（tools/build_theme.py）は、テーマの表（7.7）と hino-ronten のテーマの定義を使い、下の仮の表は使わない。
 - `teigi/note-hoiku.tsv` は、論点ノートの試作（幼保）のための仮の表。列は kind・key・name・short・setsumei。kind は テーマ（key はテーマの id、setsumei はテーマの説明）、論点（key はページの id、name は hino-ronten の事柄の名前、short は短い名前、setsumei は説明）、準備中（name だけ）、抜き出しの語（name に語。「今後検討・決定するとされていること」に抜き出す記述の語）、単位（key に資料の鍵の頭、name に単位。その資料の、数字だけの値に付ける単位。例 `doc:yosan-` の資料の値は千円）、注（引用した文だけでは数の意味を読み違えるおそれがある所に、作成者が補う説明。key に注を付ける記述の資料の鍵、name にその引用に含まれる字、short に注のもとの資料の鍵、setsumei に注の文。注の文の「」の中の字は、注のもとの資料の本文と照合する。注を付ける記述が見つからない、注のもとの資料が無い、「」の字が資料に無い、のどれかなら、ページを作らずに止まる。画面では「作成者の注」と書いて、引用と分けて出す）。
