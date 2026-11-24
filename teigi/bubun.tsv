@@ -155,3 +155,33 @@ doc:koho-no771-08	13	7	列	みらいしゃくなげ保育園	doc:koho-no771-08/2
 doc:koho-no771-08	14		表	認定こども園	doc:koho-no771-08/2					読んだ	表の題の字は、原典の文字に無い。name は、表を含む区分の見出しの字で、読んで決めた。原典の文字（text_raw）には、同じ字の行が2つある。
 doc:koho-no771-08	15	14	行	所在地	doc:koho-no771-08/2					読んだ	依頼者が PDF で確認（2026-11-24）
 doc:koho-no771-08	16	14	列	桜谷こども園	doc:koho-no771-08/2	1		fa:sakuradani-1;fa:sakuradani-2	依頼者が確認（2026-11-24）	読んだ	依頼者が PDF で確認（2026-11-24）
+pt:youho/honpen	20	15	見出し	３ 幼児教育保育施設の再編整備計画について	pt:youho/honpen/27					機械	
+pt:youho/honpen	21	20	表	〇町立幼児教育保育施設の再編整備について	pt:youho/honpen/27					読んだ	表の題は原典の文字にあるが、表の行と列の見出しと欄は、原典の文字（text と text_raw）に無い。行の見出しは、資料の表の「施設名」の列にある名前。行と列の見出しと欄は、2者が画像で読み、一致した（2026-11-25）。2者が画像で確認（2026-11-25）
+pt:youho/honpen	22	21	行	西大路幼稚園	pt:youho/honpen/27			fa:nishioji-yo		読んだ	2者が画像で確認（2026-11-25）
+pt:youho/honpen	23	21	行	こばと園	pt:youho/honpen/27			fa:kobato	2者の読みが一致（2026-11-25）	読んだ	2者が画像で確認（2026-11-25）
+pt:youho/honpen	24	21	行	あおぞら園 鎌掛分園	pt:youho/honpen/27			fa:kaneka	依頼者が確認（2026-11-25）	読んだ	1つの施設を指す（依頼者の説明）。依頼者が PDF で確認（2026-11-25）
+pt:youho/honpen	25	21	行	南比都佐幼稚園	pt:youho/honpen/27			fa:minamihizusa-yo		読んだ	2者が画像で確認（2026-11-25）
+pt:youho/honpen	26	21	行	あおぞら園	pt:youho/honpen/27			fa:aozora	2者の読みが一致（2026-11-25）	読んだ	2者が画像で確認（2026-11-25）
+pt:youho/honpen	27	21	行	日野幼稚園	pt:youho/honpen/27			fa:hino-yo		読んだ	2者が画像で確認（2026-11-25）
+pt:youho/honpen	28	21	行	必佐幼稚園	pt:youho/honpen/27			fa:hisa-yo		読んだ	2者が画像で確認（2026-11-25）
+pt:youho/honpen	29	21	行	桜谷こども園 第１園舎（旧幼稚園）	pt:youho/honpen/27			fa:sakuradani-1	2者の読みが一致（2026-11-25）	読んだ	2者が画像で確認（2026-11-25）
+pt:youho/honpen	30	21	行	桜谷こども園 第２園舎（旧保育所）	pt:youho/honpen/27			fa:sakuradani-2	2者の読みが一致（2026-11-25）	読んだ	2者が画像で確認（2026-11-25）
+pt:youho/honpen	31	21	列	延床面積（㎡）	pt:youho/honpen/27	1				読んだ	依頼者が PDF で確認（2026-11-25）
+pt:youho/honpen	32	21	列	整備方針	pt:youho/honpen/27	2				読んだ	2者が画像で確認（2026-11-25）
+pt:youho/honpen	33	21	列	形態	pt:youho/honpen/27	3				読んだ	2者が画像で確認（2026-11-25）
+pt:youho/honpen	34	21	列	整備後の施設（案）	pt:youho/honpen/27	4				読んだ	2者が画像で確認（2026-11-25）
+pt:youho/honpen-202503	19	1	見出し	３ 幼児教育保育施設の再編整備計画について	pt:youho/honpen-202503/27					機械	
+pt:youho/honpen-202503	20	19	表	〇町立幼児教育保育施設の再編整備について	pt:youho/honpen-202503/27					読んだ	表の題は原典の文字にあるが、表の行と列の見出しと欄は、原典の文字（text と text_raw）に無い。行の見出しは、資料の表の「施設名」の列にある名前。行と列の見出しと欄は、2者が画像で読み、一致した（2026-11-25）。2者が画像で確認（2026-11-25）
+pt:youho/honpen-202503	21	20	行	西大路幼稚園	pt:youho/honpen-202503/27			fa:nishioji-yo		読んだ	2者が画像で確認（2026-11-25）
+pt:youho/honpen-202503	22	20	行	こばと園	pt:youho/honpen-202503/27			fa:kobato	2者の読みが一致（2026-11-25）	読んだ	2者が画像で確認（2026-11-25）
+pt:youho/honpen-202503	23	20	行	あおぞら園 鎌掛分園	pt:youho/honpen-202503/27			fa:kaneka	依頼者が確認（2026-11-25）	読んだ	1つの施設を指す（依頼者の説明）。依頼者が PDF で確認（2026-11-25）
+pt:youho/honpen-202503	24	20	行	南比都佐幼稚園	pt:youho/honpen-202503/27			fa:minamihizusa-yo		読んだ	2者が画像で確認（2026-11-25）
+pt:youho/honpen-202503	25	20	行	あおぞら園	pt:youho/honpen-202503/27			fa:aozora	2者の読みが一致（2026-11-25）	読んだ	2者が画像で確認（2026-11-25）
+pt:youho/honpen-202503	26	20	行	日野幼稚園	pt:youho/honpen-202503/27			fa:hino-yo		読んだ	2者が画像で確認（2026-11-25）
+pt:youho/honpen-202503	27	20	行	必佐幼稚園	pt:youho/honpen-202503/27			fa:hisa-yo		読んだ	2者が画像で確認（2026-11-25）
+pt:youho/honpen-202503	28	20	行	桜谷こども園 第１園舎（旧幼稚園）	pt:youho/honpen-202503/27			fa:sakuradani-1	2者の読みが一致（2026-11-25）	読んだ	2者が画像で確認（2026-11-25）
+pt:youho/honpen-202503	29	20	行	桜谷こども園 第２園舎（旧保育所）	pt:youho/honpen-202503/27			fa:sakuradani-2	2者の読みが一致（2026-11-25）	読んだ	2者が画像で確認（2026-11-25）
+pt:youho/honpen-202503	30	20	列	延床面積（㎡）	pt:youho/honpen-202503/27	1				読んだ	依頼者が PDF で確認（2026-11-25）
+pt:youho/honpen-202503	31	20	列	整備方針	pt:youho/honpen-202503/27	2				読んだ	2者が画像で確認（2026-11-25）
+pt:youho/honpen-202503	32	20	列	形態	pt:youho/honpen-202503/27	3				読んだ	2者が画像で確認（2026-11-25）
+pt:youho/honpen-202503	33	20	列	整備後の施設（案）	pt:youho/honpen-202503/27	4				読んだ	2者が画像で確認（2026-11-25）

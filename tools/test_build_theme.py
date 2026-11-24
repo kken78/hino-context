@@ -133,10 +133,10 @@ def theme_rows(*extra):
     return [dict(theme="hoiku", shu="施設の表", jun="1", inyo="", tokoro=f"{KK}/2", hyo="1", chu="")] + list(extra)
 
 
-def tables(theme=None, bubun=None):
+def tables(theme=None, bubun=None, atai=None, teigi=()):
     s, p1 = suji.read_suji(tsv(suji.SUJI_COLUMNS, [dict(id="teiin", name="定員", nani="施設の定員", tani="人",
-                                                        kettei="案")]))
-    a, p2 = suji.read_atai(tsv(suji.ATAI_COLUMNS, atai_rows()))
+                                                        kettei="案")] + list(teigi)))
+    a, p2 = suji.read_atai(tsv(suji.ATAI_COLUMNS, atai if atai is not None else atai_rows()))
     b, p3 = suji.read_bunsho(tsv(suji.BUNSHO_COLUMNS, bunsho_rows()))
     c, p4 = suji.read_bubun(tsv(suji.BUBUN_COLUMNS, bubun if bubun is not None else bubun_rows()))
     k, p5 = suji.read_bunsho_kankei(tsv(suji.BUNSHO_KANKEI_COLUMNS, kankei_rows()))
@@ -203,6 +203,35 @@ class TestThemeCheck(unittest.TestCase):
         self.assertEqual(theme_check([r], bubun=bub), ["表（1）の行と列に、shisetsu がある部分が無い"])
         # inyo がある
         self.assertEqual(theme_check([dict(r, inyo="構想")]), ["「施設の表」の行に inyo がある"])
+
+
+# テーマの資料（広報ひの koho-1）の表。行が施設を指し、欄は文。見出しは原典の文字に無く、確認の記録がある
+IRAI = "依頼者が PDF で確認（2026-11-25）"
+
+
+def bubun_koho(**kw):
+    def b(n, oya, shu, name, jun="", shisetsu="", shisetsu_kakunin=""):
+        return dict(bunsho=KOHO, n=n, oya=oya, shu=shu, name=name, tokoro=f"{KOHO}/1", jun=jun, matome="",
+                    shisetsu=shisetsu, shisetsu_kakunin=shisetsu_kakunin, torikata="読んだ", chu=IRAI)
+    rows = [b("1", "", "表", "整備の表"),
+            b("2", "1", "行", "日野幼稚園", shisetsu="fa:hino-yo"),
+            b("3", "1", "行", "桜谷第１", shisetsu="fa:s1", shisetsu_kakunin="2者の読みが一致（2026-11-25）"),
+            b("4", "1", "列", "整備方針", "1"),
+            b("5", "1", "列", "形態", "2")]
+    return bubun_rows() + [dict(r, **kw.get(r["n"], {})) for r in rows]
+
+
+def atai_koho():
+    a = dict(suji="hoshin", kubun="", jiten="2026年7月の広報ひの", nendo="", atai="集約化", shurui="", jotai=suji.ARU,
+             shiryo=f"{KOHO}/1", inyo="", hani="", kakunin="2026-11-25", chu=IRAI, bubun="2", retsu="4")
+    return atai_rows() + [a, dict(a, suji="keitai", atai="こども園", retsu="5"),
+                          dict(a, bubun="3", atai="運営"), dict(a, suji="keitai", bubun="3", atai="こども園", retsu="5")]
+
+
+def tables_koho(**kw):
+    teigi = [dict(id="hoshin", name="整備方針", nani="施設ごとの整備方針", kettei="案"),
+             dict(id="keitai", name="形態", nani="施設ごとの形態", kettei="案")]
+    return tables(bubun=bubun_koho(**kw), atai=atai_koho(), teigi=teigi)
 
 
 class TestPage(unittest.TestCase):
@@ -291,6 +320,43 @@ class TestPage(unittest.TestCase):
         self.assertIn(D.bun("hyo-ni-nai", shisetsu="<a href='#fa-shin'>新こども園</a>"), page)
         # 施設ごとの記述は、表の施設が先
         self.assertLess(page.index("id='fa-s2'"), page.index("id='fa-shin'"))
+
+    def test_hyo_kijutsu(self):
+        # テーマの資料の文書の表の欄は、施設ごとの記述にだけ出し、施設の表には出さない（docs/design.md 4節）
+        page, info = self.build(t=tables_koho())
+        self.assertEqual(info["hyo_kijutsu"], 2)
+        head = (f"<thead><tr><th></th><th></th><th>{D.kotoba('施設の記録 aspect が「運営」')}</th>"
+                f"<th>{D.bun('retsu-tani', name='定員', tani='人')}</th></tr></thead>")
+        self.assertIn(head, page)
+        self.assertNotIn("<th>整備方針", page)
+        self.assertNotIn("整備方針は、", page)
+        # 施設の表の出力は、この表が無い場合と同じ
+        mae, _ = self.build()
+        s = page.index(f"<h2>{D.kotoba('テーマの表 shu が「施設の表」')}</h2>")
+        self.assertEqual(page[s:page.index("<h2>", s + 1)], mae[s:mae.index("<h2>", s + 1)])
+        # 施設ごとの記述：見出し、もとの資料、表の題、行の見出し、欄（列の見出し：内容）
+        midashi = f"<h4>{D.kotoba('文書の部分の表 shisetsu、oya')}</h4>"
+        self.assertEqual(page.count(midashi), 2)
+        ran = D.bun("hyo-kijutsu-ran", midashi="整備方針", atai="集約化") + "<br>" + D.bun(
+            "hyo-kijutsu-ran", midashi="形態", atai="こども園")
+        self.assertIn("<td><a href='https://example.jp/h.pdf#page=1'>広報ひの 2026年7月号「お知らせ」　1ページ</a></td>"
+                      f"<td>整備の表</td><td>日野幼稚園</td><td>{ran}</td>", page)
+        i = page.index("<h3 id='fa-hino-yo'>")
+        self.assertLess(i, page.index(midashi, i))
+        self.assertLess(page.index(midashi, i), page.index("<h3 id='fa-s1'>"))
+        # 行が無い施設には、見出しも出さない。確認の記録があるので、未確認の文は出さない
+        j = page.index("<h3 id='fa-shin'>")
+        self.assertNotIn(midashi, page[j:])
+        self.assertNotIn(D.bun("mikakunin-hyo"), page)
+
+    def test_hyo_kijutsu_mikakunin(self):
+        # 施設の割り当てが未確認の行があれば止まる
+        kinds, p = self.stop(t=tables_koho(**{"3": dict(shisetsu_kakunin="")}))
+        self.assertEqual(kinds, {"(g) 施設の割り当て"})
+        self.assertIn("桜谷第１", p[0][1])
+        # 見出しの確認の記録が無い部分は、表の検査で止まる（name が原典の文字に無い）
+        kinds, _ = self.stop(t=tables_koho(**{"4": dict(chu="")}))
+        self.assertEqual(kinds, {"(a) 表の検査"})
 
     def test_no_shisetsu_hyo(self):
         # 施設の表の行が無いテーマ：施設の表と、表に無い施設の文を出さない
@@ -393,6 +459,33 @@ class TestReal(unittest.TestCase):
         self.assertNotIn("の広報ひの）", page)
         self.assertIn("所在地は、広報ひの 2024年10月号", page)
         self.assertIn("（令和7年4月1日現在）", page)
+
+    def test_hoiku_hyo_kijutsu(self):
+        """再編整備計画 27ページの表（2つの版）の欄は、施設ごとの記述にだけ出し、町内の施設の表には出さない。"""
+        page, info = bt.build(self.inp, self.tables, "hoiku", bn.read_kotoba(), TODAY, self.read_problems, D)
+        self.assertEqual(info["hyo_kijutsu"], 18)
+        midashi = f"<h4>{D.kotoba('文書の部分の表 shisetsu、oya')}</h4>"
+        self.assertEqual(page.count(midashi), 9)
+        s = page.index(f"<h2>{D.kotoba('テーマの表 shu が「施設の表」')}</h2>")
+        hyo = page[s:page.index("<h2>", s + 1)]
+        for w in ("延床面積", "整備方針", "再編整備計画"):
+            self.assertNotIn(w, hyo)
+        # 西大路幼稚園：2つの版の2行。資料の日付の古い順（2025年3月の版が先）
+        i = page.index("<h3 id='fa-nishioji-yo'>")
+        part = page[i:page.index("<h3 ", i + 1)]
+        self.assertEqual(part.count("<td>〇町立幼児教育保育施設の再編整備について</td><td>西大路幼稚園</td>"), 2)
+        self.assertLess(part.index("（2025年3月）"), part.index("（令和８年６月一部改正、2026年6月）"))
+        self.assertIn(D.bun("hyo-kijutsu-ran", midashi="整備後の施設（案）", atai="子育て支援施設 学童保育所等"), part)
+        self.assertIn(D.bun("hyo-kijutsu-ran", midashi="延床面積（㎡）", atai="531"), part)
+        # 表に行が無い施設（新こども園、わらべ保育園など）には、見出しも出さない
+        for k in ("fa-shin-kodomoen", "fa-warabe", "fa-warabe2", "fa-hinona"):
+            i = page.index(f"<h3 id='{k}'>")
+            j = page.find("<h3 ", i + 1)
+            self.assertNotIn(midashi, page[i:j if j > 0 else len(page)], k)
+        # 桜谷こども園は、園舎ごとの行（第１園舎と第２園舎の施設ごとの記述に1つずつ、2つの版で2行ずつ）
+        i = page.index("<h3 id='fa-sakuradani-1'>")
+        self.assertEqual(page[i:page.index("<h3 ", i + 1)].count("<td>桜谷こども園 第１園舎（旧幼稚園）</td>"), 2)
+        self.assertNotIn(D.bun("mikakunin-hyo"), page)
 
 
 if __name__ == "__main__":
