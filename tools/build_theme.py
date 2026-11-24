@@ -4,6 +4,8 @@
 テーマの名前、施設、資料は、hino-ronten のテーマの定義（ref/themes.tsv）から引く。資料のうち計画は、kind「系列」の
 value を系列の表（ref/lineage.tsv）の series で引いた plan の文書（pt:<plan>/…）とする。
 経過は過程の記録（records/katei.tsv）、施設ごとの欄は施設の記録（records/shisetsu.tsv）の、確定済みの行から作る。
+施設ごとの欄には、テーマの資料である文書の表（テーマの表で施設の表として指定した表を除く）の、その施設の行か列の欄も、
+記録の表の下に出す。その欄は、施設の表には出さない（docs/design.md 4節。2026-11-25 の依頼者の了承）。
 説明の文と施設の表は、テーマの表（teigi/theme.tsv）から、施設の表の欄の数値は数値の表から、資料どうしの関係は
 文書どうしの関係の表から引く。数値を計算しない。外から何も読み込まない1つの HTML にする。
 画面に出す言葉は、docs/design.md 3節の2つの表から読む（tools/build_suji.py の read_design と同じ読み方）。
@@ -18,7 +20,7 @@ value を系列の表（ref/lineage.tsv）の series で引いた plan の文書
   (f) 過程の記録と施設の記録の quote が、source の資料の本文に無い（SCHEMA.md §3）。会議録の発言者の役職から、
       町の答弁か議員の発言かを決められない（役職が空か、議長を含む）。資料の名前を作れない。過程の記録の from・to の形が違う
   (g) 施設の表に、施設の割り当てが未確認の行（tools/suji.py の shisetsu_mikakunin）がある。施設の表の施設が、
-      テーマの施設に無い
+      テーマの施設に無い。施設ごとの欄に出す資料の表の行か列に、施設の割り当てが未確認の行がある
 """
 import datetime
 import os
@@ -177,6 +179,24 @@ class Theme:
         return bool(m) and m[1] in self.plans
 
 
+def shitei_hyo(trow):
+    """テーマの表の「施設の表」の行 → (文書の鍵, 表の番号)。行が無ければ None。"""
+    return (sj.bunsho_of(trow["tokoro"]), trow["hyo"]) if trow else None
+
+
+def kijutsu_no_hyo(part, by, th, shitei):
+    """文書の部分の行 part が、施設ごとの欄に出す資料の表の行か列か。→ 親の表の行か None。
+
+    行か列で、shisetsu があり、親の表がテーマの資料である文書の表で、施設の表として指定した表（shitei）ではないもの。
+    by は (文書の鍵, 番号) → 文書の部分の行。"""
+    if part.get("shu") not in (sj.GYO, sj.RETSU) or not part.get("shisetsu", "").strip():
+        return None
+    if not th.has(part["bunsho"]) or (part["bunsho"], part["oya"]) == shitei:
+        return None
+    hyo = by.get((part["bunsho"], part["oya"]))
+    return hyo if hyo is not None and hyo["shu"] == sj.HYO else None
+
+
 def anchor(fa):
     """施設の鍵 → ページ内リンクの id。"""
     return fa.replace(":", "-")
@@ -187,7 +207,7 @@ def anchor(fa):
 class ShisetsuHyo:
     """テーマの表の「施設の表」の行が指す表の、行（shisetsu がある行か列）と欄。"""
 
-    def __init__(self, D, tables, trow, ref_by_key, kiroku, theme_shisetsu):
+    def __init__(self, D, tables, trow, ref_by_key, kiroku, theme_shisetsu, th):
         self.problems = []
         bub = tables["bubun"]
         self.bubun_by = {(r["bunsho"], r["n"]): r for r in bub}
@@ -208,8 +228,13 @@ class ShisetsuHyo:
         self.suji = []            # 定義の表の行の並び（定義の表の順）
         self.atai = {}            # (定義の id, 施設の鍵の組) → 数値の表の行の並び
         kumi = set(self.keys)
+        shitei = shitei_hyo(trow)
         for r in tables["atai"]:
             ks = sj.atai_shisetsu(r, self.bubun_by)
+            b = sj.bunsho_of(r["shiryo"]) if r["shiryo"].strip() else None
+            parts = [self.bubun_by.get((b, n)) for n in (r["bubun"], r["retsu"]) if b and n]
+            if any(x is not None and kijutsu_no_hyo(x, self.bubun_by, th, shitei) is not None for x in parts):
+                continue        # 施設ごとの欄にだけ出す（同じ内容を2か所に出さない）
             if r["jotai"] == sj.ARU and ks in kumi:
                 self.atai.setdefault((r["suji"], ks), []).append(r)
         ids = {s for s, _ in self.atai}
@@ -223,6 +248,45 @@ class ShisetsuHyo:
         self.matome = any(g["matome"].strip() for g in self.gyo)
 
 
+# ---- 施設ごとの、資料の表の欄 ----
+
+class HyoKijutsu:
+    """施設の鍵 → 資料の表の行か列（kijutsu_no_hyo）と、その欄の並び。"""
+
+    def __init__(self, tables, th, trow, ref_by_key):
+        self.problems = []
+        bub = tables["bubun"]
+        by = {(r["bunsho"], r["n"]): r for r in bub}
+        hiduke = {r["bunsho"]: r["hiduke"] for r in tables["bunsho"]}
+        shitei = shitei_hyo(trow)
+        self.gyo = {}                                   # 施設の鍵 → (部分, 表, 欄の並び) の並び
+        for p in bub:
+            hyo = kijutsu_no_hyo(p, by, th, shitei)
+            if hyo is None:
+                continue
+            if sj.shisetsu_mikakunin(p, ref_by_key):
+                self.problems.append(("(g) 施設の割り当て", f"{sj.BUBUN_NAME} の {p['_gyo']} 行目：施設の割り当てが"
+                                                        f"未確認（{p['name']}）"))
+            aite_shu = sj.RETSU if p["shu"] == sj.GYO else sj.GYO
+            aite = sorted((x for x in bub if x["bunsho"] == p["bunsho"] and x["oya"] == p["oya"]
+                           and x["shu"] == aite_shu),
+                          key=lambda x: (int(x["jun"] or 0), int(x["n"])))
+            ran = []
+            for x in aite:
+                g, c = (p["n"], x["n"]) if p["shu"] == sj.GYO else (x["n"], p["n"])
+                ran += [(x, r) for r in tables["atai"]
+                        if r["jotai"] == sj.ARU and r["bubun"] == g and r["retsu"] == c
+                        and sj.bunsho_of(r["shiryo"]) == p["bunsho"]]
+            for k in dict.fromkeys(sj.shisetsu_keys(p["shisetsu"])):
+                self.gyo.setdefault(k, []).append((p, hyo, ran))
+        for k in self.gyo:
+            self.gyo[k].sort(key=lambda t: (hiduke.get(t[0]["bunsho"]) or "9999", t[0]["bunsho"], int(t[1]["n"]),
+                                            int(t[0]["n"])))
+
+    def kazu(self):
+        return sum(len(v) for v in self.gyo.values())
+
+
 # ---- ページ ----
 
 STYLE = """body{font-family:sans-serif;line-height:1.7;max-width:60rem;margin:1.5rem auto;padding:0 1rem;color:#222}
@@ -233,9 +297,10 @@ th{background:#eee;font-weight:normal} td.r{text-align:right} .s{color:#555;font
 
 
 class Page:
-    def __init__(self, D, inp, tables, theme, th, ref_by_key, kiroku, katei, namae, hyo):
+    def __init__(self, D, inp, tables, theme, th, ref_by_key, kiroku, katei, namae, hyo, hk):
         self.D, self.inp, self.t, self.theme, self.th = D, inp, tables, theme, th
         self.ref, self.kiroku, self.katei, self.n, self.hyo = ref_by_key, kiroku, katei, namae, hyo
+        self.hk = hk
 
     def setsumei(self):
         """テーマの表の「説明の文」の行の部分。行が無ければ、見出しも出さない。"""
@@ -400,14 +465,39 @@ class Page:
                 o.append(f"<p class=s>{E(maeno)}：{S('、'.join(al))}</p>")
             rs = sorted((r for r in self.kiroku if r["facility"] == k),
                         key=lambda r: (r["source_date"], r["source"], r["aspect"]))
-            if not rs:
-                continue
-            rows = []
-            for r in rs:
-                v = S(r["value"]) + (f"（{S(r['target'])}）" if r["target"] else "")
-                rows.append(f"<tr><td>{self.n.link(r['source'], r['quote'])}</td><td>{E(r['aspect'])}</td>"
-                            f"<td>{E(r['kind'])}</td><td>{v}</td><td>「{S(r['quote'])}」</td></tr>")
-            o.append(f"<table>\n<thead><tr>{head}</tr></thead>\n<tbody>\n" + "\n".join(rows) + "\n</tbody>\n</table>")
+            if rs:
+                rows = []
+                for r in rs:
+                    v = S(r["value"]) + (f"（{S(r['target'])}）" if r["target"] else "")
+                    rows.append(f"<tr><td>{self.n.link(r['source'], r['quote'])}</td><td>{E(r['aspect'])}</td>"
+                                f"<td>{E(r['kind'])}</td><td>{v}</td><td>「{S(r['quote'])}」</td></tr>")
+                o.append(f"<table>\n<thead><tr>{head}</tr></thead>\n<tbody>\n" + "\n".join(rows)
+                         + "\n</tbody>\n</table>")
+            o.append(self.hyo_kijutsu(k))
+        return "\n".join(x for x in o if x)
+
+    def hyo_kijutsu(self, k):
+        """施設 k の、資料の表の行か列の欄（docs/design.md 4節の6）。行が無ければ、見出しも出さない。"""
+        D = self.D
+        gyo = self.hk.gyo.get(k) if self.hk else None
+        if not gyo:
+            return ""
+        head = (f"<th>{E(D.kotoba('文書の表 namae、han、hiduke'))}</th>"
+                f"<th>{E(D.kotoba('文書の部分の表 name（shu が「表」）'))}</th>"
+                f"<th>{E(D.kotoba('文書の部分の表 name（shu が「行」か「列」）'))}</th>"
+                f"<th>{E(D.kotoba('数値の表 atai、retsu'))}</th>")
+        rows, mi = [], False
+        for p, hyo, ran in gyo:
+            cells = "<br>".join(D.bun("hyo-kijutsu-ran", midashi=bh.midashi_ji(D, x), atai=S(r["atai"]))
+                                for x, r in ran)
+            mi = mi or any(sj.mikakunin(x) for x in [p, hyo] + [x for x, _ in ran])
+            rows.append(f"<tr><td>{self.n.link(hyo['tokoro'])}</td><td>{bh.midashi_ji(D, hyo)}</td>"
+                        f"<td>{bh.midashi_ji(D, p)}</td><td>{cells}</td></tr>")
+        o = [f"<h4>{E(D.kotoba('文書の部分の表 shisetsu、oya'))}</h4>",
+             f"<p class=s>{E(D.bun('hyo-kijutsu-setsumei'))}</p>",
+             f"<table>\n<thead><tr>{head}</tr></thead>\n<tbody>\n" + "\n".join(rows) + "\n</tbody>\n</table>"]
+        if mi:
+            o.append(f"<p class=s>{E(D.bun('mikakunin-hyo'))}</p>")
         return "\n".join(o)
 
     def render(self, today):
@@ -478,13 +568,15 @@ def build(inp, tables, theme, kotoba, today, read_problems=(), design=None):
     hyo = None
     trows = [r for r in tables["theme"] if r["theme"] == theme and r["shu"] == sj.SHISETSU_HYO]
     if trows:
-        hyo = ShisetsuHyo(D, tables, trows[0], ref, kiroku, set(th.shisetsu))
+        hyo = ShisetsuHyo(D, tables, trows[0], ref, kiroku, set(th.shisetsu), th)
         problems += hyo.problems
+    hk = HyoKijutsu(tables, th, trows[0] if trows else None, ref)
+    problems += hk.problems
     if problems:
         raise Stop(problems)
     by = {r["bunsho"]: r for r in tables["bunsho"]}
     namae = Namae(D, inp, by)
-    page = Page(D, inp, tables, theme, th, ref, kiroku, katei, namae, hyo).render(today)
+    page = Page(D, inp, tables, theme, th, ref, kiroku, katei, namae, hyo, hk).render(today)
     if namae.problems:
         raise Stop(list(dict.fromkeys(namae.problems)))
     problems = bn.kotoba_problems(page, *kotoba)
@@ -492,7 +584,7 @@ def build(inp, tables, theme, kotoba, today, read_problems=(), design=None):
         raise Stop([("(b) 使わない言葉", m) for _, m in problems])
     page = page.replace(A, "").replace(B, "")
     return page, dict(katei=len(katei), kiroku=len(kiroku), shisetsu=len(th.shisetsu),
-                      hyo=len(hyo.gyo) if hyo else 0, inyo=res.matched, ji=len(page),
+                      hyo=len(hyo.gyo) if hyo else 0, inyo=res.matched, ji=len(page), hyo_kijutsu=hk.kazu(),
                       setsumei=sum(1 for r in tables["theme"] if r["theme"] == theme and r["shu"] == sj.SETSUMEI_BUN))
 
 
@@ -521,7 +613,8 @@ def main(argv=None, teigi_dir=None):
         f.write(page)
     print(f"{os.path.relpath(out, inputs.ROOT)}（{os.path.getsize(out)} バイト、{info['ji']} 文字）")
     print(f"説明の文 {info['setsumei']}、経過 {info['katei']} 行、施設の表 {info['hyo']} 行、"
-          f"施設 {info['shisetsu']}（記録 {info['kiroku']} 行）、照合した引用 {info['inyo']}")
+          f"施設 {info['shisetsu']}（記録 {info['kiroku']} 行）、照合した引用 {info['inyo']}、"
+          f"施設ごとの欄に出した資料の表の行 {info['hyo_kijutsu']}")
     return 0
 
 

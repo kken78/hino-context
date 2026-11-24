@@ -414,6 +414,12 @@ def mikakunin(r):
     return r["torikata"] == YONDA and not kakunin_ari(r["chu"])
 
 
+def name_kensa_nozoku(r):
+    """文書の部分の行を、name が tokoro のページの原典の文字にあることの検査から外すか（SCHEMA.md §7.4）。
+    torikata が「読んだ」で、chu に確認の記録（日付の形が合うもの）がある行。2026-11-25 の依頼者の了承による。"""
+    return r["torikata"] == YONDA and kakunin_ari(r["chu"])
+
+
 # 部分の種類ごとに、親にできる種類（SCHEMA.md §7.2。見出し → 見出し → 表 → 行・列）。None は親が無いこと。
 OYA_SHU = {MIDASHI: (None, MIDASHI), HYO: (None, MIDASHI), GYO: (HYO,), RETSU: (HYO,)}
 
@@ -628,7 +634,7 @@ def check_bubun(inp, rows, bunsho_names):
             out.append(Mondai(BUBUN_NAME, g, f"tokoro が、この文書のページの鍵でない（{t}）"))
         elif not r["name"].strip():
             out.append(Mondai(BUBUN_NAME, g, "name が空"))
-        elif not on_page(inp, r["name"], t):
+        elif not name_kensa_nozoku(r) and not on_page(inp, r["name"], t):
             out.append(Mondai(BUBUN_NAME, g, f"name の字が、tokoro のページの原典の文字に無い（{r['name']}）"))
         elif oya and page_no(oya["tokoro"]) is not None and page_no(oya["tokoro"]) > page_no(t):
             out.append(Mondai(BUBUN_NAME, g, f"tokoro のページが、親の tokoro のページより前（{t}）"))
@@ -1028,9 +1034,12 @@ def check_all(inp, suji_rows, atai_rows, bunsho_rows=None, bubun_rows=None, kank
         out += more
         more, index = check_bubun(inp, bubun_rows or [], names)
         out += more
+        kazoe["name_nozoita"] = sum(1 for r in bubun_rows or [] if name_kensa_nozoku(r))
         more, shisetsu_kazoe = check_shisetsu(inp, bubun_rows or [])
         out += more
+        name_nozoita = kazoe["name_nozoita"]
         more, kazoe = check_atai_bubun(inp, atai_rows, bubun_rows or [], index, names)
+        kazoe["name_nozoita"] = name_nozoita
         out += more
         out += check_bunsho_kankei(inp, kankei_rows or [], names)
         out += check_theme(inp, theme_rows or [], names, bubun_rows or [], index)
@@ -1117,6 +1126,8 @@ def main(argv=None, teigi_dir=None):
               + "、".join(f"{x} {ct.get(x, 0)}" for x in TORIKATA) + "）")
         if n_shisetsu is not None:
             print(f"施設の参照表：{n_shisetsu} 行。施設の記録（確定済み）：{n_kiroku} 行")
+        print(f"name が原典の文字にあることの検査：torikata が「読んだ」で、chu に確認の記録があり、"
+              f"検査から外した行 {kazoe['name_nozoita']}")
         print(f"文書の部分で、shisetsu がある行：{sum(1 for r in bubun_rows if r['shisetsu'].strip())}"
               f"（name と一致 {kazoe['shisetsu_icchi']}、一致しない {kazoe['shisetsu_fuicchi']}。"
               f"一致しない行のうち、shisetsu_kakunin に記録が無い行 {kazoe['shisetsu_mikakunin']}）")

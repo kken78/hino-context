@@ -459,6 +459,25 @@ class TestBubun(unittest.TestCase):
         p, _ = run7(bubun=change(rows, "5", jun="1"))
         self.assertIn("同じ表に、jun が同じ列がある（1）", p)
 
+    def test_name_yonda_kakunin(self):
+        """torikata が「読んだ」で chu に確認の記録がある行は、name の検査から外し、数を出す（SCHEMA.md §7.4）。"""
+        rows = bubun_rows()
+        nai = "name の字が、tokoro のページの原典の文字に無い（第６章 量の見込み）"
+        for chu in ("2者が画像で確認（2026-11-25）", "依頼者が PDF で確認（2026-11-25）"):
+            with self.subTest(chu=chu):
+                p, kazoe = run7(bubun=change(rows, "1", name="第６章 量の見込み", torikata="読んだ", chu=chu))
+                self.assertEqual(p, [])
+                self.assertEqual(kazoe["name_nozoita"], 1)
+        # 確認の記録が無い「読んだ」の行と、日付の形が違う記録の行は、これまでどおり検査する
+        for chu in ("", "2者が画像で確認（2026-13-01）", "依頼者が PDF で確認（2026/11/25）"):
+            with self.subTest(chu=chu):
+                p, kazoe = run7(bubun=change(rows, "1", name="第６章 量の見込み", torikata="読んだ", chu=chu))
+                self.assertEqual(p, [nai])
+                self.assertEqual(kazoe["name_nozoita"], 0)
+        # 「機械」の行は外さない（確認の記録は、別の検査で止まる）
+        p, _ = run7(bubun=change(rows, "1", name="第６章 量の見込み"))
+        self.assertEqual(p, [nai])
+
     def test_matome(self):
         """列のまとまりの見出し（SCHEMA.md §7.2・§7.4）：列の行だけに書け、tokoro のページの原典の文字にある。"""
         rows = bubun_rows()

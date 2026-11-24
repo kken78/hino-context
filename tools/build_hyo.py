@@ -6,7 +6,7 @@
 中身は teigi/ の4つの表と、lock の版の入力だけから作る。数値を計算しない。
 行は、文書の部分の表で、表を親にする行。並べる順は、原典の文字（text_raw）の表の範囲での、行の位置の順。
 列は、表を親にする列。並べる順は jun の順。
-欄の数値は、原典の文字（text_raw）の表の範囲の、行の見出しに続く数値から、列の jun の順で取る（SCHEMA.md §7.3）。
+欄の数値は、原典の文字（text_raw）の表の範囲の、行の name に続く数値から、列の jun の順で取る（SCHEMA.md §7.3）。
 数値の表に、その欄を指す行があれば、取った数値と atai が一致することを確認する。
 親の表か行の torikata が「読んだ」の表は、原典の文字から数えられないので、数値の表に行がある欄だけを出せる。
 表の torikata が「読んだ」の表は、原典の文字の表の範囲を使わない（表の題が行のあとに出るなど、範囲が決まらないため）。
@@ -22,7 +22,7 @@ torikata が「読んだ」で、chu に確認の記録が無い表・行・列�
   (d) lock と入力が合わない
   (e) docs/design.md 3節の表と、このツールが合わない（tools/build_suji.py の design_problems。
       1つ目の表の「同じ定義の数値がある、ほかの文書」の画面の言葉と、2つ目の表の midashi-onaji の文が違う場合を含む）
-  (f) 表の範囲が決まらない。行の見出しと数値の行が1行に決まらない。行の数値の数が、列の jun に足りない
+  (f) 表の範囲が決まらない。行の name と数値の行が1行に決まらない。行の数値の数が、列の jun に足りない
   (g) 数値の表の数値と、原典の文字から取った数値が一致しない
   (h) torikata が「読んだ」の表で、数値の表に行が無い欄がある（原典の文字から取れない）
 """
@@ -112,7 +112,7 @@ class Hyo:
         """torikata が「機械」の行：原典の文字の行から、列の jun の順で数値を取る。→ 行の位置。"""
         hits = [i for i, ln in enumerate(lines) if sj.row_numbers(ln, g["name"]) is not None]
         if len(hits) != 1:
-            self.stop("(f) 行", f"{sj.BUBUN_NAME} の {g['_gyo']} 行目：行の見出しと数値の行が、表の範囲に {len(hits)} 行ある"
+            self.stop("(f) 行", f"{sj.BUBUN_NAME} の {g['_gyo']} 行目：行の name と数値の行が、表の範囲に {len(hits)} 行ある"
                                f"（1行のはず：{g['name']}）")
             return None
         nums = sj.row_numbers(lines[hits[0]], g["name"])
@@ -139,7 +139,7 @@ class Hyo:
         q = shogo.norm(g["name"])
         at = [int(g["n"])] if lines is None else [i for i, ln in enumerate(lines) if q and shogo.norm(ln).startswith(q)]
         if not at:
-            self.stop("(f) 行", f"{sj.BUBUN_NAME} の {g['_gyo']} 行目：行の見出しが、表の範囲に無い（{g['name']}）")
+            self.stop("(f) 行", f"{sj.BUBUN_NAME} の {g['_gyo']} 行目：行の name が、表の範囲に無い（{g['name']}）")
         for c in self.retsu:
             rs = self.atai.get((g["n"], c["n"]), [])
             vals = {shogo.norm(r["atai"]) for r in rs}
