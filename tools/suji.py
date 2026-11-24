@@ -33,7 +33,8 @@ BUNSHO_NAME = "teigi/bunsho.tsv"
 BUBUN_NAME = "teigi/bubun.tsv"
 BUNSHO_COLUMNS = ["bunsho", "namae", "shurui", "konkyo", "konkyo_tokoro", "hiduke", "hiduke_moto", "han", "han_tokoro",
                   "chu"]
-BUBUN_COLUMNS = ["bunsho", "n", "oya", "shu", "name", "tokoro", "jun", "matome", "shisetsu", "torikata", "chu"]
+BUBUN_COLUMNS = ["bunsho", "n", "oya", "shu", "name", "tokoro", "jun", "matome", "shisetsu", "shisetsu_kakunin", "torikata",
+                 "chu"]
 BUNSHO_KANKEI_NAME = "teigi/bunsho-kankei.tsv"
 BUNSHO_KANKEI_COLUMNS = ["kara", "e", "hyogen", "inyo", "tokoro", "chu"]
 
@@ -248,7 +249,8 @@ KANKEI_ATO = "ato"        # 数値の時点が、資料の日付より後
 KANKEI_MAE = "mae"        # 数値の時点が、資料の日付と同じか、前
 KANKEI_TOCHU = "tochu"    # 数値の時点が年度の期間で、資料の日付が、その期間の中
 KANKEI = (KANKEI_ATO, KANKEI_MAE, KANKEI_TOCHU)
-RE_NENGETSU = re.compile(r"(令和|平成)(元|[0-9]+)年([0-9]+)月")
+# 年月の表記。日と「現在」が続く字（「令和7年4月1日現在」）も、年月の表記として扱う（SCHEMA.md §7.3）
+RE_NENGETSU = re.compile(r"(令和|平成)(元|[0-9]+)年([0-9]+)月(?:[0-9]+日)?(?:現在)?")
 GENGO = {"令和": 2018, "平成": 1988}
 
 
@@ -701,13 +703,40 @@ def shisetsu_icchi(r, ref_by_key):
     return all(q in shisetsu_namae(ref_by_key[k]) for k in ks)
 
 
+# 施設の確認の記録（SCHEMA.md §7.2 の shisetsu_kakunin）。どちらかの形で、日付が正しいものだけを記録とする
+RE_SHISETSU_KAKUNIN = re.compile(r"(?:依頼者が確認|2者の読みが一致)（([0-9]{4}-[0-9]{2}-[0-9]{2})）")
+
+
+def shisetsu_kakunin_ari(kakunin):
+    """shisetsu_kakunin の字が、「依頼者が確認（YYYY-MM-DD）」か「2者の読みが一致（YYYY-MM-DD）」で、日付が正しいか。"""
+    m = RE_SHISETSU_KAKUNIN.fullmatch((kakunin or "").strip())
+    return bool(m) and is_ymd(m.group(1))
+
+
+def shisetsu_mikakunin(r, ref_by_key):
+    """文書の部分の行の、施設の割り当てに未確認の印を付けるか（SCHEMA.md §7.2）。shisetsu があり、name が施設の name か
+    aliases と一致せず、shisetsu_kakunin に日付の形が合う記録が無い行。印を付ける条件は、この関数だけで判定する。
+    shisetsu が空の行と、参照表に無い鍵がある行は False（鍵の誤りは check_shisetsu で止める）。"""
+    return shisetsu_icchi(r, ref_by_key) is False and not shisetsu_kakunin_ari(r.get("shisetsu_kakunin", ""))
+
+
 def check_shisetsu(inp, rows):
-    """文書の部分の表の shisetsu の検査（SCHEMA.md §7.4）。→ (問題の並び, 数えた結果)。
+    """文書の部分の表の shisetsu と shisetsu_kakunin の検査（SCHEMA.md §7.4）。→ (問題の並び, 数えた結果)。
 
     shisetsu がある行が無ければ、施設の参照表を読まない。数えるのは、name と一致する行（shisetsu_icchi）と、一致しない行
-    （shisetsu_fuicchi）。
+    （shisetsu_fuicchi）、一致しない行のうち未確認の行（shisetsu_mikakunin）。
     """
     out, kazoe = [], Counter()
+    for r in rows:
+        k = r.get("shisetsu_kakunin", "")
+        if not k.strip():
+            continue
+        if not r["shisetsu"].strip():
+            out.append(Mondai(BUBUN_NAME, r["_gyo"], f"shisetsu が空の行に、shisetsu_kakunin がある（{k}）"))
+        elif not shisetsu_kakunin_ari(k):
+            out.append(Mondai(BUBUN_NAME, r["_gyo"],
+                              "shisetsu_kakunin の形が違う（「依頼者が確認（YYYY-MM-DD）」か"
+                              f"「2者の読みが一致（YYYY-MM-DD）」のはず：{k}）"))
     rows = [r for r in rows if r["shisetsu"].strip()]
     if not rows:
         return out, kazoe
@@ -718,7 +747,15 @@ def check_shisetsu(inp, rows):
             out.append(Mondai(BUBUN_NAME, r["_gyo"],
                               f"shisetsu の鍵が、施設の参照表に無い（{'・'.join(k or '空' for k in bad)}）"))
             continue
-        kazoe["shisetsu_icchi" if shisetsu_icchi(r, ref_by_key) else "shisetsu_fuicchi"] += 1
+        if shisetsu_icchi(r, ref_by_key):
+            kazoe["shisetsu_icchi"] += 1
+            if r.get("shisetsu_kakunin", "").strip():
+                out.append(Mondai(BUBUN_NAME, r["_gyo"],
+                                  f"name が施設の name か aliases と一致する行に、shisetsu_kakunin がある（{r['name']}）"))
+        else:
+            kazoe["shisetsu_fuicchi"] += 1
+            if shisetsu_mikakunin(r, ref_by_key):
+                kazoe["shisetsu_mikakunin"] += 1
     return out, kazoe
 
 
@@ -957,7 +994,8 @@ def main(argv=None, teigi_dir=None):
         if n_shisetsu is not None:
             print(f"施設の参照表：{n_shisetsu} 行。施設の記録（確定済み）：{n_kiroku} 行")
         print(f"文書の部分で、shisetsu がある行：{sum(1 for r in bubun_rows if r['shisetsu'].strip())}"
-              f"（name と一致 {kazoe['shisetsu_icchi']}、一致しない {kazoe['shisetsu_fuicchi']}）")
+              f"（name と一致 {kazoe['shisetsu_icchi']}、一致しない {kazoe['shisetsu_fuicchi']}。"
+              f"一致しない行のうち、shisetsu_kakunin に記録が無い行 {kazoe['shisetsu_mikakunin']}）")
     if kankei_rows is not None:
         print(f"文書どうしの関係：{len(kankei_rows)} 行")
     print(f"数値の表で、bubun がある行：{sum(1 for r in atai_rows if r['bubun'])}、"

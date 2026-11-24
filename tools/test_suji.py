@@ -619,6 +619,12 @@ class TestJitenKankei(unittest.TestCase):
         # 注の付いた年度の字（補正）も、年度として扱う
         self.assertEqual(self.k(teigi=self.T0, jiten="令和7年度（12月補正）", shiryo="doc:yosan-1/2"), suji.KANKEI_TOCHU)
 
+    def test_hi_to_genzai(self):
+        # 日と「現在」が続く年月の字（「令和7年4月1日現在」）も、年月として比較する
+        self.assertEqual(self.k(jiten="令和7年4月1日現在"), suji.KANKEI_MAE)                     # 2025年4月 と 2026年6月
+        self.assertEqual(self.k(jiten="令和7年4月1日現在", shiryo="pt:kodomo/honpen/72"), suji.KANKEI_ATO)  # 2025年3月
+        self.assertEqual(self.k(teigi=self.T0, jiten="令和7年4月1日現在", shiryo="doc:yosan-1/2"), suji.KANKEI_MAE)
+
     def test_dasanai(self):
         self.assertIsNone(self.k(nendo=""))
         self.assertIsNone(self.k(shiryo=""))
@@ -864,6 +870,65 @@ class TestShisetsu(unittest.TestCase):
         self.assertEqual(run7(inp=inp)[0], [])
 
 
+class TestShisetsuKakunin(unittest.TestCase):
+    """施設の確認の記録 shisetsu_kakunin（SCHEMA.md §7.2・§7.4）。条件ごとに確認する。"""
+
+    REF = {r["key"]: r for r in SHISETSU_REF}
+
+    def mikakunin(self, name, shisetsu, kakunin=""):
+        return suji.shisetsu_mikakunin(dict(name=name, shisetsu=shisetsu, shisetsu_kakunin=kakunin), self.REF)
+
+    def test_kiroku_no_katachi(self):
+        self.assertTrue(suji.shisetsu_kakunin_ari("依頼者が確認（2026-11-24）"))
+        self.assertTrue(suji.shisetsu_kakunin_ari("2者の読みが一致（2026-11-24）"))
+        for k in ("", "依頼者が確認（2026-11-31）", "依頼者が確認（2026/11/24）", "依頼者が PDF で確認（2026-11-24）",
+                  "2者が画像で確認（2026-11-24）", "確認済み", "依頼者が確認（2026-11-24）。第１園舎と第２園舎"):
+            self.assertFalse(suji.shisetsu_kakunin_ari(k), k)
+
+    def test_mikakunin(self):
+        # name が一致する行：印を付けない（記録は要らない）
+        self.assertFalse(self.mikakunin("南比都佐幼稚園", "fa:minamihizusa-yo"))
+        # name が一致しない行：記録が無ければ印を付ける。記録があれば付けない
+        self.assertTrue(self.mikakunin("桜谷こども園", "fa:sakuradani-1;fa:sakuradani-2"))
+        self.assertFalse(self.mikakunin("桜谷こども園", "fa:sakuradani-1;fa:sakuradani-2", "依頼者が確認（2026-11-24）"))
+        self.assertFalse(self.mikakunin("桜谷こども園", "fa:sakuradani-1;fa:sakuradani-2", "2者の読みが一致（2026-11-24）"))
+        # 日付の形が違う記録は、無いものとする
+        self.assertTrue(self.mikakunin("桜谷こども園", "fa:sakuradani-1;fa:sakuradani-2", "依頼者が確認（2026-13-01）"))
+        # 見出しの確認の記録（chu の字）は、施設の確認の記録にならない
+        self.assertTrue(self.mikakunin("桜谷こども園", "fa:sakuradani-1;fa:sakuradani-2", "2者が画像で確認（2026-11-24）"))
+        # shisetsu が空の行と、参照表に無い鍵の行は、印を付けない
+        self.assertFalse(self.mikakunin("桜谷こども園", ""))
+        self.assertFalse(self.mikakunin("桜谷こども園", "fa:nai"))
+
+    def run_k(self, bango, **kw):
+        return run7(bubun=change(bubun_rows(), bango, **kw), inp=fake_shisetsu())
+
+    def test_kensa(self):
+        sakura = dict(shisetsu="fa:sakuradani-1;fa:sakuradani-2")            # 行6の name「①量の見込み」は一致しない
+        # 一致しない行に、形の合う記録：止めない
+        p, kazoe = self.run_k("6", shisetsu_kakunin="依頼者が確認（2026-11-24）", **sakura)
+        self.assertEqual(p, [])
+        self.assertEqual((kazoe["shisetsu_fuicchi"], kazoe["shisetsu_mikakunin"]), (1, 0))
+        # 一致しない行で、記録が空：止めない。未確認の行として数える
+        p, kazoe = self.run_k("6", **sakura)
+        self.assertEqual((p, kazoe["shisetsu_mikakunin"]), ([], 1))
+        # 形が違う記録：止める
+        p, _ = self.run_k("6", shisetsu_kakunin="依頼者が確認（2026-11-31）", **sakura)
+        self.assertEqual(p, ["shisetsu_kakunin の形が違う（「依頼者が確認（YYYY-MM-DD）」か"
+                             "「2者の読みが一致（YYYY-MM-DD）」のはず：依頼者が確認（2026-11-31））"])
+        # shisetsu が空の行に、記録：止める
+        p, _ = self.run_k("6", shisetsu_kakunin="依頼者が確認（2026-11-24）")
+        self.assertEqual(p, ["shisetsu が空の行に、shisetsu_kakunin がある（依頼者が確認（2026-11-24））"])
+        # name が一致する行に、記録：止める（name の字は原典の文字に無いので、施設の検査だけを行う）
+        rows = change(bubun_rows(), "2", name="南比都佐幼稚園", shisetsu="fa:minamihizusa-yo",
+                      shisetsu_kakunin="依頼者が確認（2026-11-24）")
+        out, kazoe = suji.check_shisetsu(fake_shisetsu(), [dict({"shisetsu": "", "shisetsu_kakunin": ""}, **r, _gyo=i)
+                                                           for i, r in enumerate(rows, 2)])
+        self.assertEqual([m.naiyo for m in out],
+                         ["name が施設の name か aliases と一致する行に、shisetsu_kakunin がある（南比都佐幼稚園）"])
+        self.assertEqual(kazoe["shisetsu_icchi"], 1)
+
+
 class TestShisetsuReal(unittest.TestCase):
     """lock の版の hino-ronten の、施設の参照表と施設の記録（SCHEMA.md §1・§2）。"""
 
@@ -898,9 +963,21 @@ class TestShisetsuReal(unittest.TestCase):
                ("公立 新施設（１園）R10.4〜", "fa:shin-kodomoen", False),
                ("私立 わらべ保育園（2園）", "fa:warabe;fa:warabe2", False),
                ("桜谷こども園", "fa:sakuradani-1;fa:sakuradani-2", False),
-               ("保育所あおぞら園鎌掛分園", "fa:kaneka", True)]
+               ("保育所あおぞら園鎌掛分園", "fa:kaneka", True), ("みらいしゃくなげ保育園", "fa:kaneka", True),
+               ("こばと園", "fa:kobato", False)]
         for name, k, want in rei:
             self.assertIs(suji.shisetsu_icchi(dict(name=name, shisetsu=k), ref), want, name)
+
+    def test_kakunin_jitsubutsu(self):
+        """実際の表：name が一致しない行は、どれも施設の確認の記録があり、未確認の行は無い（SCHEMA.md §7.2）。"""
+        ref = {r["key"]: r for r in self.inp.shisetsu()}
+        rows = [r for r in real_tables()["bubun"] if r["shisetsu"]]
+        fuicchi = sorted((r["bunsho"], r["name"]) for r in rows if suji.shisetsu_icchi(r, ref) is False)
+        self.assertEqual(fuicchi, [("doc:jigyo-shinkodomoen-kousou", "桜谷こども園"), ("doc:koho-no771-08", "こばと園"),
+                                   ("doc:koho-no771-08", "桜谷こども園")])
+        self.assertFalse(any(suji.shisetsu_mikakunin(r, ref) for r in rows))
+        self.assertTrue(all(suji.shisetsu_kakunin_ari(r["shisetsu_kakunin"]) for r in rows
+                            if suji.shisetsu_icchi(r, ref) is False))
 
 
 # ---------------------------------------------------------------- 文書どうしの関係（SCHEMA.md §7.6・§7.4）
