@@ -182,6 +182,11 @@ class Inputs:
     def speaker(self, sid):
         return (self.statements().get(sid) or {}).get("name") or ""
 
+    def role(self, sid):
+        """発言者の役職（索引の role）。発言が無ければ None。"""
+        e = self.statements().get(sid)
+        return None if e is None else (e.get("role") or "")
+
     # ---- 町の資料（hino-town-docs） ----
 
     def docs(self):

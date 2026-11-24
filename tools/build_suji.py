@@ -59,20 +59,31 @@ CALLS1 = ("kotoba", "retsu_setsumei", "dasanai")             # 1つ目の表を�
 CALLS2 = ("bun",)                                            # 2つ目の表を引く呼び出し
 NAGASA = 4                                                   # このツールの中に書かれていないことを確認する、字の長さの下限
 
-# 1つ目の表の左の列の形（SCHEMA.md の表の名前 → 列の並び）
+# 1つ目の表の左の列の形（SCHEMA.md の表の名前 → 列の並び）。テーマの定義・施設の参照表・施設の記録・過程の記録は、
+# hino-ronten の入力の表（SCHEMA.md §1）
+KATEI_COLUMNS = ["theme", "step", "cycle", "name", "from", "to", "sources", "quote", "status", "reviewer", "date", "note"]
+THEMES_COLUMNS = ["theme", "kind", "value", "source", "views", "reviewer", "date", "note"]
 HYO_COLUMNS = (("定義の表", sj.SUJI_COLUMNS), ("数値の表", sj.ATAI_COLUMNS),
-               ("文書の部分の表", sj.BUBUN_COLUMNS), ("文書の表", sj.BUNSHO_COLUMNS))
-RE_HYO_RETSU = re.compile(r"(定義の表|数値の表|文書の部分の表|文書の表) ([a-z_]+)")
+               ("文書の部分の表", sj.BUBUN_COLUMNS), ("文書の表", sj.BUNSHO_COLUMNS),
+               ("文書どうしの関係の表", sj.BUNSHO_KANKEI_COLUMNS), ("テーマの表", sj.THEME_COLUMNS),
+               ("テーマの定義", THEMES_COLUMNS), ("施設の参照表", inputs.SHISETSU_COLUMNS),
+               ("施設の記録", inputs.SHISETSU_KIROKU_COLUMNS), ("過程の記録", KATEI_COLUMNS))
+# 表の名前と、そのあとの列（「、」で区切って2つ以上書ける）。長い名前から当てる（「文書の部分の表」を「文書の表」より先に）
+RE_HYO_RETSU = re.compile("(" + "|".join(sorted((re.escape(h) for h, _ in HYO_COLUMNS), key=len, reverse=True))
+                          + r") ([a-z_]+(?:、[a-z_]+)*)")
 RE_KANKEI = re.compile(r"時点の関係 (\S+)")
 KANKEI_NASHI = "無し"
-# 上の形に当てはまらない左の列（決めた形の一覧）→ その字が指す、数値の表の列
-KATACHI = {"shiryo が発言": ("shiryo",),
-           "shiryo が計画・町の資料": ("shiryo",),
-           "文書の部分（bubun・retsu から親をたどった並び）": ("bubun", "retsu"),
-           "bubun が空": ("bubun",),
-           "同じ定義の数値がある、ほかの文書": ("suji", "shiryo")}
+# 上の形に当てはまらない左の列（決めた形の一覧）→ その字が指す、表の列の組（表の名前, 列）の並び。
+# 会議録の発言者の役職は、入力の会議録の索引の role で、SCHEMA.md の表の列ではないので、組を持たない
+KATACHI = {"shiryo が発言": (("数値の表", "shiryo"),),
+           "shiryo が計画・町の資料": (("数値の表", "shiryo"),),
+           "文書の部分（bubun・retsu から親をたどった並び）": (("数値の表", "bubun"), ("数値の表", "retsu")),
+           "bubun が空": (("数値の表", "bubun"),),
+           "同じ定義の数値がある、ほかの文書": (("数値の表", "suji"), ("数値の表", "shiryo")),
+           "会議録の発言者の役職が「数字＋番」": (),
+           "会議録の発言者の役職が、議長でも「数字＋番」でもない": ()}
 # docs/design.md 3節の表を引く、ページを作るツール。表の行は、このどれかが引いていればよい
-PAGE_TOOLS = ("build_suji.py", "build_hyo.py")
+PAGE_TOOLS = ("build_suji.py", "build_hyo.py", "build_theme.py")
 
 
 class Design:
@@ -143,11 +154,11 @@ def hidari_problems(key):
         if m.group(1) not in sj.KANKEI and m.group(1) != KANKEI_NASHI:
             out.append(f"「{key}」：印が suji.KANKEI に無い")
         return out
-    refs = [(h, c) for h, c in RE_HYO_RETSU.findall(key)]
+    refs = [(h, c) for h, cs in RE_HYO_RETSU.findall(key) for c in cs.split("、")]
     if any(key.startswith(h + " ") for h, _ in HYO_COLUMNS):
         pass
     elif key in KATACHI:
-        refs += [("数値の表", c) for c in KATACHI[key]]
+        refs += list(KATACHI[key])
     else:
         out.append(f"「{key}」：決めた形（表の名前と列、時点の関係と印、決めた形の一覧）のどれでもない")
     cols = dict(HYO_COLUMNS)
