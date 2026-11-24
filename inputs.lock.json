@@ -17,7 +17,7 @@
   },
   "hino-ronten": {
     "sha": "1c34ba0d1a39fe701f2d0086f1d0e2542cc55137",
-    "files": ["ref/themes.tsv", "ref/shisetsu.tsv", "records/kotogara.tsv", "records/katei.tsv", "records/taio.tsv",
-              "records/shisetsu.tsv"]
+    "files": ["ref/themes.tsv", "ref/shisetsu.tsv", "ref/lineage.tsv", "records/kotogara.tsv", "records/katei.tsv",
+              "records/taio.tsv", "records/shisetsu.tsv"]
   }
 }

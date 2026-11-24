@@ -4,6 +4,7 @@
   teigi/suji.tsv（定義）と teigi/atai.tsv（数値）を読み、SCHEMA.md §6.4 の検査を行う。
   teigi/bunsho.tsv（文書）と teigi/bubun.tsv（文書の部分）があれば、SCHEMA.md §7.4 の検査も行う。
   teigi/bunsho-kankei.tsv（文書どうしの関係。SCHEMA.md §7.6）があれば、その検査も行う。文書の表が要る。
+  teigi/theme.tsv（テーマの表。SCHEMA.md §7.7）があれば、その検査も行う。文書の表と文書の部分の表が要る。
   定義と数値の2つの表がどちらも無ければ「表がまだ無い」と出して、終了コード 0 で終わる。
   文書と文書の部分の2つの表は、どちらも無ければ検査しない。片方しか無ければ止まる。
   問題があれば、件数と、表の何行目か・何が問題かを出して、終了コード 1 で終わる。
@@ -21,6 +22,7 @@ sys.path.insert(0, HERE)
 
 import inputs  # noqa: E402
 import keys  # noqa: E402
+import ronten  # noqa: E402
 import shogo  # noqa: E402
 
 TEIGI_DIR = os.path.join(inputs.ROOT, "teigi")
@@ -37,6 +39,11 @@ BUBUN_COLUMNS = ["bunsho", "n", "oya", "shu", "name", "tokoro", "jun", "matome",
                  "chu"]
 BUNSHO_KANKEI_NAME = "teigi/bunsho-kankei.tsv"
 BUNSHO_KANKEI_COLUMNS = ["kara", "e", "hyogen", "inyo", "tokoro", "chu"]
+THEME_NAME = "teigi/theme.tsv"
+THEME_COLUMNS = ["theme", "shu", "jun", "inyo", "tokoro", "hyo", "chu"]
+SETSUMEI_BUN, SHISETSU_HYO = "説明の文", "施設の表"     # テーマの表の shu（SCHEMA.md §7.7）
+THEME_SHU = (SETSUMEI_BUN, SHISETSU_HYO)
+THEME_NAMAE = "名前"   # hino-ronten のテーマの定義の kind。テーマの名前の行
 
 ARU = "数値がある"
 KARA = "欄が空"
@@ -118,6 +125,10 @@ def read_bubun(text):
 
 def read_bunsho_kankei(text):
     return read_table(text, BUNSHO_KANKEI_NAME, BUNSHO_KANKEI_COLUMNS)
+
+
+def read_theme(text):
+    return read_table(text, THEME_NAME, THEME_COLUMNS)
 
 
 def is_ymd(s):
@@ -814,6 +825,79 @@ def check_bunsho_kankei(inp, rows, bunsho_names):
     return out
 
 
+# ---------------------------------------------------------------- テーマの表（SCHEMA.md §7.7）
+
+def theme_hyo_bubun(r, index):
+    """テーマの表の「施設の表」の行 → 指している文書の部分の表の行（表）。無ければ None。"""
+    xs = index.get((bunsho_of(r["tokoro"]), r["hyo"])) or []
+    return xs[0] if len(xs) == 1 else None
+
+
+def theme_hyo_gyo(hyo, bubun_rows):
+    """表（文書の部分の表の行）→ その表を親にする行か列のうち、shisetsu がある行の並び。"""
+    return [x for x in bubun_rows if x["bunsho"] == hyo["bunsho"] and x["oya"] == hyo["n"]
+            and x["shu"] in (GYO, RETSU) and x["shisetsu"].strip()]
+
+
+def check_theme(inp, rows, bunsho_names, bubun_rows, index):
+    """テーマの表の検査（SCHEMA.md §7.4）。inyo の照合は on_page（§3 の正規化）、広報ひのの確認は is_koho と has_kakunin。"""
+    out = []
+    namae = {}
+    jun = Counter((r["theme"], r["shu"], r["jun"]) for r in rows)
+    hyo_kazu = Counter(r["theme"] for r in rows if r["shu"] == SHISETSU_HYO)
+    for r in rows:
+        g, th = r["_gyo"], r["theme"]
+        if not th.strip():
+            out.append(Mondai(THEME_NAME, g, "theme が空"))
+        else:
+            if th not in namae:
+                namae[th] = any(x["kind"] == THEME_NAMAE for x in ronten.themes(inp, th))
+            if not namae[th]:
+                out.append(Mondai(THEME_NAME, g, f"テーマの定義に、theme（{th}）の kind「{THEME_NAMAE}」の行が無い"))
+        if r["shu"] not in THEME_SHU:
+            out.append(Mondai(THEME_NAME, g, f"shu が {'・'.join(THEME_SHU)} のどちらでもない（{r['shu']}）"))
+            continue
+        if not re.fullmatch(r"[1-9][0-9]*", r["jun"]):
+            out.append(Mondai(THEME_NAME, g, f"jun が1からの整数でない（{r['jun']}）"))
+        elif jun[(th, r["shu"], r["jun"])] > 1:
+            out.append(Mondai(THEME_NAME, g, f"同じ theme と shu の中で、jun が重なっている（{r['jun']}）"))
+        t = r["tokoro"]
+        try:
+            kind, _ = keys.parse(t)
+        except keys.KeyFormError:
+            kind = None
+        if kind not in ("doc", "pt"):
+            out.append(Mondai(THEME_NAME, g, f"tokoro が、doc か pt のページの鍵でない（{t}）"))
+            continue
+        if bunsho_of(t) not in bunsho_names:
+            out.append(Mondai(THEME_NAME, g, f"tokoro の文書が、文書の表に無い（{bunsho_of(t)}）"))
+            continue
+        if r["shu"] == SETSUMEI_BUN:
+            if r["hyo"]:
+                out.append(Mondai(THEME_NAME, g, f"「{SETSUMEI_BUN}」の行に hyo がある（{r['hyo']}）"))
+            if not r["inyo"].strip():
+                out.append(Mondai(THEME_NAME, g, "「説明の文」の行で、inyo が空"))
+            elif not on_page(inp, r["inyo"], t):
+                out.append(Mondai(THEME_NAME, g, f"inyo が、tokoro のページの原典の文字に無い（{t}）"))
+            if is_koho(inp, t) and not has_kakunin(r["chu"]):
+                out.append(Mondai(THEME_NAME, g,
+                                  "広報ひのの「説明の文」の行で、chu に「依頼者が PDF で確認（YYYY-MM-DD）」が無い"))
+            continue
+        # 施設の表
+        if r["inyo"].strip():
+            out.append(Mondai(THEME_NAME, g, f"「{SHISETSU_HYO}」の行に inyo がある"))
+        if hyo_kazu[th] > 1:
+            out.append(Mondai(THEME_NAME, g, f"テーマ（{th}）に「{SHISETSU_HYO}」の行が {hyo_kazu[th]} 行ある（1行まで）"))
+        hyo = theme_hyo_bubun(r, index) if re.fullmatch(r"[1-9][0-9]*", r["hyo"]) else None
+        if hyo is None or hyo["shu"] != HYO:
+            out.append(Mondai(THEME_NAME, g, f"hyo が、tokoro の文書の、文書の部分の表の表でない（{r['hyo']}）"))
+        elif hyo["tokoro"] != t:
+            out.append(Mondai(THEME_NAME, g, f"tokoro が、表の tokoro（{hyo['tokoro']}）と違う（{t}）"))
+        elif not theme_hyo_gyo(hyo, bubun_rows):
+            out.append(Mondai(THEME_NAME, g, f"表（{r['hyo']}）の行と列に、shisetsu がある部分が無い"))
+    return out
+
+
 def check_atai_bubun(inp, rows, bubun_rows, index, bunsho_names):
     """数値の表の bubun と retsu の検査と、行と列を指す数値の検査（SCHEMA.md §7.4）。→ (問題の並び, 数えた結果)。"""
     out = []
@@ -918,12 +1002,12 @@ def check(inp, suji_rows, atai_rows, bunsho_rows=None, bubun_rows=None, kankei_r
     return out, res
 
 
-def check_all(inp, suji_rows, atai_rows, bunsho_rows=None, bubun_rows=None, kankei_rows=None):
+def check_all(inp, suji_rows, atai_rows, bunsho_rows=None, bubun_rows=None, kankei_rows=None, theme_rows=None):
     """SCHEMA.md §6.4 と §7.4 の検査。→ (問題の並び, inyo の照合の結果, 行と列を指す数値の検査で数えた結果)。
 
     問題は表と行の番号の順。inp は入力の読み口（inputs.Inputs か、テストの偽の入力）。照合する inyo が無ければ読まない。
     文書の表と文書の部分の表（§7）は、どちらかがあるか、数値の表に bubun か retsu がある行があるか、
-    文書どうしの関係の表（kankei_rows）があるときに検査する。
+    文書どうしの関係の表（kankei_rows）か、テーマの表（theme_rows）があるときに検査する。
     """
     out = check_suji(suji_rows)
     ids = {r["id"] for r in suji_rows if r["id"]}
@@ -938,7 +1022,7 @@ def check_all(inp, suji_rows, atai_rows, bunsho_rows=None, bubun_rows=None, kank
         out.append(Mondai(ATAI_NAME, m["where"], f"inyo が shiryo の資料の本文に無い（{m['reason']}：{m['source']}）"))
     kazoe = Counter()
     shisetsu_kazoe = Counter()
-    if (bunsho_rows is not None or bubun_rows is not None or kankei_rows is not None
+    if (bunsho_rows is not None or bubun_rows is not None or kankei_rows is not None or theme_rows is not None
             or any(r["bubun"] or r["retsu"] for r in atai_rows)):
         more, names = check_bunsho(inp, bunsho_rows or [])
         out += more
@@ -949,11 +1033,12 @@ def check_all(inp, suji_rows, atai_rows, bunsho_rows=None, bubun_rows=None, kank
         more, kazoe = check_atai_bubun(inp, atai_rows, bubun_rows or [], index, names)
         out += more
         out += check_bunsho_kankei(inp, kankei_rows or [], names)
+        out += check_theme(inp, theme_rows or [], names, bubun_rows or [], index)
     kazoe = Counter(kazoe)
     kazoe.update(shurui_kazoe)
     kazoe.update(shisetsu_kazoe)
-    order = {SUJI_NAME: 0, ATAI_NAME: 1, BUNSHO_NAME: 2, BUBUN_NAME: 3, BUNSHO_KANKEI_NAME: 4}
-    out.sort(key=lambda m: (order.get(m.hyo, 5), m.gyo))
+    order = {SUJI_NAME: 0, ATAI_NAME: 1, BUNSHO_NAME: 2, BUBUN_NAME: 3, BUNSHO_KANKEI_NAME: 4, THEME_NAME: 5}
+    out.sort(key=lambda m: (order.get(m.hyo, 6), m.gyo))
     return out, res, kazoe
 
 
@@ -971,9 +1056,11 @@ def main(argv=None, teigi_dir=None):
     paths = {SUJI_NAME: os.path.join(d, "suji.tsv"), ATAI_NAME: os.path.join(d, "atai.tsv")}
     paths7 = {BUNSHO_NAME: os.path.join(d, "bunsho.tsv"), BUBUN_NAME: os.path.join(d, "bubun.tsv")}
     path_kankei = os.path.join(d, "bunsho-kankei.tsv")
+    path_theme = os.path.join(d, "theme.tsv")
     aru = {k: os.path.exists(p) for k, p in paths.items()}
     aru7 = {k: os.path.exists(p) for k, p in paths7.items()}
     aru_kankei = os.path.exists(path_kankei)
+    aru_theme = os.path.exists(path_theme)
     if not any(aru.values()) and not any(aru7.values()):
         print(f"表がまだ無い（{SUJI_NAME}・{ATAI_NAME}）")
         return 0
@@ -988,26 +1075,32 @@ def main(argv=None, teigi_dir=None):
     if aru_kankei and not all(aru7.values()):
         print(f"止めた：{BUNSHO_NAME}・{BUBUN_NAME} が無いのに、{BUNSHO_KANKEI_NAME} がある", file=sys.stderr)
         return 1
+    if aru_theme and not all(aru7.values()):
+        print(f"止めた：{BUNSHO_NAME}・{BUBUN_NAME} が無いのに、{THEME_NAME} がある", file=sys.stderr)
+        return 1
     try:
         suji_rows, p1 = read_suji(_read_file(paths[SUJI_NAME]))
         atai_rows, p2 = read_atai(_read_file(paths[ATAI_NAME]))
-        bunsho_rows = bubun_rows = kankei_rows = None
-        p3 = p4 = p5 = []
+        bunsho_rows = bubun_rows = kankei_rows = theme_rows = None
+        p3 = p4 = p5 = p6 = []
         if all(aru7.values()):
             bunsho_rows, p3 = read_bunsho(_read_file(paths7[BUNSHO_NAME]))
             bubun_rows, p4 = read_bubun(_read_file(paths7[BUBUN_NAME]))
         if aru_kankei:
             kankei_rows, p5 = read_bunsho_kankei(_read_file(path_kankei))
+        if aru_theme:
+            theme_rows, p6 = read_theme(_read_file(path_theme))
         need = any(r["inyo"].strip() or r["bubun"] or r["retsu"] or r["shurui"].strip() for r in atai_rows) or bool(bunsho_rows or bubun_rows)
         inp = inputs.Inputs() if need else None
-        problems, res, kazoe = check_all(inp, suji_rows, atai_rows, bunsho_rows, bubun_rows, kankei_rows)
+        problems, res, kazoe = check_all(inp, suji_rows, atai_rows, bunsho_rows, bubun_rows, kankei_rows,
+                                             theme_rows)
         n_shisetsu = n_kiroku = None
         if bunsho_rows is not None and inp is not None:
             n_shisetsu, n_kiroku = len(inp.shisetsu()), len(inp.shisetsu_kiroku())
     except (inputs.InputError, OSError, UnicodeDecodeError) as e:
         print(f"止めた：lock と入力、または表を読めない\n{e}", file=sys.stderr)
         return 1
-    problems = p1 + p2 + p3 + p4 + p5 + problems
+    problems = p1 + p2 + p3 + p4 + p5 + p6 + problems
     print(f"定義：{len(suji_rows)} 行")
     print(f"数値：{len(atai_rows)} 行")
     c = Counter(r["jotai"] for r in atai_rows)
@@ -1029,6 +1122,9 @@ def main(argv=None, teigi_dir=None):
               f"一致しない行のうち、shisetsu_kakunin に記録が無い行 {kazoe['shisetsu_mikakunin']}）")
     if kankei_rows is not None:
         print(f"文書どうしの関係：{len(kankei_rows)} 行")
+    if theme_rows is not None:
+        ct = Counter(r["shu"] for r in theme_rows)
+        print(f"テーマの表：{len(theme_rows)} 行（" + "、".join(f"{x} {ct.get(x, 0)}" for x in THEME_SHU) + "）")
     print(f"数値の表で、bubun がある行：{sum(1 for r in atai_rows if r['bubun'])}、"
           f"retsu がある行：{sum(1 for r in atai_rows if r['retsu'])}")
     print(f"行と列を指す数値の検査：対象 {kazoe['taisho']}、合った {kazoe['atta']}。"

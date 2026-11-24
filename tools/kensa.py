@@ -12,6 +12,7 @@
   9. 資料の表のページの作成（tools/build_hyo.py doc:shingi-youho-teigen 4）
   10. 資料の表のページの作成（tools/build_hyo.py doc:jigyo-shinkodomoen-kousou 4）
   11. 資料の表のページの作成（tools/build_hyo.py pt:kodomo/honpen 37）
+  12. テーマのページの作成（tools/build_theme.py hoiku）
 
 使い方：
   python3 -B tools/kensa.py
@@ -43,6 +44,7 @@ STEPS = [
      PY + [os.path.join(TOOLS, "build_hyo.py"), "doc:jigyo-shinkodomoen-kousou", "4"]),
     ("資料の表のページの作成（子ども・子育て支援事業計画の表37）",
      PY + [os.path.join(TOOLS, "build_hyo.py"), "pt:kodomo/honpen", "37"]),
+    ("テーマのページの作成（幼保）", PY + [os.path.join(TOOLS, "build_theme.py"), "hoiku"]),
 ]
 
 

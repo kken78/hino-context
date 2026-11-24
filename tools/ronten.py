@@ -1,8 +1,9 @@
 """hino-ronten の題材の定義と、確定した記録の読み込み（SCHEMA.md §1）。
 
-lock の SHA の hino-ronten から読む。status が confirmed の行だけを返す。
+lock の SHA の hino-ronten から読む。records の表は、status が confirmed の行だけを返す。
 """
 THEMES = "ref/themes.tsv"
+LINEAGE = "ref/lineage.tsv"
 KOTOGARA = "records/kotogara.tsv"
 KATEI = "records/katei.tsv"
 TAIO = "records/taio.tsv"
@@ -12,6 +13,11 @@ CONFIRMED = "confirmed"
 def themes(inp, theme):
     """題材の定義の、その題材の行（themes.tsv には status の列が無い。依頼者が決めた行だけが入っている）。"""
     return [r for r in inp.ronten_tsv(THEMES) if r["theme"] == theme]
+
+
+def lineage_plans(inp, series):
+    """系列の表（ref/lineage.tsv）のうち、series が series のどれかの行の plan（空の行は除く）の集まり（SCHEMA.md §1）。"""
+    return {r["plan"] for r in inp.ronten_tsv(LINEAGE) if r["series"] in series and r["plan"]}
 
 
 def _confirmed(inp, path):
