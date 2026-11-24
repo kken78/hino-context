@@ -16,14 +16,22 @@ SID = "0000008211_20241213_0156"
 
 
 class FakeGaibu(FakeInputs):
-    """FakeInputs に、外部の公的な資料の表（SCHEMA.md §5）の読み口を足した物。"""
+    """FakeInputs に、外部の公的な資料の表（SCHEMA.md §5）と、施設の参照表・施設の記録（SCHEMA.md §1）の読み口を足したもの。"""
 
-    def __init__(self, gaibu=None, **kw):
+    def __init__(self, gaibu=None, shisetsu=None, shisetsu_kiroku=None, **kw):
         super().__init__(**kw)
         self._gaibu = gaibu or []
+        self._shisetsu = shisetsu or []
+        self._shisetsu_kiroku = shisetsu_kiroku or []
 
     def gaibu(self):
         return self._gaibu
+
+    def shisetsu(self):
+        return self._shisetsu
+
+    def shisetsu_kiroku(self):
+        return self._shisetsu_kiroku
 
 
 def fake():
@@ -311,14 +319,15 @@ def atai7(**kw):
     return r
 
 
-def run7(atai=None, bunsho=None, bubun=None, inp=None):
+def run7(atai=None, bunsho=None, bubun=None, inp=None, kankei=None):
     """§7 の表を含めて検査する。→ (問題の内容の並び, 数えた結果)。"""
     s, _ = suji.read_suji(tsv(suji.SUJI_COLUMNS, [teigi_row()]))
     a, p1 = suji.read_atai(tsv(suji.ATAI_COLUMNS, atai if atai is not None else [atai7()]))
     b, p2 = suji.read_bunsho(tsv(suji.BUNSHO_COLUMNS, bunsho if bunsho is not None else [bunsho_row()]))
     c, p3 = suji.read_bubun(tsv(suji.BUBUN_COLUMNS, bubun if bubun is not None else bubun_rows()))
-    problems, _, kazoe = suji.check_all(inp or fake7(), s, a, b, c)
-    return [m.naiyo for m in p1 + p2 + p3 + problems], kazoe
+    k, p4 = (suji.read_bunsho_kankei(tsv(suji.BUNSHO_KANKEI_COLUMNS, kankei)) if kankei is not None else (None, []))
+    problems, _, kazoe = suji.check_all(inp or fake7(), s, a, b, c, k)
+    return [m.naiyo for m in p1 + p2 + p3 + p4 + problems], kazoe
 
 
 def change(rows, bango, **kw):
@@ -791,6 +800,166 @@ class TestReal7(unittest.TestCase):
         self.assertIn((suji.ATAI_NAME, self.gyo_of(**self.FUSOKU2, nendo="2025"), ng), p)
 
 
+# ---------------------------------------------------------------- 施設（SCHEMA.md §2・§7.2・§7.4）
+
+SHISETSU_REF = [
+    dict(key="fa:minamihizusa-yo", name="南比都佐幼稚園", aliases=""),
+    dict(key="fa:kaneka", name="みらいしゃくなげ保育園",
+         aliases="鎌掛幼稚園（開設から）;日野幼稚園鎌掛分園（平成１０年度から）;保育所あおぞら園鎌掛分園（平成２８年度から）"),
+    dict(key="fa:sakuradani-1", name="桜谷こども園第１園舎", aliases=""),
+    dict(key="fa:sakuradani-2", name="桜谷こども園第２園舎", aliases=""),
+]
+
+
+def fake_shisetsu():
+    inp = fake7()
+    inp._shisetsu = [dict(r) for r in SHISETSU_REF]
+    return inp
+
+
+class TestShisetsu(unittest.TestCase):
+    """文書の部分の表の shisetsu（SCHEMA.md §7.2・§7.4）。"""
+
+    REF = {r["key"]: r for r in SHISETSU_REF}
+
+    def icchi(self, name, shisetsu):
+        return suji.shisetsu_icchi(dict(name=name, shisetsu=shisetsu), self.REF)
+
+    def test_icchi(self):
+        """§7.2 の判定の条件：name が、施設の name か aliases（「（…から）」の注記を除く）と、§3 の正規化のあとで一致する。"""
+        self.assertTrue(self.icchi("南比都佐幼稚園", "fa:minamihizusa-yo"))
+        self.assertTrue(self.icchi("南比都佐 幼稚園", "fa:minamihizusa-yo"))          # 空白は §3 の正規化で除く
+        self.assertTrue(self.icchi("保育所あおぞら園鎌掛分園", "fa:kaneka"))           # aliases の注記を除いて一致
+        self.assertFalse(self.icchi("保育所あおぞら園鎌掛分園（平成２８年度から）", "fa:kaneka"))
+        self.assertFalse(self.icchi("南比幼稚園 676㎡", "fa:minamihizusa-yo"))
+        self.assertFalse(self.icchi("あおぞら園 鎌掛分園", "fa:kaneka"))
+        # 鍵が複数ある行は、どの鍵の施設とも一致する場合だけ一致。単語の一致で決めない
+        self.assertFalse(self.icchi("桜谷こども園", "fa:sakuradani-1;fa:sakuradani-2"))
+        self.assertFalse(self.icchi("桜谷こども園第１園舎", "fa:sakuradani-1;fa:sakuradani-2"))
+        self.assertIsNone(self.icchi("南比都佐幼稚園", ""))
+        self.assertIsNone(self.icchi("南比都佐幼稚園", "fa:nai"))
+
+    def test_kazoe(self):
+        rows = change(change(bubun_rows(), "3", shisetsu="fa:minamihizusa-yo", name="不足分（②－①）"),
+                      "6", shisetsu="fa:sakuradani-1;fa:sakuradani-2")
+        p, kazoe = run7(bubun=rows, inp=fake_shisetsu())
+        self.assertEqual(p, [])
+        self.assertEqual((kazoe["shisetsu_icchi"], kazoe["shisetsu_fuicchi"]), (0, 2))
+        rows = change(bubun_rows(), "2", shisetsu="fa:minamihizusa-yo", name="南比都佐幼稚園")
+        out, kazoe = suji.check_shisetsu(fake_shisetsu(), [dict({"shisetsu": ""}, **r, _gyo=i) for i, r in enumerate(rows, 2)])
+        self.assertEqual((out, kazoe["shisetsu_icchi"], kazoe["shisetsu_fuicchi"]), ([], 1, 0))
+
+    def test_kagi(self):
+        """shisetsu の鍵は、施設の参照表の key にある。「;」で区切った空の鍵も止まる。"""
+        for v, want in (("fa:nai", "fa:nai"), ("fa:kaneka;fa:nai", "fa:nai"), ("fa:kaneka;", "空"),
+                        ("fa:kaneka; fa:minamihizusa-yo", " fa:minamihizusa-yo"), ("kaneka", "kaneka")):
+            with self.subTest(v=v):
+                p, _ = run7(bubun=change(bubun_rows(), "6", shisetsu=v), inp=fake_shisetsu())
+                self.assertEqual(p, [f"shisetsu の鍵が、施設の参照表に無い（{want}）"])
+
+    def test_yomanai(self):
+        """shisetsu がある行が無ければ、施設の参照表を読まない。"""
+        inp = fake7()
+        inp.shisetsu = None          # 呼べば止まる
+        self.assertEqual(run7(inp=inp)[0], [])
+
+
+class TestShisetsuReal(unittest.TestCase):
+    """lock の版の hino-ronten の、施設の参照表と施設の記録（SCHEMA.md §1・§2）。"""
+
+    YOHO = ("fa:aozora", "fa:hino-yo", "fa:hinona", "fa:hisa-yo", "fa:kaneka", "fa:kobato", "fa:minamihizusa-yo",
+            "fa:nishioji-yo", "fa:sakuradani-1", "fa:sakuradani-2", "fa:shin-kodomoen", "fa:warabe", "fa:warabe2")
+
+    @classmethod
+    def setUpClass(cls):
+        cls.inp = real_inputs()
+        if cls.inp is None:
+            raise unittest.SkipTest("lock の版の入力が無い")
+
+    def test_sanshohyo(self):
+        ref = {r["key"]: r for r in self.inp.shisetsu()}
+        self.assertEqual(len(ref), len(self.inp.shisetsu()))
+        for k in self.YOHO:
+            self.assertIn(k, ref)
+        self.assertTrue(all(suji.RE_SHISETSU.fullmatch(k) for k in ref), sorted(ref))
+
+    def test_kiroku(self):
+        rows = self.inp.shisetsu_kiroku()
+        self.assertTrue(rows)
+        self.assertTrue(all(r["status"] == inputs.CONFIRMED for r in rows))
+        keys = {r["key"] for r in self.inp.shisetsu()}
+        self.assertTrue({r["facility"] for r in rows} <= keys)
+
+    def test_schema_no_rei(self):
+        """SCHEMA.md §7.2 の実物の例。"""
+        ref = {r["key"]: r for r in self.inp.shisetsu()}
+        rei = [("南比都佐幼稚園", "fa:minamihizusa-yo", True), ("南比幼稚園 676㎡", "fa:minamihizusa-yo", False),
+               ("こども園B（こばと園の増築）", "fa:kobato", False), ("あおぞら園 鎌掛分園", "fa:kaneka", False),
+               ("公立 新施設（１園）R10.4〜", "fa:shin-kodomoen", False),
+               ("私立 わらべ保育園（2園）", "fa:warabe;fa:warabe2", False),
+               ("桜谷こども園", "fa:sakuradani-1;fa:sakuradani-2", False),
+               ("保育所あおぞら園鎌掛分園", "fa:kaneka", True)]
+        for name, k, want in rei:
+            self.assertIs(suji.shisetsu_icchi(dict(name=name, shisetsu=k), ref), want, name)
+
+
+# ---------------------------------------------------------------- 文書どうしの関係（SCHEMA.md §7.6・§7.4）
+
+def bunsho_youho():
+    return bunsho_row(bunsho="pt:youho/honpen", namae="a", konkyo="", konkyo_tokoro="", hiduke="", hiduke_moto="",
+                      chu="無い")
+
+
+def kankei_row(**kw):
+    r = dict(kara="pt:kodomo/honpen", e="pt:youho/honpen", hyogen="に基づく",
+             inyo="子ども・子育て支援法第 61 条に基づく計画です。", tokoro="pt:kodomo/honpen/3", chu="")
+    r.update(kw)
+    return r
+
+
+class TestBunshoKankei(unittest.TestCase):
+    def run_k(self, *rows):
+        return run7(bunsho=[bunsho_row(), bunsho_youho()], kankei=list(rows))[0]
+
+    def test_ok(self):
+        self.assertEqual(self.run_k(kankei_row()), [])
+        self.assertEqual(self.run_k(), [])
+
+    def test_bunsho(self):
+        self.assertEqual(self.run_k(kankei_row(e="pt:nai/honpen")), ["e が文書の表に無い（pt:nai/honpen）"])
+        p = self.run_k(kankei_row(kara="doc:nai", tokoro="doc:nai/1"))
+        self.assertIn("kara が文書の表に無い（doc:nai）", p)
+
+    def test_tokoro_inyo_hyogen(self):
+        self.assertEqual(self.run_k(kankei_row(tokoro="pt:youho/honpen/2")),
+                         ["tokoro が、kara の文書のページの鍵でない（pt:youho/honpen/2）"])
+        self.assertEqual(self.run_k(kankei_row(tokoro="pt:kodomo/honpen/2")),
+                         ["inyo が、tokoro のページの原典の文字に無い（pt:kodomo/honpen/2）"])
+        self.assertEqual(self.run_k(kankei_row(hyogen="を上位計画とし")), ["hyogen が、inyo の中に無い（を上位計画とし）"])
+        self.assertEqual(self.run_k(kankei_row(hyogen="")), ["必ず書く列が空（hyogen）"])
+        self.assertEqual(self.run_k(kankei_row(inyo="", hyogen="")), ["必ず書く列が空（hyogen・inyo）"])
+
+    def test_columns(self):
+        rows, p = suji.read_bunsho_kankei("kara\te\thyogen\tinyo\ttokoro\n")
+        self.assertEqual([m.naiyo for m in p], ["列が足りない（chu）"])
+
+    def test_real(self):
+        inp = real_inputs()
+        if inp is None:
+            self.skipTest("入力が無い")
+        t = real_tables()
+        with open(os.path.join(suji.TEIGI_DIR, "bunsho-kankei.tsv"), encoding="utf-8") as f:
+            rows, p = suji.read_bunsho_kankei(f.read())
+        self.assertEqual(p, [])
+        names = {r["bunsho"] for r in t["bunsho"]}
+        self.assertEqual([m.naiyo for m in suji.check_bunsho_kankei(inp, rows, names)], [])
+        # 再編整備計画 令和7年3月の版の「基本とした」の行を、別の文書のページに置くと止まる
+        r = next(x for x in rows if x["kara"] == "pt:youho/honpen-202503")
+        bad = [dict(r, tokoro="pt:youho/honpen-202503/24")]
+        self.assertEqual([m.naiyo for m in suji.check_bunsho_kankei(inp, bad, names)],
+                         ["inyo が、tokoro のページの原典の文字に無い（pt:youho/honpen-202503/24）"])
+
+
 class TestMain(unittest.TestCase):
     def main(self, files, inp=None):
         with tempfile.TemporaryDirectory() as d:
@@ -823,6 +992,14 @@ class TestMain(unittest.TestCase):
         self.assertIn("数値がある：1 行", out)
         self.assertIn("欄が空：1 行", out)
         self.assertIn("inyo の照合：対象 1、合った 1、合わなかった 0", out)
+
+    def test_kankei_dake(self):
+        """文書どうしの関係の表があり、文書の表と文書の部分の表が無ければ止まる。"""
+        code, _, err = self.main({"suji.tsv": tsv(suji.SUJI_COLUMNS, [teigi_row()]),
+                                  "atai.tsv": tsv(suji.ATAI_COLUMNS, [atai_row()]),
+                                  "bunsho-kankei.tsv": tsv(suji.BUNSHO_KANKEI_COLUMNS, [kankei_row()])})
+        self.assertEqual(code, 1)
+        self.assertIn("teigi/bunsho-kankei.tsv がある", err)
 
     def test_problems(self):
         code, _, err = self.main({"suji.tsv": tsv(suji.SUJI_COLUMNS, [teigi_row(), teigi_row()]),
