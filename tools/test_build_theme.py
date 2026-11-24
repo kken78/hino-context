@@ -460,6 +460,33 @@ class TestReal(unittest.TestCase):
         self.assertIn("所在地は、広報ひの 2024年10月号", page)
         self.assertIn("（令和7年4月1日現在）", page)
 
+    def test_hoiku_hyo_kijutsu(self):
+        """再編整備計画 27ページの表（2つの版）の欄は、施設ごとの記述にだけ出し、町内の施設の表には出さない。"""
+        page, info = bt.build(self.inp, self.tables, "hoiku", bn.read_kotoba(), TODAY, self.read_problems, D)
+        self.assertEqual(info["hyo_kijutsu"], 18)
+        midashi = f"<h4>{D.kotoba('文書の部分の表 shisetsu、oya')}</h4>"
+        self.assertEqual(page.count(midashi), 9)
+        s = page.index(f"<h2>{D.kotoba('テーマの表 shu が「施設の表」')}</h2>")
+        hyo = page[s:page.index("<h2>", s + 1)]
+        for w in ("延床面積", "整備方針", "再編整備計画"):
+            self.assertNotIn(w, hyo)
+        # 西大路幼稚園：2つの版の2行。資料の日付の古い順（2025年3月の版が先）
+        i = page.index("<h3 id='fa-nishioji-yo'>")
+        part = page[i:page.index("<h3 ", i + 1)]
+        self.assertEqual(part.count("<td>〇町立幼児教育保育施設の再編整備について</td><td>西大路幼稚園</td>"), 2)
+        self.assertLess(part.index("（2025年3月）"), part.index("（令和８年６月一部改正、2026年6月）"))
+        self.assertIn(D.bun("hyo-kijutsu-ran", midashi="整備後の施設（案）", atai="子育て支援施設 学童保育所等"), part)
+        self.assertIn(D.bun("hyo-kijutsu-ran", midashi="延床面積（㎡）", atai="531"), part)
+        # 表に行が無い施設（新こども園、わらべ保育園など）には、見出しも出さない
+        for k in ("fa-shin-kodomoen", "fa-warabe", "fa-warabe2", "fa-hinona"):
+            i = page.index(f"<h3 id='{k}'>")
+            j = page.find("<h3 ", i + 1)
+            self.assertNotIn(midashi, page[i:j if j > 0 else len(page)], k)
+        # 桜谷こども園は、園舎ごとの行（第１園舎と第２園舎の施設ごとの記述に1つずつ、2つの版で2行ずつ）
+        i = page.index("<h3 id='fa-sakuradani-1'>")
+        self.assertEqual(page[i:page.index("<h3 ", i + 1)].count("<td>桜谷こども園 第１園舎（旧幼稚園）</td>"), 2)
+        self.assertNotIn(D.bun("mikakunin-hyo"), page)
+
 
 if __name__ == "__main__":
     unittest.main()
