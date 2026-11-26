@@ -7,5 +7,7 @@
   "compatibility_date": "2026-11-25",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
-  "observability": { "enabled": true }
+  "observability": { "enabled": true },
+  // PR のブランチで、Cloudflare がプレビューを作成する（npx wrangler preview）ために要る。プレビューだけの設定は無いので、空にしている。
+  "previews": {}
 }
