@@ -1,0 +1,11 @@
+// hino-context の MCP サーバー。Cloudflare の Workers Builds では、Root directory を mcp にして、
+// npx wrangler deploy で公開する（docs/mcp.md）。バインディング（KV、D1、Durable Objects など）は使わない。
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "hino-context",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-25",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "observability": { "enabled": true }
+}
