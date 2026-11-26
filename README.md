@@ -6,6 +6,8 @@
 
 これは個人による提案と試作で、日野町や日野町議会の公式の物ではありません。内容は、会議録の原本や各資料の原典で確認してください。
 
+使う人の生成AIから呼べる、読み取り専用の MCP サーバーの試作があります（[mcp/](mcp/)。形は [docs/mcp.md](docs/mcp.md)）。応答は tools/build_mcp.py が表から先に作り、Cloudflare Workers に置いたプログラムは、それを引いて返すだけです。Claude のカスタムコネクタに、公開の URL（末尾が `/mcp`）を登録して使います。
+
 前のリポジトリ（経過と確定済みの台帳）は [hino-ronten](https://github.com/kken78/hino-ronten) にあります。
 
 ライセンスは、プログラムが AGPL-3.0-or-later（[LICENSE](LICENSE)）、データは [LICENSE-DATA.md](LICENSE-DATA.md) の区分によります。
