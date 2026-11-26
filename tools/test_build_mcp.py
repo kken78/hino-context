@@ -92,7 +92,8 @@ class TestReal(unittest.TestCase):
         d = self.data
         self.assertEqual((d["name"], d["version"]), ("hino-context", bm.VERSION))
         self.assertEqual([t["name"] for t in d["tools"]], ["theme", "suji", "shisetsu", "shiryo"])
-        want = {"theme": ["theme", "tsuzuki"], "suji": ["id", "shiryo", "tsuzuki"], "shisetsu": ["key", "tsuzuki"],
+        want = {"theme": ["theme", "tsuzuki"], "suji": ["id", "shiryo", "uchiwake", "tsuzuki"],
+                "shisetsu": ["key", "tsuzuki"],
                 "shiryo": ["bunsho", "hyo", "tsuzuki"]}
         for t in d["tools"]:
             self.assertTrue(t["description"])
@@ -105,7 +106,9 @@ class TestReal(unittest.TestCase):
         self.assertEqual({t["name"]: [a["name"] for a in t["args"] if a["required"]] for t in d["tools"]},
                          {"theme": [], "suji": ["id"], "shisetsu": ["key"], "shiryo": ["bunsho"]})
         self.assertIn("taiki（待機児童数）", d["tools"][1]["args"][0]["description"])
-        self.assertIn("最初に", d["tools"][0]["description"])
+        self.assertNotIn("最初に", d["tools"][0]["description"])            # 2026-11-27 の修正
+        self.assertIn("ツールの引数の説明か、theme の応答", d["tools"][0]["description"])
+        self.assertEqual(d["tools"][1]["args"][2]["type"], "integer")
         self.assertEqual(set(d["nai"]), {"theme", "suji", "shisetsu", "shiryo"})
         self.assertEqual(d["instructions"], bm.read_skill())
         n = len(d["bun"])
@@ -158,7 +161,7 @@ class TestReal(unittest.TestCase):
         self.assertNotIn("tsuzuki=", self.bun("suji", f"id=taiki&tsuzuki={n}"))
         self.assertNotIn(f"id=taiki&tsuzuki={n + 1}", o)
         # 年齢別の内訳は、資料の中で内訳ごとにまとめる
-        t = "".join(self.data["bun"][o[k]] for k in o if k.startswith("id=fusoku&tsuzuki="))
+        t = "".join(self.data["bun"][o[k]] for k in o if k.startswith("id=fusoku&uchiwake=1&tsuzuki="))
         midashi = f"- {D.kotoba('数値の表 kubun')}：2号認定（3〜5歳・保育）"
         self.assertEqual(t.count(midashi), 1)
 
@@ -167,7 +170,7 @@ class TestReal(unittest.TestCase):
         for k in ("id=taikii", "id=taiki&tsuzuki=99", "id=taiki&shiryo=doc:koho-no771-08"):
             self.assertNotIn(k, o["suji"])
         self.assertNotIn("key=nishioji", o["shisetsu"])
-        self.assertEqual(self.data["nai"]["suji"], D.bun("mcp-nai", tool="suji"))
+        self.assertEqual(self.data["nai"]["suji"], D.bun("mcp-nai", tool="suji") + D.bun("mcp-hani"))
         # 表の形で出せない表は、決まった文
         self.assertIn(D.bun("mcp-hyo-dasenai"), self.bun("shiryo", "bunsho=doc:shingi-youho-teigen&hyo=16"))
 
@@ -195,6 +198,66 @@ class TestReal(unittest.TestCase):
         self.assertEqual(t.count("〇町立幼児教育保育施設の再編整備について"), 2)
         self.assertIn("定員（id：teiin）：90", t)
         self.assertNotIn("延床面積（id：", t)                               # 資料の表での記述に出した欄は除く
+
+    def test_uchiwake(self):
+        # uchiwake を付けない組は内訳の無い数値だけ、uchiwake=1 は内訳のある数値だけ
+        o = self.data["outou"]["suji"]
+        base = "".join(self.data["bun"][o[k]] for k in o if re.fullmatch(r"id=taiki&tsuzuki=[0-9]+", k))
+        uchi = "".join(self.data["bun"][o[k]] for k in o if re.fullmatch(r"id=taiki&uchiwake=1&tsuzuki=[0-9]+", k))
+        kubun = f"- {D.kotoba('数値の表 kubun')}："
+        self.assertNotIn(kubun, base)
+        self.assertIn(kubun + "うち0歳児", uchi)
+        self.assertIn(D.bun("mcp-uchiwake"), base)
+        self.assertNotIn(D.bun("mcp-uchiwake"), uchi)
+        self.assertIn(D.bun("mcp-uchiwake-dake"), uchi)
+        self.assertEqual(sum(1 for k in o if re.fullmatch(r"id=taiki&tsuzuki=[0-9]+", k)), 2)
+        # 内訳のある数値が無い定義には、uchiwake の組を作らない。どれも内訳の定義は、内訳の無い数値が無いことを示す
+        self.assertNotIn("id=kaien&uchiwake=1", o)
+        self.assertNotIn(D.bun("mcp-uchiwake"), self.bun("suji", "id=kaien"))
+        self.assertIn(D.bun("mcp-uchiwake-nomi"), self.bun("suji", "id=fusoku"))
+        self.assertIn("id=taiki&shiryo=pt:kodomo/honpen&uchiwake=1", o)
+        self.assertNotIn("id=taiki&shiryo=plan:sogo6&uchiwake=1", o)
+
+    def test_chigau(self):
+        # 資料の間で一致しない時期は、数値のページと同じ判定で出す（待機児童数の2018年4月）
+        t = self.bun("suji", "id=taiki")
+        midashi = f"## {D.bun('chigau')}"
+        self.assertEqual(t.count(midashi), 1)
+        part = t[t.index(midashi):t.index(f"## {D.bun('mcp-midashi-suji')}")]
+        self.assertIn("- 2018年4月：1（", part)
+        self.assertIn("なし（会議録 2019年6月14日（議会での答弁））", part)
+        self.assertEqual(part.count("\n- "), 1)
+        self.assertIn(D.bun("chigau-setsumei"), part)
+        for k, i in self.data["outou"]["suji"].items():
+            if not k.startswith("id=taiki"):
+                self.assertNotIn(midashi, self.data["bun"][i], k)
+
+    def test_hiduke(self):
+        # 年度だけが分かる資料は年度を出し、資料に日付の記述が無い資料は最後に並べて、そのことを書く
+        t = self.bun("shisetsu", "key=fa:nishioji-yo")
+        self.assertIn("指定避難所・指定緊急避難場所一覧（2018年度）", t)
+        self.assertIn(D.bun("hiduke-nendo-setsumei"), t)
+        t = self.bun("suji", "id=kaien")
+        self.assertIn(D.bun("hiduke-nashi-setsumei"), t)
+        self.assertGreater(t.index("パブリックコメントの実施結果"), t.index("会議録 2025年9月26日"))
+        self.assertNotIn(D.bun("hiduke-nashi-setsumei"), self.bun("suji", "id=juto"))   # 外部の資料には出さない
+
+    def test_irete_inai(self):
+        nai = D.bun("mcp-irete-inai")
+        t = self.bun("shiryo", "bunsho=plan:sogo6")
+        self.assertIn(f"- {D.kotoba('文書の表 konkyo')}：{nai}", t)
+        self.assertIn(f"## {D.bun('mcp-midashi-hyo-ichiran')}\n{nai}", t)
+        t = self.bun("shiryo", "bunsho=pt:youho/honpen-202503")
+        self.assertIn(f"## {D.kotoba('文書どうしの関係の表 e')}\n", t)
+        t = self.bun("shiryo", "bunsho=doc:yosan-r7-hosei-12")
+        self.assertIn(D.bun("mcp-konkyo-nashi", hani=D.kotoba("文書の表 chu（「根拠：」の記述の「見つからない（…）」の括弧の中の字）")
+                                                + "：全ページを「基づ」「法」の字で探し、1ページを読んだ"), t)
+        self.assertEqual(bm.konkyo_hani("根拠：記載は見つからない（1ページ（表）を見た）。日付：…"), "1ページ（表）を見た")
+        self.assertEqual(bm.konkyo_hani("根拠：原典の文字が入力に無いので探していない"), "")
+
+    def test_hani(self):
+        self.assertIn(D.bun("mcp-hani"), self.bun("theme", ""))
+        self.assertIn(D.bun("mcp-shisetsu-teigi", theme="hoiku"), self.bun("shisetsu", "key=fa:shin-kodomoen"))
 
     def test_stop_word(self):
         # 応答の文に、使わない言葉が残っていれば止まる

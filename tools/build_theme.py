@@ -99,6 +99,27 @@ class Namae:
             return S(dai)
         return self.D.bun("koho", nen=int(m[1]), tsuki=int(m[2]), dai=S(dai))
 
+    def nendo_dake(self, bkey):
+        """文書の鍵が、文書の表に無い doc の鍵で、入力の台帳（sources.tsv）の date が空、fiscal_year がある資料なら、
+        fiscal_year の字。ほかは空（docs/design.md 3節。2026-11-27）。広報ひのは除く（号の年月で出すため）。"""
+        if not bkey or bkey in self.by:
+            return ""
+        m = sj.RE_BUNSHO_DOC.fullmatch(bkey)
+        row = (self.inp.docs().get(m[1]) or {}) if m else {}
+        if row.get("date") or row.get("category") == sj.KOHO:
+            return ""
+        fy = row.get("fiscal_year", "")
+        return fy if re.fullmatch(r"[0-9]{4}", fy or "") else ""
+
+    def hiduke_nashi(self, bkey):
+        """文書の鍵が文書の表にあり、hiduke が空か。"""
+        b = self.by.get(bkey or "")
+        return b is not None and not sj.RE_HIDUKE.fullmatch(b["hiduke"] or "")
+
+    def kiroku_jun(self, r):
+        """施設の記録の並べ方：文書の表の hiduke が空の資料を最後に置き、ほかは source_date の順。"""
+        return (self.hiduke_nashi(sj.bunsho_of(r["source"])), r["source_date"], r["source"], r["aspect"])
+
     def bunsho(self, bkey):
         """文書の鍵 → 資料の名前（HTML）。文書の表にあれば namae と括弧（han と hiduke）。広報ひのは koho の文。"""
         b = self.by.get(bkey)
@@ -114,6 +135,9 @@ class Namae:
                 return S(bkey)
             if row.get("category") == sj.KOHO:
                 return self.koho(row.get("date", ""), row["title"], bkey)
+            nendo = self.nendo_dake(bkey)
+            if nendo:
+                return f"{S(row['title'])}（{E(self.D.bun('nendo', nendo=int(nendo)))}）"
             return S(row["title"])
         m = sj.RE_BUNSHO_PT.fullmatch(bkey) or keys.RE_PLAN.fullmatch(bkey)
         name = (((self.inp.plan(m[1]) or {}).get("meta") or {}).get("name", "")) if m else ""
@@ -448,7 +472,8 @@ class Page:
             rows.append(f"<tr><td>{self.n.bunsho(k)}</td><td>{cell}</td></tr>")
         head = (f"<th>{E(D.kotoba('文書どうしの関係の表 kara、e'))}</th>"
                 f"<th>{E(D.kotoba('文書どうしの関係の表 inyo'))}</th>")
-        return (f"<h2>{E(D.bun('midashi-shiryo'))}</h2>\n<p class=s>{E(D.bun('shiryo-setsumei'))}</p>\n"
+        hb = bs.hiduke_bun(D, False, any(self.n.hiduke_nashi(k) for k in docs))
+        return (f"<h2>{E(D.bun('midashi-shiryo'))}</h2>\n<p class=s>{E(D.bun('shiryo-setsumei'))}{E(hb)}</p>\n"
                 f"<table>\n<thead><tr>{head}</tr></thead>\n<tbody>\n" + "\n".join(rows) + "\n</tbody>\n</table>")
 
     def jun_shisetsu(self):
@@ -460,16 +485,17 @@ class Page:
                 f"<th>{E(D.kotoba('施設の記録 kind'))}</th><th>{E(D.kotoba('施設の記録 value、target'))}</th>"
                 f"<th>{E(D.kotoba('施設の記録 quote'))}</th>")
         maeno = D.kotoba("施設の参照表 aliases")
+        srcs = [sj.bunsho_of(r["source"]) for r in self.kiroku if r["facility"] in self.th.shisetsu]
+        hb = bs.hiduke_bun(D, any(self.n.nendo_dake(b) for b in srcs), any(self.n.hiduke_nashi(b) for b in srcs))
         o = [f"<h2>{E(D.bun('midashi-kijutsu'))}</h2>",
-             f"<p class=s>{E(D.bun('kijutsu-setsumei'))}{E(D.bun('kubun-setsumei'))}</p>"]
+             f"<p class=s>{E(D.bun('kijutsu-setsumei'))}{E(hb)}{E(D.bun('kubun-setsumei'))}</p>"]
         for k in self.jun_shisetsu():
             ref = self.ref[k]
             o.append(f"<h3 id='{E(anchor(k))}'>{S(ref['name'])}</h3>")
             al = [a.strip() for a in ref["aliases"].split(";") if a.strip()]
             if al:
                 o.append(f"<p class=s>{E(maeno)}：{S('、'.join(al))}</p>")
-            rs = sorted((r for r in self.kiroku if r["facility"] == k),
-                        key=lambda r: (r["source_date"], r["source"], r["aspect"]))
+            rs = sorted((r for r in self.kiroku if r["facility"] == k), key=self.n.kiroku_jun)
             if rs:
                 rows = []
                 for r in rs:
@@ -499,7 +525,8 @@ class Page:
             rows.append(f"<tr><td>{self.n.link(hyo['tokoro'])}</td><td>{bh.midashi_ji(D, hyo)}</td>"
                         f"<td>{bh.midashi_ji(D, p)}</td><td>{cells}</td></tr>")
         o = [f"<h4>{E(D.kotoba('文書の部分の表 shisetsu、oya'))}</h4>",
-             f"<p class=s>{E(D.bun('hyo-kijutsu-setsumei'))}</p>",
+             f"<p class=s>{E(D.bun('hyo-kijutsu-setsumei'))}"
+             f"{E(bs.hiduke_bun(D, False, any(self.n.hiduke_nashi(p['bunsho']) for p, _, _ in gyo)))}</p>",
              f"<table>\n<thead><tr>{head}</tr></thead>\n<tbody>\n" + "\n".join(rows) + "\n</tbody>\n</table>"]
         if mi:
             o.append(f"<p class=s>{E(D.bun('mikakunin-hyo'))}</p>")

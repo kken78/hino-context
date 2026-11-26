@@ -460,6 +460,19 @@ class TestReal(unittest.TestCase):
         self.assertIn("所在地は、広報ひの 2024年10月号", page)
         self.assertIn("（令和7年4月1日現在）", page)
 
+    def test_hoiku_hiduke(self):
+        """年度だけが分かる資料は名前のあとに年度を出し、資料に日付の記述が無い資料は最後に並べる（2026-11-27）。"""
+        page, _ = bt.build(self.inp, self.tables, "hoiku", bn.read_kotoba(), TODAY, self.read_problems, D)
+        self.assertIn("指定避難所・指定緊急避難場所一覧（2018年度）　1ページ", page)
+        self.assertIn(D.bun("kijutsu-setsumei") + D.bun("hiduke-nendo-setsumei") + D.bun("hiduke-nashi-setsumei"), page)
+        # 文書の表で hiduke が空の文書は、施設の記録の source_date によらず、最後に置く
+        th = bt.Theme(self.inp, "hoiku")
+        n = bt.Namae(D, self.inp, {r["bunsho"]: r for r in self.tables["bunsho"]})
+        rs = sorted((r for r in self.inp.shisetsu_kiroku() if r["facility"] in th.shisetsu), key=n.kiroku_jun)
+        pabu = [i for i, r in enumerate(rs) if r["source"].startswith("doc:jigyo-shinkodomoen-pabu/")]
+        self.assertTrue(pabu)
+        self.assertTrue(all(n.hiduke_nashi(suji.bunsho_of(r["source"])) for r in rs[pabu[0]:]))
+
     def test_hoiku_hyo_kijutsu(self):
         """再編整備計画 27ページの表（2つの版）の欄は、施設ごとの記述にだけ出し、町内の施設の表には出さない。"""
         page, info = bt.build(self.inp, self.tables, "hoiku", bn.read_kotoba(), TODAY, self.read_problems, D)
