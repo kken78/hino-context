@@ -256,6 +256,14 @@ class TestReal(unittest.TestCase):
                 self.assertNotIn("<link", page)
                 self.assertNotIn("<script", page)
 
+    def test_taiki_kuzure(self):
+        """chu に「抽出した文字の並びが崩れている」がある数値は、資料の該当部分に決まった文を出す（2026-11-27）。"""
+        page, _ = self.page("taiki")
+        n = sum(1 for r in self.tables["atai"] if r["suji"] == "taiki" and suji.inyo_kuzure(r) and r["inyo"])
+        self.assertEqual(n, 10)
+        self.assertEqual(page.count(D.bun("inyo-kuzure")), n)
+        self.assertNotIn("「基準値【R1】 82 % 1 件」", page)
+
     def test_taiki_2025(self):
         page, _ = self.page("taiki")
         self.assertEqual(heads(page), [JIKI, go("ato"), go("mae")])

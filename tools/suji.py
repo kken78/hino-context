@@ -165,6 +165,15 @@ def has_kakunin(chu):
     return any(is_ymd(d) for d in RE_KAKUNIN.findall(chu or ""))
 
 
+# inyo を、並びが崩れた原典の文字から取った行の、chu の決まった字（SCHEMA.md §6.2。2026-11-27）
+KUZURE = "抽出した文字の並びが崩れている"
+
+
+def inyo_kuzure(r):
+    """数値の表の行の inyo が、並びが崩れた原典の文字から取った字か（chu に KUZURE がある）。この関数だけで判定する。"""
+    return KUZURE in (r.get("chu") or "")
+
+
 def has_nisha(chu):
     """chu に「2者が画像で確認（YYYY-MM-DD）」があり、日付の形が合っているか。"""
     return any(is_ymd(d) for d in RE_NISHA.findall(chu or ""))

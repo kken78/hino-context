@@ -409,7 +409,9 @@ class Tsukuru:
                 ichi = E(D.kotoba("bubun が空"))
             if ichi:
                 lines.append(f"  - {E(D.kotoba('文書の部分（bubun・retsu から親をたどった並び）'))}：{ichi}")
-            if r["inyo"]:
+            if r["inyo"] and sj.inyo_kuzure(r):
+                lines.append(f"  - {E(D.kotoba('数値の表 inyo'))}：{E(D.bun('inyo-kuzure'))}")
+            elif r["inyo"]:
                 lines.append(f"  - {E(D.kotoba('数値の表 inyo'))}：「{S(r['inyo'])}」")
         if r["jotai"] != sj.ARU and r["hani"]:
             lines.append(f"  - {E(D.kotoba('数値の表 hani'))}：{E(r['hani'])}")
@@ -501,7 +503,20 @@ class Tsukuru:
     def bunsho_intro(self, bkey):
         D = self.D
         b = self.by[bkey]
-        intro = [f"- {E(D.kotoba('文書の表 shurui'))}：{E(b['shurui'])}"]
+        shurui = {"keikaku": D.kotoba("文書の表 shurui が「keikaku」"), "koho": D.kotoba("文書の表 shurui が「koho」"),
+                  "yosan": D.kotoba("文書の表 shurui が「yosan」"), "hyoka": D.kotoba("文書の表 shurui が「hyoka」"),
+                  "jigyo": D.kotoba("文書の表 shurui が「jigyo」"), "shingi": D.kotoba("文書の表 shurui が「shingi」")}
+        if b["shurui"] not in shurui:
+            self.problems.append(("(e) デザインシステムとの対応",
+                                  f"文書の表の shurui「{b['shurui']}」の行が、docs/design.md 3節に無い（{bkey}）"))
+        kk = [r for r in self.t["kankei"] if r["kara"] == bkey]
+        ke = [r for r in self.t["kankei"] if r["e"] == bkey]
+        ar = [r for r in self.t["atai"] if r["shiryo"].strip() and sj.bunsho_of(r["shiryo"]) == bkey]
+        hyo = [p for p in self.t["bubun"] if p["bunsho"] == bkey and p["shu"] == sj.HYO]
+        intro = [E(D.bun("mcp-shiryo-hani")),
+                 E(D.bun("mcp-shiryo-kazu", hyo=len(hyo), atai=len(ar), teigi=len({r["suji"] for r in ar}),
+                         kara=len(kk), e=len(ke))),
+                 f"- {E(D.kotoba('文書の表 shurui'))}：{E(shurui.get(b['shurui'], b['shurui']))}"]
         if b["konkyo"]:
             kp = D.bun("page", n=sj.page_no(b["konkyo_tokoro"]))
             intro.append(f"- {E(D.kotoba('文書の表 konkyo'))}：「{S(b['konkyo'])}」（{E(kp)}）")
@@ -758,14 +773,14 @@ def build(inp, tables, kotoba, read_problems=(), design=None, skill=None):
                 if why:
                     dasenai.append((f"{b} {p['n']}", why))
                 ireru("shiryo", [("bunsho", b), ("hyo", p["n"])], o)
-    if tk.namae.problems:
-        raise Stop(list(dict.fromkeys(tk.namae.problems)))
+    if tk.namae.problems or tk.problems:
+        raise Stop(list(dict.fromkeys(tk.namae.problems + tk.problems)))
 
     tools = tk.tools(themes)
-    nai = {name: D.bun("mcp-nai", tool=name) + D.bun("mcp-hani") for name, _ in TOOLS}
+    nai = {name: D.bun("mcp-nai", tool=name) + D.bun("mcp-hani-nai") for name, _ in TOOLS}
     top = D.bun("mcp-top", name=NAME)
     setsumei = D.bun("mcp-setsumei")
-    skill = read_skill() if skill is None else skill
+    skill = (read_skill() if skill is None else skill) + "\n- " + D.bun("mcp-hani-nai")
     # 使わない言葉の検査：応答の文、ツールと引数の説明、決まった文
     zenbu = bun + [E(x) for x in list(nai.values()) + [top, setsumei, skill]]
     zenbu += [E(x["description"]) for x in tools] + [E(a["description"]) for x in tools for a in x["args"]]

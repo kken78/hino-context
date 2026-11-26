@@ -110,7 +110,7 @@ class TestReal(unittest.TestCase):
         self.assertIn("ツールの引数の説明か、theme の応答", d["tools"][0]["description"])
         self.assertEqual(d["tools"][1]["args"][2]["type"], "integer")
         self.assertEqual(set(d["nai"]), {"theme", "suji", "shisetsu", "shiryo"})
-        self.assertEqual(d["instructions"], bm.read_skill())
+        self.assertEqual(d["instructions"], bm.read_skill() + "\n- " + D.bun("mcp-hani-nai"))
         n = len(d["bun"])
         self.assertTrue(all(0 <= i < n for v in d["outou"].values() for i in v.values()))
         self.assertEqual(set(range(n)), {i for v in d["outou"].values() for i in v.values()})
@@ -170,7 +170,7 @@ class TestReal(unittest.TestCase):
         for k in ("id=taikii", "id=taiki&tsuzuki=99", "id=taiki&shiryo=doc:koho-no771-08"):
             self.assertNotIn(k, o["suji"])
         self.assertNotIn("key=nishioji", o["shisetsu"])
-        self.assertEqual(self.data["nai"]["suji"], D.bun("mcp-nai", tool="suji") + D.bun("mcp-hani"))
+        self.assertEqual(self.data["nai"]["suji"], D.bun("mcp-nai", tool="suji") + D.bun("mcp-hani-nai"))
         # 表の形で出せない表は、決まった文
         self.assertIn(D.bun("mcp-hyo-dasenai"), self.bun("shiryo", "bunsho=doc:shingi-youho-teigen&hyo=16"))
 
@@ -210,7 +210,7 @@ class TestReal(unittest.TestCase):
         self.assertIn(D.bun("mcp-uchiwake"), base)
         self.assertNotIn(D.bun("mcp-uchiwake"), uchi)
         self.assertIn(D.bun("mcp-uchiwake-dake"), uchi)
-        self.assertEqual(sum(1 for k in o if re.fullmatch(r"id=taiki&tsuzuki=[0-9]+", k)), 2)
+        self.assertEqual(sum(1 for k in o if re.fullmatch(r"id=taiki&tsuzuki=[0-9]+", k)), 3)
         # 内訳のある数値が無い定義には、uchiwake の組を作らない。どれも内訳の定義は、内訳の無い数値が無いことを示す
         self.assertNotIn("id=kaien&uchiwake=1", o)
         self.assertNotIn(D.bun("mcp-uchiwake"), self.bun("suji", "id=kaien"))
@@ -256,8 +256,37 @@ class TestReal(unittest.TestCase):
         self.assertEqual(bm.konkyo_hani("根拠：原典の文字が入力に無いので探していない"), "")
 
     def test_hani(self):
-        self.assertIn(D.bun("mcp-hani"), self.bun("theme", ""))
         self.assertIn(D.bun("mcp-shisetsu-teigi", theme="hoiku"), self.bun("shisetsu", "key=fa:shin-kodomoen"))
+
+    def test_shurui(self):
+        # 資料の種類は、内部の値ではなく、docs/design.md の言葉で出す
+        self.assertIn(f"- {D.kotoba('文書の表 shurui')}：{D.kotoba('文書の表 shurui が「keikaku」')}",
+                      self.bun("shiryo", "bunsho=pt:youho/honpen"))
+        self.assertIn(f"- {D.kotoba('文書の表 shurui')}：{D.kotoba('文書の表 shurui が「koho」')}",
+                      self.bun("shiryo", "bunsho=doc:koho-no771-08"))
+        for k, i in self.data["outou"]["shiryo"].items():
+            self.assertIsNone(re.search(r"資料の種類：[a-z]", self.data["bun"][i]), k)
+        tables = copy.deepcopy(self.tables)
+        tables["bunsho"][0]["shurui"] = "bosai"
+        with self.assertRaises(bm.Stop) as c:
+            bm.build(self.inp, tables, bn.read_kotoba(), self.read_problems, D)
+        self.assertTrue(any("bosai" in m for _, m in c.exception.problems))
+
+    def test_kuzure(self):
+        # 取り出した文字が崩れている数値は、資料の該当部分を出さず、決まった文と確認の記録を出す
+        t = self.bun("suji", "id=taiki&shiryo=doc:hyoka-r4-senryaku-kensho")
+        self.assertEqual(t.count(D.bun("inyo-kuzure")), 6)
+        self.assertNotIn("「基準値【R1】", t)
+        self.assertIn("2者が画像で確認（2026-11-23）", t)
+        self.assertNotIn(D.bun("inyo-kuzure"), self.bun("suji", "id=taiki&shiryo=pt:youho/honpen"))
+
+    def test_shiryo_hani(self):
+        t = self.bun("shiryo", "bunsho=doc:koho-no771-08")
+        lines = t.split("\n")
+        self.assertEqual(lines[2], D.bun("mcp-shiryo-hani"))                # 名前のすぐあと
+        self.assertEqual(lines[3], D.bun("mcp-shiryo-kazu", hyo=3, atai=10, teigi=1, kara=0, e=0))
+        self.assertIn(D.bun("mcp-hani"), self.bun("theme", ""))
+        self.assertNotIn(D.bun("mcp-hani-nai"), self.bun("theme", ""))
 
     def test_stop_word(self):
         # 応答の文に、使わない言葉が残っていれば止まる
