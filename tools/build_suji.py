@@ -575,7 +575,10 @@ class Page:
                 items.append((tokoro, e.ichi))
             elif e.page:
                 items.append((tokoro, E(D.kotoba("bubun が空"))))
-            if r["inyo"]:
+            if r["inyo"] and sj.inyo_kuzure(r):
+                D.dasanai("数値の表 chu に「抽出した文字の並びが崩れている」がある")
+                items.append((D.kotoba("数値の表 inyo"), E(D.bun("inyo-kuzure"))))
+            elif r["inyo"]:
                 items.append((D.kotoba("数値の表 inyo"), f"「{S(r['inyo'])}」"))
         if r["shurui"]:
             items.append((D.kotoba("数値の表 shurui"), S(r["shurui"])))

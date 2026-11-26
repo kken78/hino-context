@@ -95,13 +95,13 @@ class Namae:
     def koho(self, hiduke, dai, key):
         m = re.fullmatch(r"([0-9]{4})-([0-9]{2})(?:-[0-9]{2})?", hiduke or "")
         if not m:
-            self.stop(f"広報ひのの号の年月が無い（{key}）")
+            self.stop(f"広報（koho）の号の年月が無い（{key}）")
             return S(dai)
         return self.D.bun("koho", nen=int(m[1]), tsuki=int(m[2]), dai=S(dai))
 
     def nendo_dake(self, bkey):
         """文書の鍵が、文書の表に無い doc の鍵で、入力の台帳（sources.tsv）の date が空、fiscal_year がある資料なら、
-        fiscal_year の字。ほかは空（docs/design.md 3節。2026-11-27）。広報ひのは除く（号の年月で出すため）。"""
+        fiscal_year の字。ほかは空（docs/design.md 3節。2026-11-27）。広報（koho）は除く（号の年月で出すため）。"""
         if not bkey or bkey in self.by:
             return ""
         m = sj.RE_BUNSHO_DOC.fullmatch(bkey)
@@ -121,7 +121,7 @@ class Namae:
         return (self.hiduke_nashi(sj.bunsho_of(r["source"])), r["source_date"], r["source"], r["aspect"])
 
     def bunsho(self, bkey):
-        """文書の鍵 → 資料の名前（HTML）。文書の表にあれば namae と括弧（han と hiduke）。広報ひのは koho の文。"""
+        """文書の鍵 → 資料の名前（HTML）。文書の表にあれば namae と括弧（han と hiduke）。広報（koho）は koho の文。"""
         b = self.by.get(bkey)
         if b:
             if b["shurui"] == sj.KOHO:
