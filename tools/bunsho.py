@@ -16,7 +16,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SKILL_PATH = os.path.join(ROOT, "SKILL.md")
 HEAD = "| 使わない書き方 | 使う書き方 |"
-TARGETS = ("*.md", "docs/*.md", "teigi/*.tsv", "tools/*.py")
+TARGETS = ("*.md", "docs/*.md", "teigi/*.tsv", "tools/*.py", "mcp/*.md", "mcp/src/*.ts")
 SKIP = ("tools/test_bunsho.py",)   # 検査のテストは、使わない書き方を例として含む
 
 

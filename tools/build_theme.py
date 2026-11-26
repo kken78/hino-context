@@ -197,6 +197,25 @@ def kijutsu_no_hyo(part, by, th, shitei):
     return hyo if hyo is not None and hyo["shu"] == sj.HYO else None
 
 
+def kikan(D, r):
+    """過程の記録の from・to → 画面に出す時期（docs/design.md 3節）。"""
+    a = bs.hi_str(D, r["from"])
+    if not r["to"]:
+        return D.bun("kikan-tochu", a=a)
+    if r["to"] == r["from"]:
+        return a
+    return D.bun("kikan", a=a, z=bs.hi_str(D, r["to"]))
+
+
+def jun_shisetsu(hyo, th, ref):
+    """施設ごとの欄の順：施設の表（hyo。無ければ None）の行の順に、表にある施設を先に置き、残りは施設の参照表の順。"""
+    out = []
+    if hyo is not None:
+        out += [k for ks in hyo.keys for k in ks]
+    out += [k for k in ref if k in th.shisetsu]
+    return [k for k in dict.fromkeys(out) if k in th.shisetsu]
+
+
 def anchor(fa):
     """施設の鍵 → ページ内リンクの id。"""
     return fa.replace(":", "-")
@@ -325,15 +344,6 @@ class Page:
             i = k
         return "\n".join(o)
 
-    def kikan(self, r):
-        D = self.D
-        a = bs.hi_str(D, r["from"])
-        if not r["to"]:
-            return D.bun("kikan-tochu", a=a)
-        if r["to"] == r["from"]:
-            return a
-        return D.bun("kikan", a=a, z=bs.hi_str(D, r["to"]))
-
     def keika(self):
         D = self.D
         if not self.katei:
@@ -344,7 +354,7 @@ class Page:
         for r in self.katei:
             srcs = list(dict.fromkeys(s.strip() for s in r["sources"].split(",") if s.strip()))
             links = "、".join(self.n.link(s, r["quote"]) for s in srcs)
-            rows.append(f"<tr><td>{E(self.kikan(r))}</td><td>{S(r['name'])}</td><td>「{S(r['quote'])}」</td>"
+            rows.append(f"<tr><td>{E(kikan(D, r))}</td><td>{S(r['name'])}</td><td>「{S(r['quote'])}」</td>"
                         f"<td>{links}</td></tr>")
         return (f"<h2>{E(D.bun('midashi-keika'))}</h2>\n<p class=s>{E(D.bun('keika-setsumei'))}</p>\n"
                 f"<table>\n<thead><tr>{head}</tr></thead>\n<tbody>\n" + "\n".join(rows) + "\n</tbody>\n</table>")
@@ -442,12 +452,7 @@ class Page:
                 f"<table>\n<thead><tr>{head}</tr></thead>\n<tbody>\n" + "\n".join(rows) + "\n</tbody>\n</table>")
 
     def jun_shisetsu(self):
-        """施設ごとの欄の順：施設の表の行の順に、表にある施設を先に置き、残りは施設の参照表の順。"""
-        out = []
-        if self.hyo is not None:
-            out += [k for ks in self.hyo.keys for k in ks]
-        out += [k for k in self.ref if k in self.th.shisetsu]
-        return [k for k in dict.fromkeys(out) if k in self.th.shisetsu]
+        return jun_shisetsu(self.hyo, self.th, self.ref)
 
     def kijutsu(self):
         D = self.D

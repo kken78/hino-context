@@ -83,7 +83,7 @@ KATACHI = {"shiryo が発言": (("数値の表", "shiryo"),),
            "会議録の発言者の役職が「数字＋番」": (),
            "会議録の発言者の役職が、議長でも「数字＋番」でもない": ()}
 # docs/design.md 3節の表を引く、ページを作るツール。表の行は、このどれかが引いていればよい
-PAGE_TOOLS = ("build_suji.py", "build_hyo.py", "build_theme.py")
+PAGE_TOOLS = ("build_suji.py", "build_hyo.py", "build_theme.py", "build_mcp.py")
 
 
 class Design:
