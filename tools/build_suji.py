@@ -333,6 +333,12 @@ def hiduke_of(D, shiryo, by):
     return tuple(int(x) for x in h.split("-")) + (0,) * (3 - len(h.split("-"))), hi_str(D, h)
 
 
+def hiduke_bun(D, nendo, nashi):
+    """日付の順に並べた一覧の上に添える文。nendo：年度だけが分かる資料があるか。nashi：文書の表の hiduke が空の
+    資料があるか（docs/design.md 3節。2026-11-27）。"""
+    return (D.bun("hiduke-nendo-setsumei") if nendo else "") + (D.bun("hiduke-nashi-setsumei") if nashi else "")
+
+
 def para_range(bubun):
     """段落の鍵 → (始め, 終わり)。"""
     _, g = keys.parse(bubun)
@@ -547,8 +553,9 @@ class Page:
         heads = [D.kotoba("文書の表 hiduke、発言の日"), D.kotoba("数値の表 atai")]
         heads += [D.kotoba("数値の表 shurui")] if shurui else []
         heads += [D.kotoba("文書の表 namae と、shiryo のページ")]
+        nashi = any(e.hiduke is None and e.r["shiryo"].strip() and not e.r["shiryo"].startswith("ext:") for e in es)
         return (f"<h2>{E(D.bun('midashi-hiduke'))}</h2>\n"
-                f"<p>{E(D.bun('hiduke-setsumei'))}{E(D.bun('erabu'))}</p>\n"
+                f"<p>{E(D.bun('hiduke-setsumei'))}{E(hiduke_bun(D, False, nashi))}{E(D.bun('erabu'))}</p>\n"
                 f"<table>\n<thead><tr>{''.join(f'<th>{E(h)}</th>' for h in heads)}</tr></thead>\n"
                 f"<tbody>{rows}</tbody>\n</table>")
 

@@ -54,7 +54,8 @@ Stop = bn.Stop
 # ツールと引数（名前、型、必須か）。引数の順は、応答を引く鍵の並びの順でもある（docs/mcp.md）
 TSUZUKI = "tsuzuki"
 TOOLS = (("theme", (("theme", "string", False), (TSUZUKI, "integer", False))),
-         ("suji", (("id", "string", True), ("shiryo", "string", False), (TSUZUKI, "integer", False))),
+         ("suji", (("id", "string", True), ("shiryo", "string", False), ("uchiwake", "integer", False),
+                   (TSUZUKI, "integer", False))),
          ("shisetsu", (("key", "string", True), (TSUZUKI, "integer", False))),
          ("shiryo", (("bunsho", "string", True), ("hyo", "integer", False), (TSUZUKI, "integer", False))))
 
@@ -180,7 +181,7 @@ class Tsukuru:
             name = bt.Theme(self.inp, th).namae
             items.append("- " + self.kagi_ji(S(name[0]) if name else E(th), "theme", th))
         D.dasanai("テーマの定義 kind が「名前」")
-        return Outou(E(D.bun("mcp-midashi-theme")), blocks=[([], items)])
+        return Outou(E(D.bun("mcp-midashi-theme")), [E(D.bun("mcp-hani"))], blocks=[([], items)])
 
     # theme=…
     def theme(self, theme):
@@ -223,7 +224,8 @@ class Tsukuru:
                  for k in bt.jun_shisetsu(self._hyo.get(theme), th, self.ref)]
         blocks.append(([f"## {E(D.bun('mcp-midashi-shisetsu'))}"], items))
         docs = sorted((b for b in self.by if th.has(b)), key=lambda b: (self.by[b]["hiduke"] or "9999", b))
-        blocks.append(([f"## {E(D.bun('mcp-midashi-shiryo'))}", E(D.bun("mcp-shiryo-setsumei"))],
+        hb = bs.hiduke_bun(D, False, any(self.namae.hiduke_nashi(b) for b in docs))
+        blocks.append(([f"## {E(D.bun('mcp-midashi-shiryo'))}", E(D.bun("mcp-shiryo-setsumei")) + E(hb)],
                        ["- " + self.bunsho_kagi(b) for b in docs]))
         blocks.append(([f"## {E(D.bun('mcp-midashi-teigi'))}", E(D.bun("mcp-teigi-setsumei"))],
                        ["- " + self.teigi_kagi(x) for x in t["suji"]]))
@@ -284,11 +286,13 @@ class Tsukuru:
         return ([f"## {E(D.kotoba('テーマの表 shu が「施設の表」'))}"] + ["\n".join(setsumei)], items + foot)
 
     # suji
-    def suji(self, t, bunsho=None):
+    def suji(self, t, bunsho=None, uchiwake=False):
+        """定義 t の数値。uchiwake が偽なら kubun の無い行だけ、真なら kubun のある行だけ（docs/mcp.md）。"""
         D = self.D
-        rows = [r for r in self.t["atai"] if r["suji"] == t["id"]]
+        zen = [r for r in self.t["atai"] if r["suji"] == t["id"]]
         if bunsho:
-            rows = [r for r in rows if r["shiryo"].strip() and sj.bunsho_of(r["shiryo"]) == bunsho]
+            zen = [r for r in zen if r["shiryo"].strip() and sj.bunsho_of(r["shiryo"]) == bunsho]
+        rows = [r for r in zen if bool(r["kubun"]) == uchiwake]
         intro = []
         if t["kettei"] == "案":
             intro.append(E(D.kotoba("定義の表 kettei が「案」")))
@@ -297,6 +301,8 @@ class Tsukuru:
                      (D.kotoba("定義の表 chui"), "chui")):
             if t[c]:
                 intro.append(f"- {E(k)}：{E(t[c])}")
+        if uchiwake:
+            intro += ["", E(D.bun("mcp-uchiwake-dake"))]
         kankei = {id(r): sj.jiten_kankei(r, t, self.by) for r in rows}
         kotoba = {sj.KANKEI_ATO: (D.kotoba("時点の関係 ato"), D.retsu_setsumei("時点の関係 ato")),
                   sj.KANKEI_TOCHU: (D.kotoba("時点の関係 tochu"), ""),
@@ -308,6 +314,10 @@ class Tsukuru:
             intro += [f"- {E(kotoba[k][0])}" + (f"：{E(kotoba[k][1])}" if kotoba[k][1] else "") for k in tsukau]
         if any(bs.ichi_of(D, r, self.index)[1] for r in rows if r["shiryo"].strip()):
             intro += ["", E(D.bun("mikakunin-setsumei"))]
+        blocks = []
+        chigau = self.chigau(t, rows, kankei)
+        if chigau:
+            blocks.append(([f"## {E(D.bun('chigau'))}"], chigau + [E(D.bun("chigau-setsumei"))]))
         # 資料（ページか発言か外部の資料）ごとにまとめる。shiryo が空の行は最後
         groups = {}
         for r in rows:
@@ -315,9 +325,14 @@ class Tsukuru:
 
         def jun(k):
             if not k:
-                return (2, (), "")
+                return (3, (), "")
             h = bs.hiduke_of(D, k, self.by)
-            return (0, h[0], k) if h else (1, (), k)
+            if h:
+                return (0, h[0], k)
+            nendo = self.namae.nendo_dake(sj.bunsho_of(k))
+            if nendo:
+                return (0, (int(nendo), 4, 0), k)
+            return (1, (), k) if k.startswith("ext:") else (2, (), k)      # 外部の資料は、名前に日付を含む
         items_all = []
         for k in sorted(groups, key=jun):
             rs = groups[k]
@@ -337,11 +352,40 @@ class Tsukuru:
                           (self.atai_gyo(r, kankei[id(r)], kotoba) for r in rs if r["kubun"] == kb)]
                 items.append("\n".join(lines))
             items_all.append((head, items))
-        blocks = [([f"## {E(D.bun('mcp-midashi-suji'))}", E(D.bun("hiduke-setsumei"))], [])] + items_all
-        # 見出しのブロックは、最初の資料のブロックと一緒に出す
+        srcs = [k for k in groups if k]
+        hb = bs.hiduke_bun(D, any(jun(k)[0] == 0 and not bs.hiduke_of(D, k, self.by) for k in srcs),
+                           any(jun(k)[0] == 2 for k in srcs))
+        midashi = [f"## {E(D.bun('mcp-midashi-suji'))}", E(D.bun("hiduke-setsumei")) + E(hb)]
         if items_all:
-            blocks = [(blocks[0][0] + [""] + items_all[0][0], items_all[0][1])] + items_all[1:]
+            # 見出しは、最初の資料のブロックと一緒に出す
+            blocks += [(midashi + [""] + items_all[0][0], items_all[0][1])] + items_all[1:]
+        sue = []
+        if not rows and not uchiwake:
+            sue.append(E(D.bun("mcp-uchiwake-nomi")))
+        if not uchiwake and any(r["kubun"] for r in zen):
+            sue.append(E(D.bun("mcp-uchiwake")))
+        if sue:
+            blocks.append(([], sue))
         return Outou(self.teigi_kagi(t), intro, blocks)
+
+    def chigau(self, t, rows, kankei):
+        """数値のページと同じ判定（mae の数値を、内訳ごと、時期ごとにまとめ、tools/suji.py の ichi_shinai）で、
+        資料の間で数値が一致しない時期の行。数値と資料の名前を並べる。どちらが正しいかは書かない。"""
+        D = self.D
+        kumi = {}
+        for r in rows:
+            if kankei[id(r)] == sj.KANKEI_MAE:
+                key, label = bs.toki_of(D, r, t)
+                kumi.setdefault((r["kubun"], key, label), []).append(r)
+        out = []
+        for (kb, _, label), rs in sorted(kumi.items(), key=lambda x: (x[0][0], x[0][1])):
+            if not sj.ichi_shinai(rs, self.index):
+                continue
+            jiki = E(label) + (f"（{E(D.kotoba('数値の表 kubun'))}：{E(kb)}）" if kb else "")
+            atai = "、".join(f"{S(r['atai'])}（{self.moto(r['shiryo'], r['inyo'])[0]}）"
+                            for r in rs if r["jotai"] == sj.ARU)
+            out.append("- " + D.bun("mcp-chigau-gyo", jiki=jiki, atai=atai))
+        return out
 
     def atai_gyo(self, r, kankei, kotoba):
         """数値の表の1行 → 項目（改行を含む）。"""
@@ -383,8 +427,7 @@ class Tsukuru:
             intro.append(f"- {E(D.kotoba('施設の参照表 aliases'))}：{S('、'.join(al))}")
         D.dasanai("施設の参照表 name")
         blocks = []
-        rs = sorted((r for r in self.kiroku if r["facility"] == k), key=lambda r: (r["source_date"], r["source"],
-                                                                                    r["aspect"]))
+        rs = sorted((r for r in self.kiroku if r["facility"] == k), key=self.namae.kiroku_jun)
         items = []
         for r in rs:
             nm, url = self.namae.shiryo(r["source"], r["quote"])
@@ -396,8 +439,10 @@ class Tsukuru:
                 f"  - {E(D.kotoba('施設の記録 quote'))}：「{S(r['quote'])}」",
                 self.url_gyo(url, "  - ")]))
         D.kotoba("施設の記録 source")
+        srcs = [sj.bunsho_of(r["source"]) for r in rs]
+        hb = bs.hiduke_bun(D, any(self.namae.nendo_dake(b) for b in srcs), any(self.namae.hiduke_nashi(b) for b in srcs))
         blocks.append(([f"## {E(D.bun('mcp-midashi-kiroku'))}",
-                        E(D.bun("kijutsu-setsumei")) + E(D.bun("kubun-setsumei"))], items))
+                        E(D.bun("kijutsu-setsumei")) + E(hb) + E(D.bun("kubun-setsumei"))], items))
         hk = self._hk.get(theme)
         items, hyo_parts = [], set()
         for p, hyo, ran in (hk.gyo.get(k, []) if hk else []):
@@ -414,7 +459,9 @@ class Tsukuru:
             items.append("\n".join(lines))
         mi = any(sj.mikakunin(x) for p, hyo, ran in (hk.gyo.get(k, []) if hk else [])
                  for x in [p, hyo] + [x for x, _ in ran])
-        head = [f"## {E(D.kotoba('文書の部分の表 shisetsu、oya'))}", E(D.bun("hyo-kijutsu-setsumei"))]
+        hb = bs.hiduke_bun(D, False, any(self.namae.hiduke_nashi(p["bunsho"]) for p, _, _ in
+                                         (hk.gyo.get(k, []) if hk else [])))
+        head = [f"## {E(D.kotoba('文書の部分の表 shisetsu、oya'))}", E(D.bun("hyo-kijutsu-setsumei")) + E(hb)]
         D.kotoba("文書の表 namae、han、hiduke")
         blocks.append((head, items + ([E(D.bun("mikakunin-hyo"))] if mi and items else [])))
         # 施設を指す数値の行（上の欄に出した表の数値は除く）
@@ -447,6 +494,7 @@ class Tsukuru:
             items.append(E(D.bun("mikakunin-setsumei")))
         blocks.append(([f"## {E(D.bun('mcp-midashi-shisetsu-suji'))}", E(D.bun("mcp-shisetsu-suji-setsumei"))],
                        items))
+        blocks.append(([], [E(D.bun("mcp-shisetsu-teigi", theme=theme))]))
         return Outou(self.kagi_ji(S(ref["name"]), "key", k), intro, blocks)
 
     # shiryo
@@ -457,6 +505,11 @@ class Tsukuru:
         if b["konkyo"]:
             kp = D.bun("page", n=sj.page_no(b["konkyo_tokoro"]))
             intro.append(f"- {E(D.kotoba('文書の表 konkyo'))}：「{S(b['konkyo'])}」（{E(kp)}）")
+        else:
+            hani = konkyo_hani(b["chu"])
+            ji = (D.bun("mcp-konkyo-nashi", hani=E(f"{D.kotoba('文書の表 chu（「根拠：」の記述の「見つからない（…）」の括弧の中の字）')}：{hani}"))
+                  if hani else E(D.bun("mcp-irete-inai")))
+            intro.append(f"- {E(D.kotoba('文書の表 konkyo'))}：{ji}")
         first = f"{bkey}/1" if not keys.RE_PLAN.fullmatch(bkey) else ""
         intro.append(self.url_gyo(keys.source_url(self.inp, first) if first else "", "- "))
         return intro
@@ -483,10 +536,11 @@ class Tsukuru:
                 page = E(D.bun("page", n=sj.page_no(r["tokoro"])))
                 items.append(f"- {self.bunsho_kagi(r['kara'])}\n  - 「{S(r['inyo'])}」（{page}）\n"
                              f"  - {D.bun('aite', hyogen=S(r['hyogen']), aite=self.bunsho_kagi(bkey))}")
-        blocks.append(([f"## {E(D.kotoba('文書どうしの関係の表 e'))}"], items))
+        nai = [E(D.bun("mcp-irete-inai"))]
+        blocks.append(([f"## {E(D.kotoba('文書どうしの関係の表 e'))}"], items or nai))
         ids = {r["suji"] for r in self.t["atai"] if r["shiryo"].strip() and sj.bunsho_of(r["shiryo"]) == bkey}
         blocks.append(([f"## {E(D.bun('mcp-midashi-suji-ari'))}"],
-                       ["- " + self.teigi_kagi(x) for x in self.t["suji"] if x["id"] in ids]))
+                       ["- " + self.teigi_kagi(x) for x in self.t["suji"] if x["id"] in ids] or nai))
         items = []
         for p in self.t["bubun"]:
             if p["bunsho"] == bkey and p["shu"] == sj.HYO:
@@ -495,7 +549,7 @@ class Tsukuru:
                              f"{E(p['n'])}）")
         if items and any(sj.mikakunin(p) for p in self.t["bubun"] if p["bunsho"] == bkey and p["shu"] == sj.HYO):
             items.append(E(D.bun("mikakunin-hyo")))
-        blocks.append(([f"## {E(D.bun('mcp-midashi-hyo-ichiran'))}"], items))
+        blocks.append(([f"## {E(D.bun('mcp-midashi-hyo-ichiran'))}"], items or nai))
         return Outou(self.bunsho_kagi(bkey), self.bunsho_intro(bkey), blocks)
 
     def hyo(self, bkey, n):
@@ -562,7 +616,9 @@ class Tsukuru:
                 dict(name="id", type="string", required=True, erabu=id_erabu, description=owari(E(D.bun(
                     "mcp-hikisu-id", erabu=namae_tsuki(id_erabu, lambda k: E(self.teigi[k]["name"])))))),
                 dict(name="shiryo", type="string", required=False, erabu=b_erabu,
-                     description=owari(E(D.bun("mcp-hikisu-shiryo"))))]),
+                     description=owari(E(D.bun("mcp-hikisu-shiryo")))),
+                dict(name="uchiwake", type="integer", required=False, erabu=["1"],
+                     description=owari(E(D.bun("mcp-hikisu-uchiwake"))))]),
             "shisetsu": (owari(E(D.bun("mcp-tool-shisetsu"))), [
                 dict(name="key", type="string", required=True, erabu=fa_erabu, description=owari(E(D.bun(
                     "mcp-hikisu-key", erabu=namae_tsuki(fa_erabu, lambda k: S(self.ref[k]["name"]))))))]),
@@ -579,6 +635,23 @@ class Tsukuru:
             assert [x["name"] for x in a] == [x for x, _, _ in args]
             out.append(dict(name=name, description=d, args=a))
         return out
+
+
+def konkyo_hani(chu):
+    """文書の表の chu の「根拠：」の記述に「見つからない（…）」があれば、括弧の中の字。無ければ空。
+    括弧の中に括弧があっても、対になる閉じ括弧までを取る。chu のほかの字は使わない（docs/design.md 3節）。"""
+    i = (chu or "").find("根拠：")
+    if i < 0:
+        return ""
+    j = chu.find("見つからない（", i)
+    if j < 0 or "。" in chu[i:j]:
+        return ""
+    k, depth = j + len("見つからない（"), 1
+    for x in range(k, len(chu)):
+        depth += {"（": 1, "）": -1}.get(chu[x], 0)
+        if depth == 0:
+            return chu[k:x]
+    return ""
 
 
 def read_skill(path=SKILL_PATH):
@@ -661,12 +734,16 @@ def build(inp, tables, kotoba, read_problems=(), design=None, skill=None):
     for theme, th in ths.items():
         ireru("theme", [("theme", theme)], tk.theme(theme))
     for t in tables["suji"]:
+        rs = [r for r in tables["atai"] if r["suji"] == t["id"]]
         ireru("suji", [("id", t["id"])], tk.suji(t))
-        docs = dict.fromkeys(sj.bunsho_of(r["shiryo"]) for r in tables["atai"]
-                             if r["suji"] == t["id"] and r["shiryo"].strip())
+        if any(r["kubun"] for r in rs):
+            ireru("suji", [("id", t["id"]), ("uchiwake", "1")], tk.suji(t, uchiwake=True))
+        docs = dict.fromkeys(sj.bunsho_of(r["shiryo"]) for r in rs if r["shiryo"].strip())
         for b in docs:
             if b in tk.by:
                 ireru("suji", [("id", t["id"]), ("shiryo", b)], tk.suji(t, b))
+                if any(r["kubun"] and sj.bunsho_of(r["shiryo"]) == b for r in rs if r["shiryo"].strip()):
+                    ireru("suji", [("id", t["id"]), ("shiryo", b), ("uchiwake", "1")], tk.suji(t, b, True))
     seen = set()
     for theme, th in ths.items():
         for k in bt.jun_shisetsu(tk._hyo.get(theme), th, tk.ref):
@@ -685,7 +762,7 @@ def build(inp, tables, kotoba, read_problems=(), design=None, skill=None):
         raise Stop(list(dict.fromkeys(tk.namae.problems)))
 
     tools = tk.tools(themes)
-    nai = {name: D.bun("mcp-nai", tool=name) for name, _ in TOOLS}
+    nai = {name: D.bun("mcp-nai", tool=name) + D.bun("mcp-hani") for name, _ in TOOLS}
     top = D.bun("mcp-top", name=NAME)
     setsumei = D.bun("mcp-setsumei")
     skill = read_skill() if skill is None else skill

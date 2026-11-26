@@ -255,7 +255,9 @@ def render(D, inp, tables, h, bkey, today):
             pp = "、".join(str(p) for p in sorted(hoka[k]))
             li.append(f"<li>{S(by[k]['namae'])}（{kakko_ji(D, by[k])}）"
                       + (f"　{E(D.bun('page', n=pp))}" if pp else "") + "</li>")
-        o.append(f"<h2>{E(D.bun('midashi-onaji'))}</h2>\n<ul>\n" + "\n".join(li) + "\n</ul>")
+        nashi = any(not sj.RE_HIDUKE.fullmatch(by[k]["hiduke"] or "") for k in hoka)
+        hb = f"<p class=s>{E(bs.hiduke_bun(D, False, True))}</p>\n" if nashi else ""
+        o.append(f"<h2>{E(D.bun('midashi-onaji'))}</h2>\n{hb}<ul>\n" + "\n".join(li) + "\n</ul>")
     o.append(f"<h2>{E(D.bun('midashi-owari'))}</h2><p class=s>{E(D.bun('owari-hyo'))}"
              f"{E(D.bun('sakusei-bi', hi=bs.hi_str(D, today.isoformat())))}</p>")
     body = "\n".join(o)
