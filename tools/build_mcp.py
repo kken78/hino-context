@@ -684,6 +684,30 @@ class Tsukuru:
         lines.append(f"  - {E(D.kotoba('資料の一覧の表 namae と、shiryo のページ'))}：{nm}" + (f"　{E(url)}" if url else ""))
         return "\n".join(lines)
 
+    def issue_hani(self, theme):
+        """テーマの質問と質疑のうち、論点との対応を確認してある数と時期の文（docs/design.md 4節）。数はデータから数える。"""
+        D = self.D
+        trows = ronten.themes(self.inp, theme)
+        toi = [r["value"] for r in trows if r["kind"] == "問い"]
+        shitsugi = [r["value"] for r in trows if r["kind"] == "質疑"]
+        zumi = ronten.taio_shitsumon(self.inp, set(toi + shitsugi))
+
+        def kikan(qs):
+            ym = sorted(q.split("_")[1][:6] for q in qs)
+            a, z = (D.bun("nengetsu", nen=int(x[:4]), tsuki=int(x[4:])) for x in (ym[0], ym[-1]))
+            return a if a == z else D.bun("kikan", a=a, z=z)
+
+        tz = [q for q in toi if q in zumi]
+        tn = [q for q in toi if q not in zumi]
+        sz = [q for q in shitsugi if q in zumi]
+        out = [E(D.bun("mcp-issue-hani", toi=len(toi), shitsugi=len(shitsugi), toi_zumi=len(tz),
+                       kikan=E(kikan(tz)) if tz else "", shitsugi_zumi=len(sz)))] if tz else []
+        if tz and tn:
+            out.append(E(D.bun("mcp-issue-hani-toi", n=len(tn), kikan=E(kikan(tn)))))
+        if tz and len(sz) < len(shitsugi):
+            out.append(E(D.bun("mcp-issue-hani-shitsugi", n=len(shitsugi) - len(sz))))
+        return out
+
     def issue(self, theme, P, slug, short, setsumei):
         """論点1つ。試作のページの論点のページと同じ集め方（Page.ronten）で、同じ見出しで返す。
         質問ごとに、論点に関する段落を、続きの応答で返す（docs/design.md 4節）。"""
@@ -732,7 +756,7 @@ class Tsukuru:
             setsumei = [E(D.bun("mcp-issue-gikai-setsumei", short=E(short)))]
             if qs:
                 setsumei.append(E(D.bun("mcp-issue-gikai-tsuzuki", short=E(short))))
-            items += [E(D.bun("mcp-issue-keisai", short=E(short))), E(D.bun("mcp-issue-owari"))]
+            items += [E(D.bun("mcp-issue-keisai", short=E(short)))] + self.issue_hani(theme) + [E(D.bun("mcp-issue-owari"))]
             return Outou(self.kagi_ji(E(P), "issue", slug), intro, blocks + [([gikai] + setsumei, items)] + tsuzuki)
 
         # 続きの番号は、分けてみるまで分からないので、仮の番号で分けてから、その番号で作り直す

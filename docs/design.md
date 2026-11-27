@@ -291,6 +291,9 @@
 | mcp-issue-bubun | {short}に関する部分（{n}か所） |
 | mcp-issue-zentai | 会議録でこの質問の全体を見る |
 | mcp-issue-keisai | 掲載しているのは、内容を確認できた質問です。ほかの質問でも、{short}が取り上げられている場合があります。 |
+| mcp-issue-hani | このテーマの一般質問{toi}と議案への質疑{shitsugi}のうち、内容を確認して、論点ごとに掲載しているのは、一般質問{toi_zumi}（{kikan}）と質疑{shitsugi_zumi}です。 |
+| mcp-issue-hani-toi | 残りの一般質問{n}（{kikan}）は、まだ読んでいません。 |
+| mcp-issue-hani-shitsugi | 残りの質疑{n}は、まだ読んでいません。 |
 | mcp-issue-owari | 掲載している文は資料からの引用で、要約や言い換えは行っていません。「作成者の注」とある所だけは、引用した文だけでは数の意味を読み違えるおそれがあるため、作成者が補った説明です。 |
 | mcp-tool-issue | 論点1つについて、町の資料と議会の会議録の記述を返します。見出しは、町の資料の記述、これまでの説明と答弁、今後検討・決定するとされていること、議会での質問と答弁の4つです。どの記述も、資料の文を原文のまま先に出し、そのあとに時期、区分、もとの資料の名前と URL を付けています。議会での質問と答弁は、1回めの応答に質問の一覧（日付、一般質問か議案への質疑か、題、その論点に関する部分の数）を出し、質問ごとの、その論点に関する部分（会議録の段落）は、続き（引数 page）で返します。会議録は、日付と、議会での答弁か議会での議員の発言かを示し、発言者の名前は出していません。論点の ID は、theme の応答の論点の一覧にあります。 |
 | mcp-hikisu-issue | 論点の ID。選べる ID：{erabu} |
@@ -424,7 +427,7 @@ MCP サーバーの形（ツール、引数、続き、JSON の形）は docs/mc
 2. 町の資料の記述（mcp-midashi-issue-shiryo）。記述ごとに、資料の文（「」で囲む）を先に出し、その下に、時期（mcp-issue-jiki）、金額か数値（試作のページと同じ条件で、mcp-issue-kingaku か mcp-issue-suchi）、もとの資料の名前と URL。記述が無ければ mcp-issue-shiryo-nashi の文。
 3. これまでの説明と答弁（mcp-midashi-issue-setsumei）。記述ごとに、資料の文を先に出し、その下に、時期と区分（mcp-issue-jiki-kubun）、金額か数値、作成者の注（mcp-issue-chu。注のもとの資料の名前と URL。外部の公的な資料は mcp-issue-kakunin-bi の文で確認した日）、もとの資料の名前と URL。区分は、会議録は発言者の役職から決めた区分（「会議録の発言者の役職が…」の2行）、ほかは「shiryo が計画・町の資料」の区分。実績の記述が無いときは、試作のページと同じく mcp-issue-jisseki-nashi の文を出す。
 4. 今後検討・決定するとされていること（mcp-midashi-issue-kongo）。3の記述のうち、抜き出しの語を含むもの。並べ方と書き方は3と同じ。mcp-issue-kongo-setsumei の文を添える。該当が無ければ、試作のページと同じく、見出しも出さない。
-5. 議会での質問と答弁（mcp-midashi-issue-gikai）。mcp-issue-gikai-setsumei と mcp-issue-gikai-tsuzuki の文のあとに、質問を日付の新しい順に並べる（件数などで並べ替えない）。質問ごとに、日付、一般質問か議案への質疑か（mcp-issue-ippan、mcp-issue-shitsugi）、題を mcp-issue-shitsumon の文で出し、その論点に関する部分の数（mcp-issue-bubun）と、本文を返す続きの番号（mcp-kagi の文。引数の名前は page）を添える。質問の全体の URL を mcp-issue-zentai の言葉で出す。終わりに mcp-issue-keisai の文と mcp-issue-owari の文。
+5. 議会での質問と答弁（mcp-midashi-issue-gikai）。mcp-issue-gikai-setsumei と mcp-issue-gikai-tsuzuki の文のあとに、質問を日付の新しい順に並べる（件数などで並べ替えない）。質問ごとに、日付、一般質問か議案への質疑か（mcp-issue-ippan、mcp-issue-shitsugi）、題を mcp-issue-shitsumon の文で出し、その論点に関する部分の数（mcp-issue-bubun）と、本文を返す続きの番号（mcp-kagi の文。引数の名前は page）を添える。質問の全体の URL を mcp-issue-zentai の言葉で出す。終わりに mcp-issue-keisai の文、扱っている質問の範囲の文、mcp-issue-owari の文。範囲の文（2026-11-27）は、テーマの定義の一般質問と質疑の数、そのうち質問と論点の対応の記録がある数と時期（mcp-issue-hani の文）、記録が無い一般質問の数と時期（mcp-issue-hani-toi の文）、記録が無い質疑の数（mcp-issue-hani-shitsugi の文。あるときだけ）で、どれもデータから数える。使う人の生成AIが、範囲を推し量って書かないようにするためである。
 6. 1回めの応答は、1〜5まで。質問ごとの、その論点に関する部分（hino-ronten の質問と論点の対応の記録の、会議録の段落の範囲）は、続きで返す。続きは、質問ごとに新しい応答から始め、1つの質問の部分が上限を超えるときは、段落の途中では分けずに、次の応答に続ける。続きの頭には、5と同じ見出しと、質問の行を出す。段落ごとに、段落の文（「」で囲む）を先に出し、その下に、会議録の名前（kaigiroku-kubun の文）と段落の番号（danraku の文）、作成者の注、もとの資料の URL（段落を指す URL）。
 7. 発言者の名前は出さない。質問した議員の名前も、答弁した人の名前も出さない。試作のページ（画面）は、名前を出している。画面をどちらにそろえるかは、まだ決まっていない。会議録の区分は、発言者の役職から決めるので、委員長の報告（役職が「数字＋番」）は「議会での議員の発言」になる。試作のページでは、会議録はどれも「議会での答弁」としている。
 

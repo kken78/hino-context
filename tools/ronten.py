@@ -34,6 +34,11 @@ def katei(inp, theme):
     return sorted([r for r in _confirmed(inp, KATEI) if r["theme"] == theme], key=lambda r: int(r["step"]))
 
 
+def taio_shitsumon(inp, questions):
+    """問いと事項の対応のうち、question が questions のどれかの行がある question の集まり（point は問わない）。"""
+    return {r["question"] for r in _confirmed(inp, TAIO) if r["question"] in questions}
+
+
 def taio(inp, points, questions):
     """問いと事項の対応のうち、point が points のどれかで、question が questions のどれかの行。"""
     return [r for r in _confirmed(inp, TAIO) if r["point"] in points and r["question"] in questions]
