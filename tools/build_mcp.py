@@ -812,6 +812,9 @@ class Tsukuru:
         if yomi:
             out.append(E(D.bun("mcp-issue-hani-yomi", n=len(yomi), kikan=E(kikan(yomi)),
                                soto=len([q for q in yomi if q not in toi]), toi=len(toi))))
+            nashi = self.yomi_nashi.get(theme, [])     # 読んだが、当たる論点が無かった質問（SKILL.md 4.4 の G5）
+            if nashi:
+                out.append(E(D.bun("mcp-issue-hani-yomi-nashi", n=len(nashi))))
         if tn:
             out.append(E(D.bun("mcp-issue-hani-toi", n=len(tn), kikan=E(kikan(tn)))))
         if len(sz) < len(shitsugi):
@@ -1003,11 +1006,6 @@ def read_notes(inp):
     return out
 
 
-def ym_jiko():
-    import jiko
-    return jiko.read()
-
-
 def theme_jun(inp):
     """hino-ronten のテーマの定義にあるテーマの ID を、定義の順に並べたもの。"""
     return list(dict.fromkeys(r["theme"] for r in inp.ronten_tsv(ronten.THEMES)))
@@ -1045,8 +1043,8 @@ def konkyo_problems(inp, tk, tables, rows, namae=None, yomi_qs=None):
         problems.append(("(i) 質問が取り上げた資料", f"{m['where']}：{m['reason']}（{m['source']}）"))
     if problems:
         return problems
-    ev = {r["namae"]: r for r in namae if r["shu"] == ym.DEKIGOTO}
-    kumi = {}
+    ev = {(r["theme"], r["namae"]): r for r in namae if r["shu"] == ym.DEKIGOTO}
+    kumi, kumi_th = {}, {}
     for r in rows:
         q = r["question"]
         if q not in qsrc or not bn.qhead_parts(qsrc[q])[1]:
@@ -1054,11 +1052,12 @@ def konkyo_problems(inp, tk, tables, rows, namae=None, yomi_qs=None):
             continue
         if r["aite"] in bunsho:
             k = ("bunsho", r["aite"])
-        elif r["aite"] in ev:
-            k = ("event", ev[r["aite"]]["id"])
+        elif (r["theme"], r["aite"]) in ev:
+            k = ("event", ev[(r["theme"], r["aite"])]["id"])
         else:
             continue
         x = kumi.setdefault(k, {}).setdefault(q, dict(yomi={}, mikakunin=False))
+        kumi_th.setdefault((k, q), r["theme"])
         for p in keys.paras_of(r["hani"]):
             x["yomi"][p] = r["yomi"]
     for (shu, aite), qd in kumi.items():
@@ -1074,7 +1073,7 @@ def konkyo_problems(inp, tk, tables, rows, namae=None, yomi_qs=None):
             mi = konkyo.NYURYOKU not in ys
             paras = [(sid, i, inputs.paragraphs(inp.statement_text(sid))[i - 1]) for sid, i in sorted(x["yomi"])]
             out.append(dict(question=q, date=bn.qdate(q), sitsugi=q.startswith("sq:"), who=who, dai=dai, paras=paras,
-                            mikakunin=mi, yomi=x["yomi"] if mi else {}, theme=qtheme[q]))
+                            mikakunin=mi, yomi=x["yomi"] if mi else {}, theme=kumi_th[((shu, aite), q)]))
             if qtheme[q] in tk.note:
                 tk.konkyo_pg[q] = tk.note[qtheme[q]][1]
         out.sort(key=lambda x: x["date"], reverse=True)
@@ -1149,16 +1148,18 @@ def build(inp, tables, kotoba, read_problems=(), design=None, skill=None, notes=
         problems += more
         tk.note[theme] = (T, bn.Page(inp, T, model))
     # 生成AIの2回の読み取りで読んだ質問（SCHEMA.md 7.10）。テーマごとの質問の並び（範囲の文に使う）と、質問 → テーマ
-    tk.yomi_q = {}
-    yomi_qs = {}
-    jth = {r["id"]: r["theme"] for r in ym_jiko()}
+    # 読んだ質問は、テーマの読み取りの結果の保存先（taio/yomi-<テーマ>/）の束の並びの質問の全部（当たる論点が無かった
+    # 質問も数える。SKILL.md 4.4 の G5）
+    tk.yomi_q, tk.yomi_nashi = {}, {}
+    try:
+        yomi_qs = ym.shitsumon_theme()
+    except ym.YomiError as e:
+        raise Stop([("(i) 質問が取り上げた資料", str(e))])
     yomi_rows = ym.read() if os.path.exists(ym.PATH) else []
-    yomi_yonda = ym.shitsumon() if os.path.exists(ym.TABA) else []
-    for r in yomi_rows:
-        yomi_qs.setdefault(r["question"], jth[r["jiko"]])
-    for q in yomi_yonda:
-        if q in yomi_qs:
-            tk.yomi_q.setdefault(yomi_qs[q], []).append(q)
+    for q, th in yomi_qs.items():
+        tk.yomi_q.setdefault(th, []).append(q)
+    for th in tk.yomi_q:
+        tk.yomi_nashi[th] = ym.nashi_shitsumon(th, yomi_rows)
     # (i) 質問が取り上げた資料と出来事の表
     problems += konkyo_problems(inp, tk, tables, konkyo_rows, yomi_qs=yomi_qs)
     slugs = [slug for T, _ in tk.note.values() for _, slug, _, _ in T["topics"]]
