@@ -26,6 +26,7 @@ import jiko  # noqa: E402
 import keys  # noqa: E402
 import ronten  # noqa: E402
 import shogo  # noqa: E402
+import yomi as ym  # noqa: E402
 
 TEIGI_COLUMNS = ["kind", "key", "name", "short", "setsumei"]
 TEIGI_KINDS = ("テーマ", "論点", "準備中", "抜き出しの語", "単位", "注")
@@ -85,7 +86,26 @@ def read_teigi(path, theme):
                      for r in rows if r["kind"] == "注"])
 
 
-def jiko_ni_suru(inp, teigi, theme, rows=None):
+def shudai_of(theme, jiko_rows=None, shudai=None):
+    """質問と事項の対応の表（taio/shudai.tsv。生成AIの2回の読み取り）のうち、事項がそのテーマの行の行。
+    行ごとに point（事項の name）を付ける。表が無ければ空。"""
+    jiko_rows = jiko.read() if jiko_rows is None else jiko_rows
+    if shudai is None:
+        shudai = ym.read() if os.path.exists(ym.PATH) else []
+    names = {r["id"]: r["name"] for r in jiko_rows if r["theme"] == theme}
+    return [dict(r, point=names[r["jiko"]]) for r in shudai if r["jiko"] in names]
+
+
+def ippan_src(inp, q):
+    """テーマの定義に無い一般質問の、題の字（qhead_parts で読める形）。一般質問の台帳（hino-council-search の
+    data/ippan.tsv）の、議員の名前と、全部の題名から作る。台帳に無ければ空。"""
+    rs = inp.ippan().get(keys.sid_of(q), [])
+    if not rs:
+        return ""
+    return f"{inp.role(keys.sid_of(q)) or '0番'} {rs[0]['member']} " + "".join(f"「{r['title']}」" for r in rs)
+
+
+def jiko_ni_suru(inp, teigi, theme, rows=None, shudai=None):
     """事項の表にそのテーマの行があれば、論点の一覧を事項の表から作る（SCHEMA.md 7.9。2026-11-27 の依頼者の決定）。
 
     teigi["jiko"] に、事項の表の行（表の順）を入れ、行ごとに aru（確定済みの事柄の記録か、そのテーマの質問・質疑との
@@ -109,6 +129,8 @@ def jiko_ni_suru(inp, teigi, theme, rows=None):
     qs = {r["value"] for r in trows if r["kind"] in ("問い", "質疑")}
     names = {r["name"] for r in rows}
     aru = {r["point"] for r in ronten.kotogara(inp, names)} | (ronten.taio_points(inp, qs) & names)
+    teigi["shudai"] = shudai_of(theme, rows, shudai)    # 生成AIの2回の読み取りの行（SCHEMA.md 7.10）
+    aru |= {r["point"] for r in teigi["shudai"]}
     teigi["jiko"] = [dict(r, aru=r["name"] in aru) for r in rows]
     teigi["topics"] = [(r["name"], r["id"]) + nagai.get(r["id"], (r["name"], r["name"])) for r in rows if r["name"] in aru]
     return teigi
@@ -226,13 +248,19 @@ def kotoba_problems(page, ng, ok):
 # ---- 記録を集める ----
 
 def collect(inp, teigi, theme):
-    """記録を集め、(a)(b) の検査を行う。返り値は (model, problems, quote_result)。"""
+    """記録を集め、(a)(b) の検査を行う。返り値は (model, problems, quote_result)。
+    事項の表があるテーマは、質問と事項の対応の表（taio/shudai.tsv）の行（jiko_ni_suru が teigi["shudai"] に入れたもの）も集める。"""
     trows = ronten.themes(inp, theme)
     qsrc = {r["value"]: r["source"] for r in trows if r["kind"] in ("問い", "質疑")}
     # 論点は、テーマの定義の事柄にあるか、そのテーマの質問・質疑との確定済みの対応の記録があるもの（SCHEMA.md §8。
     # 確定済みの記録があるものを出さないままにしない。2026-11-27 の依頼者の決定）
     points = {r["value"] for r in trows if r["kind"] == "事柄"} | ronten.taio_points(inp, set(qsrc))
     problems = []
+    yomi = teigi.get("shudai") or [] if teigi.get("jiko") else []
+    points |= {r["point"] for r in yomi}
+    for q in dict.fromkeys(r["question"] for r in yomi):
+        if q not in qsrc:
+            qsrc[q] = ippan_src(inp, q)
     for P, *_ in teigi["topics"]:
         if P not in points:
             problems.append(("定義", f"論点「{P}」が、hino-ronten の題材 {theme} の事柄に無く、"
@@ -252,6 +280,11 @@ def collect(inp, teigi, theme):
     res = shogo.check_quotes(inp, qrows)
     pres = shogo.check_paras(inp, [dict(where=f"問いと事項の対応 {r['question']} / {r['point']}", hani=r["hani"])
                                    for r in ta])
+    pres2 = shogo.check_paras(inp, [dict(where=f"質問と事項の対応の表 {r['question']} / {r['jiko']}", hani=r["hani"])
+                                    for r in yomi])
+    pres.total += pres2.total
+    pres.matched += pres2.matched
+    pres.mismatched += pres2.mismatched
     for m in res.mismatched + pres.mismatched:
         problems.append(("(a) 引用がもとの資料に無い", f"{m['where']}：{m['reason']}（{m['source']}）"
                          + (f"「{m['quote']}」" if m["quote"] else "")))
@@ -271,7 +304,7 @@ def collect(inp, teigi, theme):
         srcs = [s for s in r["sources"].split(",") if s]
         if not srcs or any(not named(s)[0] for s in srcs[:2]):
             problems.append(("(b) 出典の無い記述", f"過程の記録 {theme} step {r['step']}：資料が無いか、名前が作れない（{r['sources']}）"))
-    for r in ta:
+    for r in ta + yomi:
         if not r["hani"] or not qhead_parts(qsrc.get(r["question"], ""))[1]:
             problems.append(("(b) 出典の無い記述", f"問いと事項の対応 {r['question']} / {r['point']}：範囲か問いの題が無い"))
     # 目的と手段（SCHEMA.md 7.9）：入力のつながりの記録のうち、両端が事項の表にある行。引用と出典を、ほかと同じく検査する
@@ -299,7 +332,7 @@ def collect(inp, teigi, theme):
         cres = shogo.check_quotes(inp, [dict(where=where, source=c["moto"], quote=f) for f in frs])
         for m in cres.mismatched:
             problems.append(("(a) 引用がもとの資料に無い", f"{m['where']}：{m['reason']}（{m['source']}）「{m['quote']}」"))
-    return dict(ko=ko, katei=katei, ta=ta, qsrc=qsrc, mokuteki=moku), problems, (res, pres)
+    return dict(ko=ko, katei=katei, ta=ta, qsrc=qsrc, mokuteki=moku, yomi=yomi), problems, (res, pres)
 
 
 # ---- ページ ----
@@ -321,6 +354,22 @@ def qhead(q, qsrc):
     who, dai = qhead_parts(qsrc.get(q, ""))
     kind = "議案への質疑" if q.startswith("sq:") else "一般質問"
     return f"{keys.ymd(qdate(q))}　{kind}（{S(who)}）{S_kagi(dai)}"
+
+
+def yomi_go(D, yomi):
+    """段落の yomi（「一致」か「1回だけ」）→ 言葉（docs/design.md 3節）。MCP の応答（tools/build_mcp.py）も使う。"""
+    if yomi == ym.ICCHI:
+        return D.kotoba("質問と事項の対応の表 yomi が「一致」")
+    if yomi == ym.IKKAI:
+        return D.kotoba("質問と事項の対応の表 yomi が「1回だけ」")
+    raise ValueError(f"yomi が違う（{yomi}）")
+
+
+def kakunin_go(D, q):
+    """質問（Page.ronten の qs の1つ）→ 人が確認した質問か、生成AIが2回読んだ質問（未確認）かの言葉。
+    MCP の応答（tools/build_mcp.py）も使う。"""
+    D.dasanai("質問と事項の対応の表 chu")
+    return D.kotoba("質問と事項の対応の表 question") if q["mikakunin"] else D.bun("shitsumon-kakutei")
 
 
 class Page:
@@ -408,13 +457,26 @@ class Page:
         ko = sorted([x for x in self.m["ko"] if x["point"] == P], key=lambda x: x["source_date"], reverse=True)
         docs = sorted([x for x in ko if not x["source"].startswith("sp:")], key=lambda x: x["source_date"], reverse=True)
         tome = [x for x in ko if self.pat and self.pat.search(x["quote"])]
-        ta = sorted([r for r in self.m["ta"] if r["point"] == P], key=lambda r: qdate(r["question"]), reverse=True)
+        ta = [r for r in self.m["ta"] if r["point"] == P]
         qs = []
         for r in ta:
             q = r["question"]
             who, dai = qhead_parts(self.m["qsrc"].get(q, ""))
             paras = [(sid, i, inputs.paragraphs(self.inp.statement_text(sid))[i - 1]) for sid, i in keys.paras_of(r["hani"])]
-            qs.append(dict(question=q, date=qdate(q), sitsugi=q.startswith("sq:"), who=who, dai=dai, paras=paras))
+            qs.append(dict(question=q, date=qdate(q), sitsugi=q.startswith("sq:"), who=who, dai=dai, paras=paras,
+                           mikakunin=False, yomi={}))
+        # 生成AIの2回の読み取りの行（SCHEMA.md 7.10）。質問ごとに段落をまとめ、段落ごとに一致か1回だけかを持つ
+        yq = {}
+        for r in self.m.get("yomi", []):
+            if r["point"] == P:
+                for p in keys.paras_of(r["hani"]):
+                    yq.setdefault(r["question"], {})[p] = r["yomi"]
+        for q, fl in yq.items():
+            who, dai = qhead_parts(self.m["qsrc"].get(q, ""))
+            paras = [(sid, i, inputs.paragraphs(self.inp.statement_text(sid))[i - 1]) for sid, i in sorted(fl)]
+            qs.append(dict(question=q, date=qdate(q), sitsugi=q.startswith("sq:"), who=who, dai=dai, paras=paras,
+                           mikakunin=True, yomi=fl))
+        qs.sort(key=lambda x: x["date"], reverse=True)
         slugs = {p: k for p, k, _, _ in self.t["topics"]}
         aite = {}
         for r in self.m.get("mokuteki", []):
@@ -440,6 +502,7 @@ class Page:
         rows3 = "".join(f"<tr><td class='nw'>{keys.ymd(x['source_date'])}</td><td>「{S(x['quote'])}」</td>"
                         f"<td>{self.link(x)}</td></tr>" for x in tome)
         ta = R["qs"]
+        D = self.D
         blocks = []
         for r in ta:
             q = r["question"]
@@ -449,8 +512,10 @@ class Page:
                 if sid != cur:
                     cur = sid
                     body.append(f"<div class='spk'>{S(inp.speaker(sid))}</div>")
-                body.append(f"<div class='para'>{S(para)}　<a href='{E(keys.search_url(sid, i))}' target='_blank'>会議録</a>{self.chu('sp:' + sid, para)}</div>")
-            blocks.append(f"<div class='qa'><h3>{qhead(q, qsrc)}</h3><details><summary>{E(short)}に関する部分を表示（{len(ps)}か所）</summary>"
+                yl = f"<span class='m'>（{E(self.yomi_go(r['yomi'][(sid, i)]))}）</span>" if r["mikakunin"] else ""
+                body.append(f"<div class='para'>{S(para)}　<a href='{E(keys.search_url(sid, i))}' target='_blank'>会議録</a>{yl}{self.chu('sp:' + sid, para)}</div>")
+            blocks.append(f"<div class='qa'><h3>{qhead(q, qsrc)}</h3><p class='m'>{E(self.kakunin_go(r))}</p>"
+                          f"<details><summary>{E(short)}に関する部分を表示（{len(ps)}か所）</summary>"
                           f"{''.join(body)}</details><p class='m'><a href='{E(keys.source_url(inp, q))}' target='_blank'>"
                           f"会議録でこの質問の全体を見る</a></p></div>")
         sib = "／".join(f"<a href='#{s}'>{E(p)}</a>" for p, s, _, _ in T["topics"] if s != slug)
@@ -460,6 +525,9 @@ class Page:
             if tome else ""
         th = E(T["theme"])
         sec_m = self.mokuteki_html(R["mokuteki"])
+        yset = f"<p class='m'>{E(D.bun('yomi-setsumei', short=short))}</p>" if any(x["mikakunin"] for x in ta) else ""
+        keisai = (E(D.bun("keisai-yomi", short=short)) if any(x["mikakunin"] for x in ta)
+                  else f"掲載しているのは、内容を確認できた質問です。ほかの質問でも、{E(short)}が取り上げられている場合があります。")
         h = f"""<section id='{slug}' class='page'>
 <p class='lead'><a href='#top'>{SITE}</a> ＞ <a href='#top'>{th}</a> ＞ {E(P)}</p>
 <h1>{E(P)}</h1>
@@ -470,10 +538,16 @@ class Page:
 <table><tr><th>時期</th><th>区分</th><th>内容</th><th>もとの資料</th></tr>{rows2}</table>{jis}
 {sec3}{sec_m}
 <h2>議会での質問と答弁（{len(ta)}件）</h2>
-<p class='m'>一つの質問では、複数の話題が取り上げられます。ここでは、{E(short)}に関する部分だけを抜き出しています。質問の全体は、会議録で確認できます。</p>{''.join(blocks)}
-<p class='m'>掲載しているのは、内容を確認できた質問です。ほかの質問でも、{E(short)}が取り上げられている場合があります。</p>
+<p class='m'>一つの質問では、複数の話題が取り上げられます。ここでは、{E(short)}に関する部分だけを抜き出しています。質問の全体は、会議録で確認できます。</p>{yset}{''.join(blocks)}
+<p class='m'>{keisai}</p>
 </section>"""
         return h, len(ko), len(ta), [r["question"] for r in ta]
+
+    def yomi_go(self, yomi):
+        return yomi_go(self.D, yomi)
+
+    def kakunin_go(self, q):
+        return kakunin_go(self.D, q)
 
     def mokuteki_html(self, moku):
         """目的と手段（docs/design.md 4節）。相手が無ければ空。言葉は docs/design.md 3節から引く。"""
@@ -538,7 +612,7 @@ class Page:
 <h2>議会での質問から見る（{len(qmap)}件）</h2>
 <p class='m'>一つの質問が、複数の論点にまたがることがあります。質問ごとに、関係する論点のページを示します。</p>
 <table><tr><th>質問</th><th>関係する論点</th><th>全体</th></tr>{qrows}</table>
-<p class='m'>掲載しているのは、内容を確認できた質問です。このテーマに関する質問は、ほかにもあります。</p>
+<p class='m'>{E(self.D.bun("keisai-yomi-theme")) if self.m.get("yomi") else "掲載しているのは、内容を確認できた質問です。このテーマに関する質問は、ほかにもあります。"}</p>
 </section>"""
         page = f"""<!DOCTYPE html><html lang='ja'><head><meta charset='utf-8'><title>{th}｜{SITE}</title><style>
 body{{font-family:sans-serif;max-width:920px;margin:1em auto;padding:0 1em;line-height:1.7;color:#222}}

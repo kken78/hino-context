@@ -187,6 +187,18 @@ class Inputs:
         e = self.statements().get(sid)
         return None if e is None else (e.get("role") or "")
 
+    def ippan(self):
+        """一般質問の台帳（data/ippan.tsv）→ 問いの最初の発言の sid（from）→ 行の並び（n の順）。題名（title）を、
+        テーマの定義に無い質問の題に使う（SCHEMA.md §1。2026-11-28）。"""
+        if "ippan" not in self._cache:
+            out = {}
+            for r in read_tsv(self.read_bytes(HS, "data/ippan.tsv"), f"{HS} data/ippan.tsv"):
+                out.setdefault(r["from"], []).append(r)
+            for rs in out.values():
+                rs.sort(key=lambda r: int(r["n"]))
+            self._cache["ippan"] = out
+        return self._cache["ippan"]
+
     # ---- 町の資料（hino-town-docs） ----
 
     def docs(self):

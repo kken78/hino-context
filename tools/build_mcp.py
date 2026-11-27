@@ -22,7 +22,8 @@
   (g) 施設の割り当てが未確認の行がある（tools/build_theme.py と同じ）
   (h) 論点の仮の表（teigi/note-<テーマ>.tsv）と事項の表（teigi/jiko.tsv）の検査と、試作のページと同じ検査
       （tools/build_note.py の jiko_ni_suru と collect）
-  (i) 質問が取り上げた資料と出来事の表（taio/konkyo.tsv）の検査（tools/konkyo.py の check）と、範囲の段落の確認
+  (i) 質問が取り上げた資料と出来事の表（taio/konkyo.tsv）の検査（tools/konkyo.py の check）と、範囲の段落の確認。
+      資料と出来事の名前の表（teigi/konkyo-namae.tsv）の検査（tools/yomi.py の check_namae）
 """
 import argparse
 import datetime
@@ -45,6 +46,7 @@ import konkyo  # noqa: E402
 import ronten  # noqa: E402
 import shogo  # noqa: E402
 import suji as sj  # noqa: E402
+import yomi as ym  # noqa: E402
 
 OUT_PATH = os.path.join(inputs.ROOT, "mcp", "data", "outou.json")
 SRC_PATH = os.path.abspath(__file__)
@@ -68,7 +70,8 @@ TOOLS = (("theme", (("theme", "string", False), (TSUZUKI, "integer", False))),
          ("item", (("item", "string", True), ("document", "string", False), ("breakdown", "integer", False),
                    (TSUZUKI, "integer", False))),
          ("facility", (("facility", "string", True), (TSUZUKI, "integer", False))),
-         ("document", (("document", "string", True), ("table", "integer", False), (TSUZUKI, "integer", False))))
+         ("document", (("document", "string", True), ("table", "integer", False), (TSUZUKI, "integer", False))),
+         ("event", (("event", "string", True), (TSUZUKI, "integer", False))))
 
 
 def design_problems(D, src=None):
@@ -168,6 +171,7 @@ class Tsukuru:
         self.note = {}                   # テーマ → (論点の仮の表, build_note.Page)。build で入れる
         self.konkyo = {}                 # 資料の ID → 質問が取り上げた資料と出来事の表の質問（Page.ronten の qs と同じ形）。build で入れる
         self.konkyo_pg = {}              # 質問 → 注（Page.chu_list）を引く build_note.Page（その質問があるテーマの Page）
+        self.event = {}                  # 出来事の ID → (資料と出来事の名前の表の行, 質問の並び（konkyo と同じ形）, テーマの集まり)
 
     # 資料の名前と url
     def moto(self, key, quote=""):
@@ -268,6 +272,11 @@ class Tsukuru:
         blocks.append(([f"## {E(D.bun('mcp-midashi-shiryo'))}", E(D.bun("mcp-shiryo-setsumei")) + E(hb)],
                        ["- " + self.bunsho_kagi(b) + (f"　{E(D.bun('mcp-shiryo-konkyo-ari'))}" if self.konkyo.get(b) else "")
                         for b in docs]))
+        ev = [(k, r, qs) for k, (r, qs, ths_) in self.event.items() if theme in ths_]
+        if ev:
+            blocks.append(([f"## {E(D.kotoba('資料と出来事の名前の表 shu が「出来事」'))}", E(D.bun("mcp-dekigoto-setsumei"))],
+                           [f"- {self.event_kagi(k)}　{E(D.bun('mcp-dekigoto-kazu', n=len([q for q in qs if q['theme'] == theme])))}"
+                            for k, r, qs in ev]))
         # 項目は、まだテーマと結び付けていない。テーマの表に行があるテーマ（項目を作ったテーマ）にだけ並べ、
         # ほかのテーマに、別のテーマの項目を並べない（docs/design.md 4節）
         teigi = t["suji"] if any(r["theme"] == theme for r in t["theme"]) else []
@@ -275,6 +284,26 @@ class Tsukuru:
             blocks.append(([f"## {E(D.bun('mcp-midashi-teigi'))}", E(D.bun("mcp-teigi-setsumei"))],
                            ["- " + self.teigi_kagi(x) for x in teigi]))
         return Outou(S(name), blocks=blocks)
+
+    def event_kagi(self, k):
+        """出来事の名前（namae と、括弧に setsumei）と ID。"""
+        D = self.D
+        r = self.event[k][0]
+        D.dasanai("資料と出来事の名前の表 namae、setsumei")
+        D.dasanai("資料と出来事の名前の表 id")
+        name = S(r["namae"]) + (f"（{S(r['setsumei'])}）" if r["setsumei"] else "")
+        return self.kagi_ji(name, "event", k)
+
+    def event_kagi_namae(self, k):
+        return S(self.event[k][0]["namae"])
+
+    def event_outou(self, k):
+        """出来事1つ。document の、資料を取り上げている質問と同じ形（gikai）で返す。"""
+        D = self.D
+        r, qs, _ = self.event[k]
+        return self.gikai(self.event_kagi(k), [], [], qs, D.bun("mcp-event-short"),
+                          lambda q: self.konkyo_pg.get(q["question"]),
+                          f"## {E(D.bun('mcp-midashi-event-konkyo', n=len(qs)))}", [], k)
 
     def shurui(self, r):
         """事項の表の shurui → 種類の言葉（docs/design.md 3節）。"""
@@ -758,8 +787,9 @@ class Tsukuru:
             a, z = (D.bun("nengetsu", nen=int(x[:4]), tsuki=int(x[4:])) for x in (ym[0], ym[-1]))
             return a if a == z else D.bun("kikan", a=a, z=z)
 
+        yomi = self.yomi_q.get(theme, [])      # 生成AIの2回の読み取りで読んだ質問（SCHEMA.md 7.10）
         tz = [q for q in toi if q in zumi]
-        tn = [q for q in toi if q not in zumi]
+        tn = [q for q in toi if q not in zumi and q not in yomi]
         sz = [q for q in shitsugi if q in zumi]
         if not (tz or sz):
             return []
@@ -773,6 +803,9 @@ class Tsukuru:
         else:
             out = [E(D.bun("mcp-issue-hani-shitsugi-dake", toi=len(toi), shitsugi=len(shitsugi),
                            shitsugi_zumi=len(sz)))]
+        if yomi:
+            out.append(E(D.bun("mcp-issue-hani-yomi", n=len(yomi), kikan=E(kikan(yomi)),
+                               soto=len([q for q in yomi if q not in toi]), toi=len(toi))))
         if tn:
             out.append(E(D.bun("mcp-issue-hani-toi", n=len(tn), kikan=E(kikan(tn)))))
         if len(sz) < len(shitsugi):
@@ -829,14 +862,19 @@ class Tsukuru:
         def bubun(q):
             return E(D.bun("mcp-issue-bubun", short=E(short), n=len(q["paras"])))
 
+        def kakunin(q):
+            return E(bn.kakunin_go(D, q))
+
         tsuzuki = []
         for q in qs:
-            head = [gikai, f"### {shitsumon(q)}　{bubun(q)}", f"{zentai}：{E(keys.source_url(inp, q['question']))}"]
+            head = [gikai, f"### {shitsumon(q)}　{bubun(q)}", kakunin(q), f"{zentai}：{E(keys.source_url(inp, q['question']))}"]
             items = []
             pg = pg_of(q)
             for sid, i, para in q["paras"]:
                 nm = self.namae.shiryo("sp:" + sid)[0]
                 lines = [f"- 「{S(para)}」", f"  - {nm}　{E(D.bun('danraku', n=i))}"]
+                if q["mikakunin"]:
+                    lines.append(f"  - {E(bn.yomi_go(D, q['yomi'][(sid, i)]))}")
                 if pg is not None:
                     lines += self.chu_gyo(pg, "sp:" + sid, para, "  ")
                 lines.append(self.url_gyo(keys.search_url(sid, i), "  - "))
@@ -844,12 +882,16 @@ class Tsukuru:
             tsuzuki.append((head, items, True))
 
         def tsukuru(bango):
-            items = [f"- {shitsumon(q)}\n  - {self.kagi_ji(bubun(q), TSUZUKI, str(n))}"
+            items = [f"- {shitsumon(q)}\n  - {kakunin(q)}\n  - {self.kagi_ji(bubun(q), TSUZUKI, str(n))}"
                      f"\n  - {zentai}：{E(keys.source_url(inp, q['question']))}" for q, n in zip(qs, bango)]
             setsumei = [E(D.bun("mcp-issue-gikai-setsumei", short=E(short)))]
             if qs:
                 setsumei.append(E(D.bun("mcp-issue-gikai-tsuzuki", short=E(short))))
-            items += [E(D.bun("mcp-issue-keisai", short=E(short)))] + list(hani) + [E(D.bun("mcp-issue-owari"))]
+            mi = any(q["mikakunin"] for q in qs)
+            if mi:
+                setsumei.append(E(D.bun("yomi-setsumei", short=E(short))))
+            keisai = D.bun("keisai-yomi", short=E(short)) if mi else D.bun("mcp-issue-keisai", short=E(short))
+            items += [E(keisai)] + list(hani) + [E(D.bun("mcp-issue-owari"))]
             return Outou(title, intro, blocks + [([gikai] + setsumei, items)] + tsuzuki)
 
         # 続きの番号は、分けてみるまで分からないので、仮の番号で分けてから、その番号で作り直す
@@ -895,6 +937,9 @@ class Tsukuru:
             "facility": (owari(E(D.bun("mcp-tool-shisetsu"))), [
                 dict(name="facility", type="string", required=True, erabu=fa_erabu, description=owari(E(D.bun(
                     "mcp-hikisu-key", erabu=namae_tsuki(fa_erabu, lambda k: S(self.ref[k]["name"]))))))]),
+            "event": (owari(E(D.bun("mcp-tool-event"))), [
+                dict(name="event", type="string", required=True, erabu=list(self.event), description=owari(E(D.bun(
+                    "mcp-hikisu-event", erabu=namae_tsuki(list(self.event), self.event_kagi_namae)))))]),
             "document": (owari(E(D.bun("mcp-tool-shiryo"))), [
                 dict(name="document", type="string", required=True, erabu=b_erabu, description=owari(E(D.bun(
                     "mcp-hikisu-bunsho", erabu=namae_tsuki(b_erabu, self.namae.bunsho))))),
@@ -952,40 +997,83 @@ def read_notes(inp):
     return out
 
 
+def ym_jiko():
+    import jiko
+    return jiko.read()
+
+
 def theme_jun(inp):
     """hino-ronten のテーマの定義にあるテーマの ID を、定義の順に並べたもの。"""
     return list(dict.fromkeys(r["theme"] for r in inp.ronten_tsv(ronten.THEMES)))
 
 
-def konkyo_problems(inp, tk, tables, rows):
-    """質問が取り上げた資料と出来事の表の行を検査し、資料の ID ごとに質問を tk.konkyo に入れる。→ 問題の並び。
-    質問の題は、その質問があるテーマの定義の行から取り、注は、そのテーマの Page から引く。"""
+def konkyo_problems(inp, tk, tables, rows, namae=None, yomi_qs=None):
+    """質問が取り上げた資料と出来事の表の行を検査し、資料の ID ごとに質問を tk.konkyo に、出来事の ID ごとに質問を
+    tk.event に入れる。→ 問題の並び。
+    質問は、どれかのテーマの定義の問い・質疑か、生成AIの2回の読み取りで読んだ質問（yomi_qs。質問 → テーマ）。
+    質問の題は、その質問があるテーマの定義の行（無ければ hino-council-search の data/ippan.tsv）から取り、注は、そのテーマの Page から引く。
+    同じ資料（出来事）と質問の行は、1つの質問にまとめ、段落ごとに yomi を持つ（「入力の確定済み」の行は、人が確認した質問）。
+    資料の ID でも出来事の名前でもない aite（計画（案）と、資料と出来事の名前の表に無い名前）の行は、出さない。"""
+    namae = ym.read_namae() if namae is None else namae
+    yomi_qs = {} if yomi_qs is None else yomi_qs
     bunsho = {r["bunsho"] for r in tables["bunsho"]}
     problems = [("(i) 質問が取り上げた資料", m) for m in konkyo.check(rows, bunsho)]
-    qsrc, qtheme = {}, {}
+    problems += [("(i) 資料と出来事の名前の表", m) for m in ym.check_namae(namae, bunsho)]
+    qsrc, qtheme, src_of = {}, {}, {}
     for r in inp.ronten_tsv(ronten.THEMES):
         if r["kind"] in ("問い", "質疑"):
             qsrc.setdefault(r["value"], r["source"])
             qtheme.setdefault(r["value"], r["theme"])
+            src_of.setdefault((r["theme"], r["value"]), r["source"])
+    # 読んだ質問は、読んだテーマの質問とする（ほかのテーマの定義にもある質問は、題を、読んだテーマの定義か台帳から取る。
+    # 試作のページと issue と同じ題にするため）
+    for q, th in yomi_qs.items():
+        qsrc[q] = src_of.get((th, q)) or bn.ippan_src(inp, q)
+        qtheme[q] = th
     pres = shogo.check_paras(inp, [dict(where=f"質問が取り上げた資料 {r['question']} / {r['aite']}", hani=r["hani"])
                                    for r in rows])
     for m in pres.mismatched:
         problems.append(("(i) 質問が取り上げた資料", f"{m['where']}：{m['reason']}（{m['source']}）"))
     if problems:
         return problems
+    ev = {r["namae"]: r for r in namae if r["shu"] == ym.DEKIGOTO}
+    kumi = {}
     for r in rows:
         q = r["question"]
-        if q not in qsrc:
-            problems.append(("(i) 質問が取り上げた資料", f"{q}：どのテーマの定義の問い・質疑にも無い"))
+        if q not in qsrc or not bn.qhead_parts(qsrc[q])[1]:
+            problems.append(("(i) 質問が取り上げた資料", f"{q}：どのテーマの定義の問い・質疑にも、読んだ質問にも無いか、題が無い"))
             continue
-        who, dai = bn.qhead_parts(qsrc[q])
-        paras = [(sid, i, inputs.paragraphs(inp.statement_text(sid))[i - 1]) for sid, i in keys.paras_of(r["hani"])]
-        tk.konkyo.setdefault(r["aite"], []).append(dict(question=q, date=bn.qdate(q), sitsugi=q.startswith("sq:"),
-                                                       who=who, dai=dai, paras=paras))
-        if qtheme[q] in tk.note:
-            tk.konkyo_pg[q] = tk.note[qtheme[q]][1]
-    for b in tk.konkyo:
-        tk.konkyo[b].sort(key=lambda x: x["date"], reverse=True)
+        if r["aite"] in bunsho:
+            k = ("bunsho", r["aite"])
+        elif r["aite"] in ev:
+            k = ("event", ev[r["aite"]]["id"])
+        else:
+            continue
+        x = kumi.setdefault(k, {}).setdefault(q, dict(yomi={}, mikakunin=False))
+        for p in keys.paras_of(r["hani"]):
+            x["yomi"][p] = r["yomi"]
+    for (shu, aite), qd in kumi.items():
+        out = []
+        for q, x in qd.items():
+            who, dai = bn.qhead_parts(qsrc[q])
+            ys = set(x["yomi"].values())
+            if konkyo.NYURYOKU in ys and len(ys) > 1:
+                problems.append(("(i) 質問が取り上げた資料", f"{q} / {aite}：入力の確定済みの行と、読み取りの行がある"))
+                continue
+            mi = konkyo.NYURYOKU not in ys
+            paras = [(sid, i, inputs.paragraphs(inp.statement_text(sid))[i - 1]) for sid, i in sorted(x["yomi"])]
+            out.append(dict(question=q, date=bn.qdate(q), sitsugi=q.startswith("sq:"), who=who, dai=dai, paras=paras,
+                            mikakunin=mi, yomi=x["yomi"] if mi else {}, theme=qtheme[q]))
+            if qtheme[q] in tk.note:
+                tk.konkyo_pg[q] = tk.note[qtheme[q]][1]
+        out.sort(key=lambda x: x["date"], reverse=True)
+        if shu == "bunsho":
+            tk.konkyo[aite] = out
+        else:
+            r = next(r for r in namae if r["id"] == aite)
+            tk.event[aite] = (r, out, {x["theme"] for x in out})
+    # 出来事は、名前の表の順に並べる
+    tk.event = {r["id"]: tk.event[r["id"]] for r in namae if r["id"] in tk.event}
     return problems
 
 
@@ -1049,8 +1137,19 @@ def build(inp, tables, kotoba, read_problems=(), design=None, skill=None, notes=
         model, more, _ = bn.collect(inp, T, theme)
         problems += more
         tk.note[theme] = (T, bn.Page(inp, T, model))
+    # 生成AIの2回の読み取りで読んだ質問（SCHEMA.md 7.10）。テーマごとの質問の並び（範囲の文に使う）と、質問 → テーマ
+    tk.yomi_q = {}
+    yomi_qs = {}
+    jth = {r["id"]: r["theme"] for r in ym_jiko()}
+    yomi_rows = ym.read() if os.path.exists(ym.PATH) else []
+    yomi_yonda = ym.shitsumon() if os.path.exists(ym.TABA) else []
+    for r in yomi_rows:
+        yomi_qs.setdefault(r["question"], jth[r["jiko"]])
+    for q in yomi_yonda:
+        if q in yomi_qs:
+            tk.yomi_q.setdefault(yomi_qs[q], []).append(q)
     # (i) 質問が取り上げた資料と出来事の表
-    problems += konkyo_problems(inp, tk, tables, konkyo_rows)
+    problems += konkyo_problems(inp, tk, tables, konkyo_rows, yomi_qs=yomi_qs)
     slugs = [slug for T, _ in tk.note.values() for _, slug, _, _ in T["topics"]]
     problems += [("(h) 論点", f"論点の ID {x} が、2つ以上のテーマにある") for x in sorted({x for x in slugs if slugs.count(x) > 1})]
     if problems:
@@ -1091,6 +1190,8 @@ def build(inp, tables, kotoba, read_problems=(), design=None, skill=None, notes=
             if k not in seen:
                 seen.add(k)
                 ireru("facility", [("facility", k)], tk.shisetsu(k, theme, th))
+    for k in tk.event:
+        ireru("event", [("event", k)], tk.event_outou(k))
     for b in tk.by:
         ireru("document", [("document", b)], tk.shiryo(b))
         for p in tables["bubun"]:
