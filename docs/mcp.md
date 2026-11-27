@@ -85,7 +85,7 @@ hino-context のデータを、使う人の生成AIから呼べる、読み取�
 
 - Cloudflare の Workers Builds で、このリポジトリをつなぐ。Root directory は `mcp`、Build command は空、Deploy command は `npx wrangler deploy`（既定の値）。依存は、mcp/package-lock.json から、Workers Builds が入れる。リポジトリのいちばん上のファイルは使わない。
 - 公開するブランチは main。PR を main にマージするたびに、公開される。
-- main 以外のブランチを push すると、Cloudflare がプレビューを作成する（Preview command は `npx wrangler preview`。既定の値）。公開中のサーバーには影響しない。このコマンドは、設定ファイル（mcp/wrangler.jsonc）に `previews` の項目が無いと止まる。プレビューだけの設定は無いので、項目は空にしている。
+- main 以外のブランチでは、Cloudflare のビルドを行わない（Cloudflare の設定の「プレビューブランチのビルド」をオフにしている。2026-11-27）。プレビューの URL は使わない（設定ファイル mcp/wrangler.jsonc の `preview_urls` を false にしている）。確認は、手元の wrangler dev で行う。
 - 公開の URL は `https://hino-context.<アカウントの workers.dev のサブドメイン>/mcp`。Claude のカスタムコネクタに、この URL を登録する。
 - アカウントの ID などは、リポジトリに書かない。
 
