@@ -102,7 +102,7 @@ class TestRepo(unittest.TestCase):
         u = {n: (ids, c) for n, ids, c in konkyo.uchiwake(rows, konkyo.ym.read_namae())}
         self.assertEqual(u["計画"], ({"pt:youho/honpen-202503": 3, "pt:youho/honpen": 0}, 1))
         self.assertEqual(u["計画（案）"], ({"doc:jigyo-youhosaihen-keikakuan-202411": 8}, 7))
-        self.assertEqual(sum(c for _, c in u.values()), 33)
+        self.assertEqual(sum(c for _, c in u.values()), 27)
 
 
 if __name__ == "__main__":

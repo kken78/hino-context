@@ -162,14 +162,14 @@ class TestReal(unittest.TestCase):
             self.assertEqual(D.kotoba("項目の表 kettei が「案」") in text, t["kettei"] == "案", t["id"])
 
     def test_keika_kaisei(self):
-        """経過：資料の一覧の表にある資料には ID を付ける（13行のうち8行）。13行めの下に、改正前の資料と、違う数値を出す。"""
+        """経過：資料の一覧の表にある資料には ID を付ける（13行のうち9行）。13行めの下に、改正前の資料と、違う数値を出す。"""
         o = self.data["outou"]["theme"]
         t = "\n".join(self.data["bun"][o[k]] for k in sorted(o) if k.startswith("theme=hoiku&page="))
         s = t.index(f"## {D.bun('midashi-keika')}")
         keika = t[s:t.index("\n## ", s + 1)]
         rows = re.split(r"\n(?=- )", keika)[1:]
         self.assertEqual(len(rows), 13)
-        self.assertEqual(sum("（document：" in r for r in rows), 8)
+        self.assertEqual(sum("（document：" in r for r in rows), 9)
         mae = D.kotoba("資料どうしの関係の表 hyogen が「一部改正」の行の e")
         self.assertEqual([i for i, r in enumerate(rows, 1) if f"  - {mae}：" in r], [13])
         want = "\n".join([
@@ -475,7 +475,7 @@ class TestReal(unittest.TestCase):
         # テーマの資料の一覧で、取り上げた質問がある資料が分かる
         t = "\n".join(self.data["bun"][i] for k, i in self.data["outou"]["theme"].items() if k.startswith("theme=hoiku&page="))
         ari = [x for x in t.split("\n") if x.endswith(D.bun("mcp-shiryo-konkyo-ari"))]
-        self.assertEqual(len(ari), 4)
+        self.assertEqual(len(ari), 5)
         self.assertTrue(ari[0].startswith("- 子育て環境の未来に向けての提言（最終報告）"))
 
     def test_themes4(self):
