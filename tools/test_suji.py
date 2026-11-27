@@ -237,7 +237,7 @@ class TestTaniNashi(unittest.TestCase):
     def test_real(self):
         rows, _ = suji.read_suji(open(os.path.join(suji.TEIGI_DIR, "suji.tsv"), encoding="utf-8").read())
         self.assertEqual([r["id"] for r in rows if suji.tani_nashi(r)],
-                         ["kikan", "kaien", "shozaichi", "seibi-hoshin", "keitai", "seibigo-shisetsu"])
+                         ["kikan", "kaien", "shozaichi", "seibi-hoshin", "keitai", "seibigo-shisetsu", "seibi-sukejuru"])
 
 
 class TestAtaiInInyo(unittest.TestCase):
@@ -1061,9 +1061,12 @@ class TestShisetsuReal(unittest.TestCase):
         youho = [(b, n) for b in ("pt:youho/honpen", "pt:youho/honpen-202503")
                  for n in ("あおぞら園", "あおぞら園 鎌掛分園", "こばと園", "桜谷こども園 第１園舎（旧幼稚園）",
                            "桜谷こども園 第２園舎（旧保育所）")]
-        self.assertEqual(fuicchi, [("doc:jigyo-shinkodomoen-kousou", "桜谷こども園"), ("doc:koho-no771-08", "あおぞら園"),
-                                   ("doc:koho-no771-08", "こばと園"),
-                                   ("doc:koho-no771-08", "桜谷こども園")] + youho)
+        # 再編整備計画 34ページの、4つの園の名前を見出しにした段落（2つの版。施設は新こども園を含む5つ）
+        youho += [(b, "保育所あおぞら園・日野幼稚園・必佐幼稚園・桜谷こども園第１園舎")
+                  for b in ("pt:youho/honpen", "pt:youho/honpen-202503")]
+        self.assertEqual(fuicchi, sorted([("doc:jigyo-shinkodomoen-kousou", "桜谷こども園"),
+                                          ("doc:koho-no771-08", "あおぞら園"), ("doc:koho-no771-08", "こばと園"),
+                                          ("doc:koho-no771-08", "桜谷こども園")] + youho))
         self.assertFalse(any(suji.shisetsu_mikakunin(r, ref) for r in rows))
         self.assertTrue(all(suji.shisetsu_kakunin_ari(r["shisetsu_kakunin"]) for r in rows
                             if suji.shisetsu_icchi(r, ref) is False))
@@ -1232,12 +1235,57 @@ class TestKaiseiTsui(unittest.TestCase):
         by = {(r["bunsho"], r["n"]): r for r in t["bubun"]}
         jun = {r["id"]: i for i, r in enumerate(t["suji"])}
         x = suji.kaisei_tsui("pt:youho/honpen", "pt:youho/honpen-202503", t["atai"], by, jun)
-        self.assertEqual([(a["suji"], a["atai"], b["atai"], a["shiryo"], b["shiryo"]) for a, b, _ in x.chigau],
-                         [("kaien", "令和10年度", "令和11年度", "pt:youho/honpen-202503/34", "pt:youho/honpen/34")])
+        self.assertEqual([(a["suji"], a["atai"], b["atai"], a["shiryo"], b["shiryo"]) for a, b, _ in x.chigau][0],
+                         ("kaien", "令和10年度", "令和11年度", "pt:youho/honpen-202503/34", "pt:youho/honpen/34"))
+        # 34ページの段落（SCHEMA.md 7.2）：開園の時期と、再編整備スケジュールの5つの段落は、条件 (2)（施設が同じ）で組み合わせる。
+        # 桜谷こども園第２園舎の段落は、改正前と改正後で同じ（全角と半角の違いだけ）なので出ない
+        midashi = {(r["bunsho"], r["n"]): r["name"] for r in t["bubun"]}
+        self.assertEqual([(a["suji"], midashi[("pt:youho/honpen", b["bubun"])], jo) for a, b, jo in x.chigau],
+                         [("kaien", "保育所あおぞら園・日野幼稚園・必佐幼稚園・桜谷こども園第１園舎", 2)]
+                         + [("seibi-sukejuru", n, 2) for n in ("西大路幼稚園", "保育所こばと園", "保育所あおぞら園鎌掛分園",
+                                                             "南比都佐幼稚園",
+                                                             "保育所あおぞら園・日野幼稚園・必佐幼稚園・桜谷こども園第１園舎")])
         self.assertEqual([(r["suji"], r["jiten"], r["shiryo"]) for r, _ in x.kuwawaru],
                          [("taiki", "令和7年4月", "pt:youho/honpen/11"), ("nozoku", "令和7年4月", "pt:youho/honpen/11")])
-        self.assertEqual((x.nai, x.shinai, x.onaji), ([], [], 50))
+        self.assertEqual((x.nai, x.shinai, x.onaji), ([], [], 51))
         self.assertEqual([(r["suji"], r["shiryo"]) for r in x.hoka], [("nozoku", "pt:youho/honpen-202503/21")])
+
+
+class TestBashoKazoe(unittest.TestCase):
+    """数値と内容の表の行のうち、どの場所も指していない行と、下に見出しがある見出しを指している行の数（SCHEMA.md §7.4）。"""
+
+    def bubun(self):
+        k = "pt:youho/honpen"
+        rows = [("1", "", "見出し", "第３章"), ("2", "1", "見出し", "４ 再編整備スケジュール"), ("3", "2", "見出し", "西大路幼稚園"),
+                ("4", "1", "表", "表の題"), ("5", "4", "行", "行の見出し")]
+        return [dict(bunsho=k, n=n, oya=o, shu=shu, name=name) for n, o, shu, name in rows]
+
+    def test_kazoe(self):
+        rows = [atai_row(suji="a", shiryo="pt:youho/honpen/34", bubun=""),          # どこも指していない
+                atai_row(suji="a", shiryo="pt:youho/honpen/34", bubun="2"),         # 下に見出しがある見出し
+                atai_row(suji="b", shiryo="pt:youho/honpen/34", bubun="1"),         # 下に見出しがある見出し（いちばん上）
+                atai_row(suji="b", shiryo="pt:youho/honpen/34", bubun="3"),         # 下に見出しが無い見出し
+                atai_row(suji="b", shiryo="pt:youho/honpen/34", bubun="5", retsu="9"),   # 行
+                atai_row(suji="b", shiryo=f"sp:{SID7}", bubun=f"sp:{SID7}/2"),      # 発言の段落は数えない
+                atai_row(suji="c", shiryo="", bubun="", jotai=suji.NAI)]   # shiryo が空の行は数えない
+        nai, ue = suji.basho_kazoe(rows, self.bubun())
+        self.assertEqual((dict(nai), dict(ue)), ({"a": 1}, {"a": 1, "b": 1}))
+        self.assertEqual(suji.basho_kazoe_bun([dict(id="b"), dict(id="a")], nai, ue),
+                         "数値と内容の表で、どの場所も指していない行 1（a 1）。"
+                         "下に見出しがある見出しを指している行 2（b 1、a 1）")
+        self.assertEqual(suji.basho_kazoe_bun([], suji.Counter(), suji.Counter()),
+                         "数値と内容の表で、どの場所も指していない行 0。下に見出しがある見出しを指している行 0")
+
+    def test_real(self):
+        """実際の表：どの場所も指していない行は31。開園の時期の再編整備計画の2行は、段落の見出しを指すので、
+        下に見出しがある見出しを指している行は0（34ページの節の見出しを指していたときは2）。"""
+        t = real_tables()
+        nai, ue = suji.basho_kazoe(t["atai"], t["bubun"])
+        self.assertEqual((sum(nai.values()), sum(ue.values())), (31, 0))
+        self.assertEqual(nai["kaien"], 4)
+        mae = [dict(r, bubun={"39": "16", "38": "2"}[r["bubun"]]) if r["suji"] == "kaien" and
+               r["shiryo"] in ("pt:youho/honpen/34", "pt:youho/honpen-202503/34") else r for r in t["atai"]]
+        self.assertEqual(dict(suji.basho_kazoe(mae, t["bubun"])[1]), {"kaien": 2})
 
 
 class TestMain(unittest.TestCase):
@@ -1272,6 +1320,9 @@ class TestMain(unittest.TestCase):
         self.assertIn("数値がある：1 行", out)
         self.assertIn("欄が空：1 行", out)
         self.assertIn("inyo の照合：対象 1、合った 1、合わなかった 0", out)
+        # まとめて行う検査（tools/kensa.py）は最後の行を出すので、最後の行にも数を入れる
+        self.assertEqual(out.rstrip("\n").split("\n")[-1],
+                         "問題は無い（数値と内容の表で、どの場所も指していない行 2（taiki 2）。下に見出しがある見出しを指している行 0）")
 
     def test_kankei_dake(self):
         """資料どうしの関係の表があり、資料の一覧の表と資料の中の場所の表が無ければ止まる。"""

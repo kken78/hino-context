@@ -1104,6 +1104,43 @@ def check_para(inp, r, sid):
     return []
 
 
+def basho_kazoe(atai_rows, bubun_rows):
+    """数値と内容の表の行のうち、次の2つの行の数を、項目の id ごとに数える（SCHEMA.md §7.4。検査を止める条件にはしない）。
+    → (どの場所も指していない行の Counter, 下に見出しがある見出しを指している行の Counter)。
+
+    - どの場所も指していない行：shiryo があり、bubun が空の行。
+    - 下に見出しがある見出しを指している行：bubun が、資料の中の場所の表の見出しで、同じ資料に、その見出しを親にする
+      見出しがある行。発言を指す行（bubun が段落の ID）は数えない。
+    """
+    by = {(r["bunsho"], r["n"]): r for r in bubun_rows or []}
+    oya = {(r["bunsho"], r["oya"]) for r in bubun_rows or [] if r["shu"] == MIDASHI and r["oya"]}
+    nai, ue = Counter(), Counter()
+    for r in atai_rows:
+        if not r["shiryo"].strip():
+            continue
+        if not r["bubun"]:
+            nai[r["suji"]] += 1
+            continue
+        b = bunsho_of(r["shiryo"])
+        x = by.get((b, r["bubun"])) if b else None
+        if x is not None and x["shu"] == MIDASHI and (b, x["n"]) in oya:
+            ue[r["suji"]] += 1
+    return nai, ue
+
+
+def basho_kazoe_bun(suji_rows, nai, ue):
+    """basho_kazoe の結果 → 出力の文。項目は項目の表の順に並べ、0の項目は出さない。"""
+    jun = [r["id"] for r in suji_rows]
+
+    def narabi(c):
+        ks = [k for k in jun if c.get(k)] + sorted(k for k in c if c[k] and k not in jun)
+        return "、".join(f"{k} {c[k]}" for k in ks)
+    a = f"どの場所も指していない行 {sum(nai.values())}" + (f"（{narabi(nai)}）" if sum(nai.values()) else "")
+    b = (f"下に見出しがある見出しを指している行 {sum(ue.values())}"
+         + (f"（{narabi(ue)}）" if sum(ue.values()) else ""))
+    return f"数値と内容の表で、{a}。{b}"
+
+
 def check(inp, suji_rows, atai_rows, bunsho_rows=None, bubun_rows=None, kankei_rows=None):
     """SCHEMA.md §6.4 と §7.4 の検査。→ (問題の並び, inyo の照合の結果)。"""
     out, res, _ = check_all(inp, suji_rows, atai_rows, bunsho_rows, bubun_rows, kankei_rows)
@@ -1245,12 +1282,15 @@ def main(argv=None, teigi_dir=None):
     kk = count_kankei(suji_rows, atai_rows, bunsho_rows)
     print(f"時点の関係：ato {kk[KANKEI_ATO]}、mae {kk[KANKEI_MAE]}、tochu {kk[KANKEI_TOCHU]}、無し {kk[None]}")
     print(f"shurui の字の検査：対象 {kazoe['shurui_taisho']}。もとの資料から取り出した文字が入力に無くて除いた行 {kazoe['shurui_nozoita']}")
+    basho = basho_kazoe_bun(suji_rows, *basho_kazoe(atai_rows, bubun_rows))
+    print(basho)
     if problems:
         print(f"止めた：問題が {len(problems)} 件", file=sys.stderr)
         for m in problems:
             print(f"  - {m.hyo} の {m.gyo} 行目：{m.naiyo}", file=sys.stderr)
         return 1
-    print("問題は無い")
+    # まとめて行う検査（tools/kensa.py）は最後の行を出すので、数を最後の行にも入れる（止める条件にはしない）
+    print(f"問題は無い（{basho}）")
     return 0
 
 
