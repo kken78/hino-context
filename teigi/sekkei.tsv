@@ -1,17 +1,17 @@
 shu	name	hyo	chu
-mono	課題	無い	事項の表が無い。名前だけが teigi/note-*.tsv にある
-mono	取り組み	無い	事項の表が無い。名前だけが teigi/note-*.tsv にある
+mono	課題	teigi/jiko.tsv	幼保だけ。行はどれも案
+mono	取り組み	teigi/jiko.tsv	幼保だけ。行はどれも案
 mono	対象の属性と値	teigi/suji.tsv;teigi/atai.tsv	幼保だけ
 mono	資料と、資料の中の場所	teigi/bunsho.tsv;teigi/bubun.tsv	
 mono	過程の出来事	入力:hino-ronten/records/katei.tsv	
 mono	施設・地区・組織	入力:hino-ronten/ref/shisetsu.tsv	地区と組織は読んでいない
 mono	問い・質疑・報告	入力:hino-ronten/ref/themes.tsv	テーマの定義にある問いと質疑だけ
-kankei	取り組みが、課題に対処する	無い	
+kankei	目的と手段（取り組みが、課題や目的に対処する）	入力:hino-ronten/records/tsunagari.tsv	確定済みの記録を読んで、数を出すだけ。応答には出していない
 kankei	資料が、事項について記す	入力:hino-ronten/records/kotogara.tsv	確定済みの記録を読むだけ。数値は teigi/atai.tsv
 kankei	資料が、資料のもとになる	teigi/bunsho-kankei.tsv	
 kankei	出来事が、取り組み・資料の根拠になる	無い	
 kankei	取り組みに、予算の事業が当たる	無い	
-kankei	事項が、分類の体系の要素に入る	無い	計画の体系は 入力:hino-ronten/ref/taikei.tsv にある。事項との関係は持っていない
+kankei	事項が、分類の体系の要素に入る	teigi/jiko.tsv	幼保だけ。再編整備計画の章立てだけ。行はどれも案
 kankei	資料の数字が、別の資料から引かれている（確認してから足す）	無い	
 toi	主題にする	入力:hino-ronten/records/taio.tsv	確定済みの記録を読むだけ。このリポジトリの表は無い
 toi	根拠・出典にする	無い	

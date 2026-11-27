@@ -7,7 +7,7 @@
 - 5つの入力（hino-council-search・shiga-hino-plans・hino-town-docs・council-dashboard・hino-ronten）ごとに、コミットの SHA（40桁）と、読むファイルのパターン（files）を書く。`*` は1つの階層の中だけに当たる。
 - ツールは、読む前に、5つの入力の作業ツリーの HEAD が lock の SHA と同じかを確認する。違うとき、git のリポジトリでないとき、HEAD が取れないときは、読まずに止める。
 - 読むのは lock の SHA の、files に当たるファイルだけ（`git show <SHA>:<path>`）。入力の場所は、環境変数 `HINO_CONTEXT_INPUTS`（既定 `/tmp/inputs`。その下にリポジトリ名の4つ）と `HINO_CONTEXT_RONTEN`（既定 `/home/claude/hino-ronten`）で受ける。
-- hino-ronten から読むのは、題材の定義（ref/themes.tsv）、施設の参照表（ref/shisetsu.tsv）、系列の表（ref/lineage.tsv）、事柄の記録（records/kotogara.tsv）、過程の記録（records/katei.tsv）、問いと事項の対応（records/taio.tsv）、施設の記録（records/shisetsu.tsv）である。records の4つの表は、status が confirmed の行だけを使う。題材の定義と施設の参照表には status の列が無く、依頼者が決めた行だけが入っている（施設の参照表は 2026-10-27 と 2026-11-05 に依頼者が確定した。hino-ronten DESIGN.md ADR-23）。
+- hino-ronten から読むのは、題材の定義（ref/themes.tsv）、施設の参照表（ref/shisetsu.tsv）、系列の表（ref/lineage.tsv）、事柄の記録（records/kotogara.tsv）、過程の記録（records/katei.tsv）、問いと事項の対応（records/taio.tsv）、施設の記録（records/shisetsu.tsv）、計画の章立て（ref/taikei.tsv）、つながりの記録（records/tsunagari.tsv。2つは 2026-11-27 に追加。tools/jiko.py が読む）である。records の表は、status が confirmed の行だけを使う。題材の定義と施設の参照表には status の列が無く、依頼者が決めた行だけが入っている（施設の参照表は 2026-10-27 と 2026-11-05 に依頼者が確定した。hino-ronten DESIGN.md ADR-23）。
 - 過程の記録の確定済みの行のうち、ページと MCP の応答を作る検査で止まる10行（kaigo の step 2・4・5・6・9・12 と chiiki の step 8 は from が空、kaigo の step 8 と chiiki の step 6・10 は sources に議案の ID（gi:）がある）は、出さない（2026-11-27。4つのテーマを MCP に出すときの指示。入力は読むだけなので、行を直さない）。出さない行と理由は tools/ronten.py の1か所に書き、行がその理由に当たらなくなったら、ページと応答を作らずに止まる。出さずに済ませるか、行の出し方を決めるかは、依頼者が決める。
 - 系列の表（ref/lineage.tsv。hino-ronten LINK_SCHEMA.md §8）にも status の列は無い。このリポジトリでは、題材の定義の kind「系列」の value（series）から、計画の ID（plan の列。空の行は除く）を引くためだけに使う（7.7）。
 - 題材の定義は、画面では「テーマ」と書く（docs/design.md 2節）。この文書の 7.7 では、テーマの定義と書く。
@@ -496,6 +496,32 @@ docs/hoshin.md 4.2 の3つの表（物の種類、物どうしの関係、問い
 | chu | 注（一部だけできている、など） |
 
 検査（tools/sekkei.py）：name の集まりが、docs/hoshin.md 4.2 の表の1列めの集まりと同じであること。hyo のパスのファイルがあること。どちらかが合わないと止まる。`無い` の行は止めずに、数と名前を出す。
+
+### 7.9 事項の表 `teigi/jiko.tsv`
+
+事項（論点）を、種類と、計画の章立てのどこに入るかを付けて持つ（docs/hoshin.md 4.2 の物の種類の「課題」「取り組み」「対象の属性と値」と、関係「事項が、分類の体系の要素に入る」。依頼者の了承 2026-11-27）。資料と、過程の出来事は、事項にしない（2026-11-18 の決定）。
+
+| 列 | 中身 |
+| --- | --- |
+| id | 事項の ID。MCP の論点の ID と同じ字を使う |
+| theme | テーマの ID |
+| name | 事項の名前。入力（hino-ronten のテーマの定義）に同じ事項があるときは、その名前。無いときは、資料の言葉から取る |
+| shurui | `kadai`（課題）、`torikumi`（取り組み）、`atai`（対象の属性と値） |
+| taikei | 計画の章立ての要素の ID（`tk:<体系>/<番号>`。hino-ronten の ref/taikei.tsv にあるもの）。その計画の章立てに入らないときは `nashi` |
+| betsumei | 読み取りで使った別の名前（「;」で複数）。無ければ空 |
+| jotai | `案` か `決定`。決定と書けるのは、依頼者が決めた行だけ |
+| chu | 注 |
+
+検査（tools/jiko.py）：id と name が重ならないこと。shurui が3つのどれかであること。taikei が `nashi` か、入力の章立ての表にある ID であること。jotai が2つのどちらかであること。合わないと止まる。章立てに入らない事項の数を出す。
+
+事項どうしの関係（「目的と手段」）は、入力のつながりの記録（hino-ronten の records/tsunagari.tsv。確定済み）を読む。tools/jiko.py は、両端が事項の表にある組の数を出す。このリポジトリで関係の行を足す表は、足す行が出たときに作る。
+
+### 7.10 質問と事項の対応 `taio/shudai.tsv`、質問が取り上げた資料と出来事 `taio/konkyo.tsv`（形だけ。行はこれから）
+
+docs/hoshin.md 4.2 の「主題にする」と「根拠・出典にする」。生成AIの2回の読み取りで作る。
+
+- `taio/shudai.tsv`：question（質問の ID）、jiko（事項の ID）、hani（段落の ID）、yomi（`一致`、`1回だけ`）、chu
+- `taio/konkyo.tsv`：question、aite（資料の ID か、過程の記録の行）、hani、yomi、chu
 
 ## 8. まだ決めていない物
 
