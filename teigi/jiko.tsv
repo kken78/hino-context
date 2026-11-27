@@ -47,3 +47,45 @@ hoiku44	hoiku	保育施設の維持管理費用	atai	nashi			決定	読み取り
 hoiku45	hoiku	子育てしようとする人が住みたくなる住環境	torikumi	nashi			決定	読み取りの候補から（依頼者の決定 2026-11-28）
 hoiku46	hoiku	保護者への子育て支援	torikumi	nashi			決定	読み取りの候補から（依頼者の決定 2026-11-28）
 hoiku47	hoiku	幼稚園・保育所と小学校の連携	torikumi	nashi			決定	読み取りの候補から（依頼者の決定 2026-11-28）
+kaigo01	kaigo	介護予防の取り組み	torikumi	tk:kaigo9/17			案	
+kaigo02	kaigo	介護予防ボランティアポイント事業	torikumi	tk:kaigo9/11			案	
+kaigo03	kaigo	介護人材の確保	torikumi	tk:kaigo9/28			案	
+kaigo04	kaigo	介護保険料の収納	atai	tk:kaigo9/31			案	入力の枠 waku:kaigo-hokenryo/8（介護保険料の計算の流れ）
+kaigo05	kaigo	介護給付費準備基金	atai	tk:kaigo9/31			案	入力の枠 waku:kaigo-hokenryo/9（介護保険料の計算の流れ）
+kaigo06	kaigo	地域密着型サービスの事業所の整備	torikumi	tk:kaigo9/28			案	
+kaigo07	kaigo	地域支援事業から重層的支援体制整備事業への移管	torikumi	tk:kaigo9/12			案	
+kaigo08	kaigo	生活支援体制整備事業の協議体とコーディネーター	torikumi	tk:kaigo9/11			案	
+kaigo10	kaigo	第8期の計画の指標	atai	tk:kaigo9/2			案	
+kaigo11	kaigo	第9期の介護保険料	atai	tk:kaigo9/31			案	入力の枠 waku:kaigo-hokenryo/10（介護保険料の計算の流れ）
+kaigo12	kaigo	第9期の計画の指標	atai	nashi			案	
+kaigo13	kaigo	給付費の計画と実績	atai	tk:kaigo9/31			案	入力の枠 waku:kaigo-hokenryo/6（介護保険料の計算の流れ）
+kaigo14	kaigo	要介護認定率	atai	tk:kaigo9/31			案	入力の枠 waku:kaigo-hokenryo/2（介護保険料の計算の流れ）
+kaigo15	kaigo	重層的支援体制整備事業の体制	torikumi	tk:kaigo9/12			案	
+kaigo16	kaigo	重層的支援体制整備事業の実施計画	torikumi	tk:kaigo9/12			案	計画の文書の名前。資料とするかは、資料が入力にあるかを確認してから決める
+kaigo17	kaigo	多様な生きがいと居場所づくり	torikumi	tk:kaigo9/15			案	
+kaigo18	kaigo	総合的な支援体制の構築	torikumi	tk:kaigo9/24			案	
+kaigo19	kaigo	認知症支援の充実	torikumi	tk:kaigo9/25			案	
+kaigo20	kaigo	地域包括ケアシステムの深化・推進	torikumi	tk:kaigo9/7			案	
+kaigo21	kaigo	地域共生社会	torikumi	tk:kaigo9/11			案	
+kaigo23	kaigo	地域支援事業	torikumi	tk:kaigo9/31			案	
+kaigo24	kaigo	働く場と機会づくり	torikumi	tk:kaigo9/16			案	
+kaigo25	kaigo	地域共生社会づくりの推進	torikumi	tk:kaigo9/11			案	
+kaigo26	kaigo	地域包括支援センターの機能強化	torikumi	tk:kaigo9/12			案	
+kaigo27	kaigo	多様な担い手による生活支援サービスの提供	torikumi	tk:kaigo9/7			案	
+kaigo28	kaigo	多様な連携の推進	torikumi	tk:kaigo9/13			案	
+kaigo29	kaigo	成年後見制度の利用支援	torikumi	tk:kaigo9/22			案	
+kaigo31	kaigo	日常生活圏域の設定	torikumi	tk:kaigo9/32			案	
+kaigo32	kaigo	災害時・緊急時の備えの確保	torikumi	tk:kaigo9/19			案	
+kaigo33	kaigo	要介護認定	torikumi	tk:kaigo9/31			案	
+kaigo34	kaigo	課題2 地域包括ケアシステムの明確化	kadai	tk:kaigo9/3			案	
+kaigo35	kaigo	重層的な支援体制の整備	torikumi	tk:kaigo9/12			案	
+kaigo36	kaigo	第8期までの介護保険料	atai	nashi			決定	第9期より前の期の介護保険料の話を付ける（依頼者の決定 2026-11-28。第9期の計画の章立てには無い）
+kaigo37	kaigo	生活安全対策の推進	torikumi	tk:kaigo9/20			案	第9期の計画の施策の見出し（依頼者の指示 2026-11-28。2026-11-15 の決定「計画の見出しを、そのままの名前で論点にする」に沿う）
+kaigo38	kaigo	住み続けられる環境づくり	torikumi	tk:kaigo9/21			案	第9期の計画の施策の見出し（依頼者の指示 2026-11-28。2026-11-15 の決定「計画の見出しを、そのままの名前で論点にする」に沿う）
+kaigo39	kaigo	生活支援サービスの充実	torikumi	tk:kaigo9/27			案	第9期の計画の施策の見出し（依頼者の指示 2026-11-28。2026-11-15 の決定「計画の見出しを、そのままの名前で論点にする」に沿う）
+kaigo40	kaigo	介護保険サービス提供体制の確保	torikumi	tk:kaigo9/28			案	第9期の計画の施策の見出し（依頼者の指示 2026-11-28。2026-11-15 の決定「計画の見出しを、そのままの名前で論点にする」に沿う）
+kaigo41	kaigo	育児と介護のダブルケア	kadai	nashi			案	計画の見出しに無い話題（依頼者の指示 2026-11-28）
+kaigo42	kaigo	在宅高齢者のおむつ助成	torikumi	nashi			案	計画の見出しに無い話題（依頼者の指示 2026-11-28）
+kaigo43	kaigo	介護保険制度の改正と利用者負担	kadai	nashi			案	計画の見出しに無い話題（依頼者の指示 2026-11-28）
+kaigo44	kaigo	障がいのある人の介護保険への移行	kadai	nashi			案	計画の見出しに無い話題（依頼者の指示 2026-11-28）
+kaigo45	kaigo	高齢運転者の安全運転支援	torikumi	nashi			案	計画の見出しに無い話題（依頼者の指示 2026-11-28）
