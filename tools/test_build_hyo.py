@@ -20,7 +20,7 @@ TODAY = datetime.date(2026, 11, 23)
 NAMAE = "子ども計画"
 DOC_NAMAE = "子育ての資料"
 K = "pt:x/honpen"
-# 2ページ：表の題、列の見出し（3つは「除かれる者」の下）、行（原典の文字では 平成30年4月 が先）、次の表
+# 2ページ：表の題、列の見出し（3つは「除かれる者」の下）、行（もとの資料から取り出した文字では 平成30年4月 が先）、次の表
 RAW = (f"{NAMAE}\n令和７年３月\n令和８年６月一部改正\f"
        "第５章 量の見込み\n◆待機児童数の推移\n①求職\n②特定\n小計\n"
        "平成30年4月 0 4 4 1\n令和7年4月 2 11 13 3\n除かれる者\n待機児童数\n"
@@ -46,7 +46,7 @@ def bunsho_rows(**kw):
 
 
 def bubun_rows():
-    """行は、番号の順（令和7年4月 が先）と、原典の文字の順（平成30年4月 が先）を変えてある。"""
+    """行は、番号の順（令和7年4月 が先）と、もとの資料から取り出した文字の順（平成30年4月 が先）を変えてある。"""
     m = "除かれる者"
     rows = [("1", "", "見出し", "第５章 量の見込み", "", "", "機械"),
             ("2", "1", "表", "◆待機児童数の推移", "", "", "機械"),
@@ -94,7 +94,7 @@ def body_rows(page):
 
 
 D = bs.read_design()
-YONDA = D.kotoba("文書の部分の表 torikata が「読んだ」で、chu に確認の記録が無い")
+YONDA = D.kotoba("資料の中の場所の表 torikata が「読んだ」で、chu に確認の記録が無い")
 
 
 def marks(page):
@@ -116,7 +116,7 @@ class TestFake(unittest.TestCase):
 
     def test_page(self):
         page, info = self.build()
-        # 行は原典の文字の順、列は jun の順。欄の数値は原典の文字の行から取る
+        # 行はもとの資料から取り出した文字の順、列は jun の順。欄の数値はもとの資料から取り出した文字の行から取る
         self.assertEqual(body_rows(page), [("平成30年4月", ["0", "4", "4", "1"]), ("令和7年4月", ["2", "11", "13", "3"])])
         self.assertEqual((info["gyo"], info["retsu"], info["ran"], info["moji"], info["atai"]), (2, 4, 8, 8, 1))
         # 列のまとまりの見出しは、列の見出しの上の行に、続く列をまとめて出す
@@ -128,10 +128,10 @@ class TestFake(unittest.TestCase):
         self.assertIn(f"<h1>◆待機児童数の推移</h1>", page)
         self.assertIn("<p class=s>第５章 量の見込み</p>", page)
         self.assertIn("https://example.jp/p.pdf#page=2", page)
-        # 同じ定義の数値がある、ほかの文書
+        # 同じ項目の数値がある、ほかの資料
         self.assertIn(f"<h2>{D.bun('midashi-onaji')}</h2>", page)
         self.assertIn(f"<li>{DOC_NAMAE}（2025年4月）　{D.bun('page', n=2)}</li>", page)
-        # 出さないもの：数値の表の inyo、文書の表の chu、印
+        # 出さないもの：数値と内容の表の inyo、資料の一覧の表の chu、印
         self.assertNotIn("令和7年4月 2 11 13 3", page)
         self.assertNotIn("根拠：全ページを探した", page)
         self.assertNotIn(bn.A, page)
@@ -152,7 +152,7 @@ class TestFake(unittest.TestCase):
         self.assertIn(f"<p>{NAMAE}（2026年6月）　", page)
 
     def test_onaji_han(self):
-        # 同じ定義の数値がある資料の一覧でも、版の表記があれば、資料の名前のあとの括弧に版の表記と資料の日付を出す
+        # 同じ項目がある資料の一覧でも、版の表記があれば、資料の名前のあとの括弧に版の表記と資料の日付を出す
         inp = fake()
         inp._doc_texts[("jigyo-1", "text")] = f"{DOC_NAMAE}\n改訂版\f令和7年4月 3 人"
         b = bunsho_rows()
@@ -161,13 +161,13 @@ class TestFake(unittest.TestCase):
         self.assertIn(f"<li>{DOC_NAMAE}（改訂版、2025年4月）　{D.bun('page', n=2)}</li>", page)
 
     def test_stop_table_check(self):
-        # 数値の表の atai が、原典の文字の行の数値と違えば止まる（表の検査で止まる）
+        # 数値と内容の表の atai が、もとの資料から取り出した文字の行の数値と違えば止まる（表の検査で止まる）
         rows = atai_rows()
         rows[0]["atai"] = "13"
         rows[0]["inyo"] = "令和7年4月 2 11 13 3"
         kinds, _ = self.stop_kinds(t=tables(atai=rows))
         self.assertEqual(kinds, {"(a) 表の検査"})
-        # matome が原典の文字に無い
+        # matome がもとの資料から取り出した文字に無い
         kinds, p = self.stop_kinds(t=tables(bubun=change(bubun_rows(), "6", matome="含まれる者")))
         self.assertEqual(kinds, {"(a) 表の検査"})
         self.assertTrue(any("matome が" in m for _, m in p), p)
@@ -179,13 +179,13 @@ class TestFake(unittest.TestCase):
         with mock.patch.object(bh.sj, "check_all", return_value=([], None, None)):
             kinds, p = self.stop_kinds(t=t)
         self.assertEqual(kinds, {"(g) 数値の一致"})
-        self.assertIn("atai（4）が、原典の文字の行の 4 つ目（3）と違う", p[0][1])
+        self.assertIn("atai（4）が、もとの資料から取り出した文字の行の 4 つ目（3）と違う", p[0][1])
 
     def test_stop_table_and_rows(self):
         kinds, _ = self.stop_kinds(n="1")                         # 見出しは表でない
-        self.assertEqual(kinds, {"(c) 文書と表"})
+        self.assertEqual(kinds, {"(c) 資料と表"})
         kinds, _ = self.stop_kinds(n="9")                         # 表に行も列も無い
-        self.assertEqual(kinds, {"(c) 文書と表"})
+        self.assertEqual(kinds, {"(c) 資料と表"})
         # 行の数値が、列の jun に足りない（jun 5 の列）
         rows = bubun_rows() + [dict(bubun_rows()[2], n="10", name="除かれる者", jun="5", torikata="読んだ")]
         kinds, p = self.stop_kinds(t=tables(bubun=rows))
@@ -206,12 +206,12 @@ class TestFake(unittest.TestCase):
         self.assertEqual(kinds, {"(f) 表の範囲"})
 
     def test_yonda(self):
-        # torikata が「読んだ」の表は、数値の表に行がある欄だけを出せる。無い欄があれば止まる
+        # torikata が「読んだ」の表は、数値と内容の表に行がある欄だけを出せる。無い欄があれば止まる
         rows = change(bubun_rows(), "2", torikata="読んだ")
         kinds, p = self.stop_kinds(t=tables(bubun=rows))
-        self.assertEqual(kinds, {"(h) 数値の表に行が無い欄"})
+        self.assertEqual(kinds, {"(h) 数値と内容の表に行が無い欄"})
         self.assertEqual(len(p), 7)
-        # 欄が全部、数値の表にあれば出せる（数値は atai のまま）
+        # 欄が全部、数値と内容の表にあれば出せる（数値は atai のまま）
         rows = [r for r in change(bubun_rows(), "2", torikata="読んだ") if r["n"] not in ("5", "6", "7", "8")]
         page, info = self.build(tables(bubun=rows))
         self.assertEqual(body_rows(page), [("令和7年4月", ["3"])])
@@ -222,8 +222,8 @@ class TestFake(unittest.TestCase):
         self.assertIn(f"</table>\n<p class=s>{D.bun('mikakunin-hyo')}</p>", page)
 
     def test_yonda_no_range(self):
-        # 表の torikata が「読んだ」の表は、原典の文字の表の範囲を使わない（表の題がページの最後の行にあり、範囲が空）。
-        # 行は文書の部分の表の番号の順（令和7年4月 が先）に並べ、欄は数値の表の atai を出す
+        # 表の torikata が「読んだ」の表は、もとの資料から取り出した文字の表の範囲を使わない（表の題がページの最後の行にあり、範囲が空）。
+        # 行は資料の中の場所の表の番号の順（令和7年4月 が先）に並べ、欄は数値と内容の表の atai を出す
         inp = fake()
         raw = RAW.replace("◆待機児童数の推移\n", "").replace("■別の表\n平成30年4月 9 9", "◆待機児童数の推移")
         inp._pt[("x", "honpen", "text_raw")] = raw
@@ -241,7 +241,7 @@ class TestFake(unittest.TestCase):
         self.assertEqual(marks(page), 1 + 2 + 4)
 
     def test_yonda_retsu_gyo(self):
-        # 「読んだ」の列と見出しにも印を付ける（列だけが「読んだ」の表は、原典の文字から数える）
+        # 「読んだ」の列と見出しにも印を付ける（列だけが「読んだ」の表は、もとの資料から取り出した文字から数える）
         rows = change(change(bubun_rows(), "6", torikata="読んだ"), "1", torikata="読んだ")
         page, _ = self.build(tables(bubun=rows))
         self.assertIn(f"<th>①求職{YONDA}</th><th>②特定</th>", page)
@@ -257,13 +257,13 @@ class TestFake(unittest.TestCase):
         self.assertEqual(marks(page), 0)
         self.assertNotIn(D.bun("mikakunin-hyo"), page)
         # 注のあとに記録を足した行も、印が付かない
-        rows = change(bubun_rows(), "6", torikata="読んだ", chu="原典の文字では2行に分かれている。生成AIが画像を2回読んで一致（2026-11-23）")
+        rows = change(bubun_rows(), "6", torikata="読んだ", chu="もとの資料から取り出した文字では2行に分かれている。生成AIが画像を2回読んで一致（2026-11-23）")
         page, _ = self.build(tables(bubun=rows))
         self.assertEqual(marks(page), 0)
 
     def test_kakunin_nashi(self):
         # torikata が「読んだ」で、chu に記録が無い行は、印が付く
-        for chu in ("", "原典の文字では2行に分かれている"):
+        for chu in ("", "もとの資料から取り出した文字では2行に分かれている"):
             with self.subTest(chu=chu):
                 page, _ = self.build(tables(bubun=change(bubun_rows(), "6", torikata="読んだ", chu=chu)))
                 self.assertIn(f"<th>①求職{YONDA}</th>", page)
@@ -286,7 +286,7 @@ class TestFake(unittest.TestCase):
 
     def test_stop_design(self):
         d = copy.deepcopy(D)
-        d.h2["midashi-onaji"] = "ほかの資料"
+        d.h2["midashi-onaji"] = "同じ項目がほかにある資料"
         kinds, p = self.stop_kinds(design=d)
         self.assertEqual(kinds, {"(e) デザインシステムとの対応"})
         self.assertIn("midashi-onaji", p[0][1])
@@ -325,7 +325,7 @@ class TestReal(unittest.TestCase):
     def test_taiki(self):
         page, info = self.build("pt:youho/honpen", "4")
         self.assertEqual((info["gyo"], info["retsu"], info["ran"]), (8, 5, 40))
-        self.assertEqual(info["ran"] - info["atai"], 24)              # 数値の表に行が無い欄
+        self.assertEqual(info["ran"] - info["atai"], 24)              # 数値と内容の表に行が無い欄
         rows = body_rows(page)
         self.assertEqual([g for g, _ in rows][0], "平成30年4月")
         self.assertEqual(rows[0][1], ["0", "0", "4", "4", "1"])
@@ -348,12 +348,12 @@ class TestReal(unittest.TestCase):
                                            ("②確保方策（保育所、認定こども園）", ["266", "266", "266", "337", "358"]),
                                            ("不足分（②－①）", ["▲5", "▲4", "▲4", "0", "0"])])
         self.assertNotIn("colspan", page)
-        self.assertIn(D.kotoba("文書の表 konkyo"), page)
+        self.assertIn(D.kotoba("資料の一覧の表 konkyo"), page)
         self.assertNotIn(YONDA, page)
         self.assertNotIn(D.bun("mikakunin-hyo"), page)
 
     def test_taiki_kousou_kodomo(self):
-        # 画像で読んだ2つの表（基本構想の18ページ、子ども・子育て支援事業計画の19ページ）。欄は全部、数値の表の行から出す
+        # 画像で読んだ2つの表（基本構想の18ページ、子ども・子育て支援事業計画の19ページ）。欄は全部、数値と内容の表の行から出す
         for bkey, n, hajime in (("doc:jigyo-shinkodomoen-kousou", "4", "2021年（R3）"),
                                 ("pt:kodomo/honpen", "37", "2020年度（R2）")):
             with self.subTest(bkey=bkey):

@@ -1,30 +1,30 @@
-"""文書の部分の表の、表1つを1ページにする（SCHEMA.md §7.2・§7.3、docs/design.md 3節・4節）。
+"""資料の中の場所の表の、表1つを1ページにする（SCHEMA.md §7.2・§7.3、docs/design.md 3節・4節）。
 
-実行：python3 -B tools/build_hyo.py <文書の ID> <表の番号>
-  （例 pt:youho/honpen 4 → build/hyo/pt_youho_honpen_4.html。ファイル名は、文書の ID の「:」と「/」を「_」にし、
+実行：python3 -B tools/build_hyo.py <資料の ID> <表の番号>
+  （例 pt:youho/honpen 4 → build/hyo/pt_youho_honpen_4.html。ファイル名は、資料の ID の「:」と「/」を「_」にし、
   表の番号を付けたもの）
 中身は teigi/ の4つの表と、lock の版の入力だけから作る。数値を計算しない。
-行は、文書の部分の表で、表を親にする行。並べる順は、原典の文字（text_raw）の表の範囲での、行の位置の順。
+行は、資料の中の場所の表で、表を親にする行。並べる順は、もとの資料から取り出した文字（text_raw）の表の範囲での、行の位置の順。
 列は、表を親にする列。並べる順は jun の順。
-欄の数値は、原典の文字（text_raw）の表の範囲の、行の name に続く数値から、列の jun の順で取る（SCHEMA.md §7.3）。
-数値の表に、その欄を指す行があれば、取った数値と atai が一致することを確認する。
-親の表か行の torikata が「読んだ」の表は、原典の文字から数えられないので、数値の表に行がある欄だけを出せる。
-表の torikata が「読んだ」の表は、原典の文字の表の範囲を使わない（表の題が行のあとに出るなど、範囲が決まらないため）。
-行は、文書の部分の表の番号の順に並べる。
-torikata が「読んだ」で、chu に確認の記録が無い表・行・列・見出しには、数値のページと同じ未確認の印を付け、表の下に決まった文を出す
+欄の数値は、もとの資料から取り出した文字（text_raw）の表の範囲の、行の name に続く数値から、列の jun の順で取る（SCHEMA.md §7.3）。
+数値と内容の表に、その欄を指す行があれば、取った数値と atai が一致することを確認する。
+親の表か行の torikata が「読んだ」の表は、もとの資料から取り出した文字から数えられないので、数値と内容の表に行がある欄だけを出せる。
+表の torikata が「読んだ」の表は、もとの資料から取り出した文字の表の範囲を使わない（表の題が行のあとに出るなど、範囲が決まらないため）。
+行は、資料の中の場所の表の番号の順に並べる。
+torikata が「読んだ」で、chu に確認の記録が無い表・行・列・見出しには、数値のページと同じ未確認の印を付け、表の下に定型文を出す
 （判定は tools/suji.py の mikakunin）。
 画面に出す言葉は、docs/design.md 3節の2つの表から読む（tools/build_suji.py の read_design と同じ読み方）。
 
 作る前の検査（1つでも当たれば、件数と該当行を示して、ページを作らずに止まる。終了コード 1）：
   (a) 表の検査（tools/suji.py の check_all）で問題がある
   (b) 画面に出る文に、docs/design.md 2節の「使わない」言葉が残っている（資料からの文は除く）
-  (c) 文書の ID と表の番号が、文書の表と文書の部分の表に無い。表に行か列が無い
+  (c) 資料の ID と表の番号が、資料の一覧の表と資料の中の場所の表に無い。表に行か列が無い
   (d) lock と入力が合わない
   (e) docs/design.md 3節の表と、このツールが合わない（tools/build_suji.py の design_problems。
-      1つ目の表の「同じ定義の数値がある、ほかの文書」の画面の言葉と、2つ目の表の midashi-onaji の文が違う場合を含む）
+      1つ目の表の「同じ項目の数値がある、ほかの資料」の画面の言葉と、2つ目の表の midashi-onaji の文が違う場合を含む）
   (f) 表の範囲が決まらない。行の name と数値の行が1行に決まらない。行の数値の数が、列の jun に足りない
-  (g) 数値の表の数値と、原典の文字から取った数値が一致しない
-  (h) torikata が「読んだ」の表で、数値の表に行が無い欄がある（原典の文字から取れない）
+  (g) 数値と内容の表の数値と、もとの資料から取り出した文字から取った数値が一致しない
+  (h) torikata が「読んだ」の表で、数値と内容の表に行が無い欄がある（もとの資料から取り出した文字から取れない）
 """
 import datetime
 import os
@@ -50,14 +50,14 @@ RE_BANGO = re.compile(r"[1-9][0-9]*")
 
 
 def out_name(bkey, n):
-    """文書の ID と表の番号 → 出力のファイル名。"""
+    """資料の ID と表の番号 → 出力のファイル名。"""
     return re.sub(r"[:/]", "_", bkey) + f"_{n}.html"
 
 
 def design_problems(D, src=None):
     """docs/design.md 3節の表と、このツールが合うか。→ 問題の並び。"""
     out = bs.design_problems(D, src, path=SRC_PATH)
-    k = "同じ定義の数値がある、ほかの文書"
+    k = "同じ項目の数値がある、ほかの資料"
     if k in D.h1 and "midashi-onaji" in D.h2 and D.h1[k][0] != D.h2["midashi-onaji"]:
         out.append(f"1つ目の表の「{k}」の画面の言葉と、2つ目の表の midashi-onaji の文が違う")
     return out
@@ -75,16 +75,16 @@ class Hyo:
         self.hyo = self.by_n.get(n)
         self.bunsho = next((r for r in tables["bunsho"] if r["bunsho"] == bkey), None)
         if self.bunsho is None:
-            self.stop("(c) 文書と表", f"{bkey} が {sj.BUNSHO_NAME} に無い")
+            self.stop("(c) 資料と表", f"{bkey} が {sj.BUNSHO_NAME} に無い")
         if self.hyo is None or self.hyo["shu"] != sj.HYO:
-            self.stop("(c) 文書と表", f"{bkey} の {n} が、{sj.BUBUN_NAME} の表でない")
+            self.stop("(c) 資料と表", f"{bkey} の {n} が、{sj.BUBUN_NAME} の表でない")
             return
         self.gyo = [r for r in bub if r["oya"] == n and r["shu"] == sj.GYO]
         self.retsu = sorted((r for r in bub if r["oya"] == n and r["shu"] == sj.RETSU), key=lambda r: int(r["jun"]))
         if not self.gyo or not self.retsu:
-            self.stop("(c) 文書と表", f"{bkey} の表 {n} に、行か列が無い（行 {len(self.gyo)}、列 {len(self.retsu)}）")
+            self.stop("(c) 資料と表", f"{bkey} の表 {n} に、行か列が無い（行 {len(self.gyo)}、列 {len(self.retsu)}）")
             return
-        # 数値の表で、この表の欄を指す行
+        # 数値と内容の表で、この表の欄を指す行
         gn, rn = {g["n"] for g in self.gyo}, {c["n"] for c in self.retsu}
         self.atai = {}
         for r in tables["atai"]:
@@ -97,7 +97,7 @@ class Hyo:
                 self.stop("(f) 表の範囲", why)
                 return
         self.cell, ichi = {}, {}
-        self.n_moji = 0            # 原典の文字から取った欄の数
+        self.n_moji = 0            # もとの資料から取り出した文字から取った欄の数
         for g in self.gyo:
             yonda = sj.YONDA in (self.hyo["torikata"], g["torikata"])
             ichi[g["n"]] = self.read_row(lines, g) if yonda else self.count_row(lines, g)
@@ -109,7 +109,7 @@ class Hyo:
         self.problems.append((kind, msg))
 
     def count_row(self, lines, g):
-        """torikata が「機械」の行：原典の文字の行から、列の jun の順で数値を取る。→ 行の位置。"""
+        """torikata が「機械」の行：もとの資料から取り出した文字の行から、列の jun の順で数値を取る。→ 行の位置。"""
         hits = [i for i, ln in enumerate(lines) if sj.row_numbers(ln, g["name"]) is not None]
         if len(hits) != 1:
             self.stop("(f) 行", f"{sj.BUBUN_NAME} の {g['_gyo']} 行目：行の name と数値の行が、表の範囲に {len(hits)} 行ある"
@@ -126,15 +126,15 @@ class Hyo:
             for r in self.atai.get((g["n"], c["n"]), []):
                 if shogo.norm(r["atai"]) != shogo.norm(v):
                     self.stop("(g) 数値の一致", f"{sj.ATAI_NAME} の {r['_gyo']} 行目：atai（{r['atai']}）が、"
-                                            f"原典の文字の行の {j} つ目（{v}）と違う")
+                                            f"もとの資料から取り出した文字の行の {j} つ目（{v}）と違う")
             self.cell[(g["n"], c["n"])] = v
             self.n_moji += 1
         return hits[0]
 
     def read_row(self, lines, g):
-        """torikata が「読んだ」の表か行：数値の表の行だけを使う。→ 行の位置。
+        """torikata が「読んだ」の表か行：数値と内容の表の行だけを使う。→ 行の位置。
 
-        lines が None（表の torikata が「読んだ」）なら、文書の部分の表の番号を、行の位置とする。
+        lines が None（表の torikata が「読んだ」）なら、資料の中の場所の表の番号を、行の位置とする。
         """
         q = shogo.norm(g["name"])
         at = [int(g["n"])] if lines is None else [i for i, ln in enumerate(lines) if q and shogo.norm(ln).startswith(q)]
@@ -144,10 +144,10 @@ class Hyo:
             rs = self.atai.get((g["n"], c["n"]), [])
             vals = {shogo.norm(r["atai"]) for r in rs}
             if not rs:
-                self.stop("(h) 数値の表に行が無い欄",
-                          f"torikata が「読んだ」の表なので、原典の文字から取れない（行 {g['name']}、列 {c['name']}）")
+                self.stop("(h) 数値と内容の表に行が無い欄",
+                          f"torikata が「読んだ」の表なので、もとの資料から取り出した文字から取れない（行 {g['name']}、列 {c['name']}）")
             elif len(vals) > 1:
-                self.stop("(g) 数値の一致", f"同じ欄を指す数値の表の行の atai が違う（行 {g['name']}、列 {c['name']}）")
+                self.stop("(g) 数値の一致", f"同じ欄を指す数値と内容の表の行の atai が違う（行 {g['name']}、列 {c['name']}）")
             else:
                 self.cell[(g["n"], c["n"])] = rs[0]["atai"]
         return at[0] if at else None
@@ -172,20 +172,20 @@ th{background:#eee} th.g{text-align:left;white-space:nowrap} th.m{text-align:cen
 
 
 def hiduke_ji(D, h):
-    """文書の表の hiduke → 画面に出す日付。空なら、日付の記述が無いことを出す。"""
-    return bs.hi_str(D, h) if sj.RE_HIDUKE.fullmatch(h or "") else D.kotoba("文書の表 hiduke が空")
+    """資料の一覧の表の hiduke → 画面に出す日付。空なら、日付の記述が無いことを出す。"""
+    return bs.hi_str(D, h) if sj.RE_HIDUKE.fullmatch(h or "") else D.kotoba("資料の一覧の表 hiduke が空")
 
 
 def midashi_ji(D, r):
-    """文書の部分の行 → 画面に出す見出し。torikata が「読んだ」で、chu に確認の記録が無い部分には、未確認の印を付ける。"""
+    """資料の中の場所の行 → 画面に出す見出し。torikata が「読んだ」で、chu に確認の記録が無い部分には、未確認の印を付ける。"""
     if sj.mikakunin(r):
-        return S(r["name"]) + E(D.kotoba("文書の部分の表 torikata が「読んだ」で、chu に確認の記録が無い"))
+        return S(r["name"]) + E(D.kotoba("資料の中の場所の表 torikata が「読んだ」で、chu に確認の記録が無い"))
     return S(r["name"])
 
 
 def thead(D, retsu):
     """列の見出し。matome がある列は、見出しの上の行に、同じ matome が続く列をまとめて出す。"""
-    D.dasanai("文書の部分の表 matome")
+    D.dasanai("資料の中の場所の表 matome")
     if not any(c["matome"] for c in retsu):
         return "<tr><th class=g></th>" + "".join(f"<th>{midashi_ji(D, c)}</th>" for c in retsu) + "</tr>"
     ue, i = [], 0
@@ -205,7 +205,7 @@ def thead(D, retsu):
 
 
 def hoka_bunsho(tables, h, bkey):
-    """この表の欄を指す数値の定義について、数値の表に行がある、ほかの文書。→ 文書の ID → ページの番号の集まり。"""
+    """この表の欄を指す項目について、数値と内容の表に行がある、ほかの資料。→ 資料の ID → ページの番号の集まり。"""
     sids = {r["suji"] for rs in h.atai.values() for r in rs}
     by = {r["bunsho"] for r in tables["bunsho"]}
     out = {}
@@ -218,8 +218,8 @@ def hoka_bunsho(tables, h, bkey):
 
 
 def kakko_ji(D, b):
-    """文書の表の行 → 文書の名前のあとの括弧の中。han があれば han と hiduke、無ければ hiduke だけ（docs/design.md 3節）。"""
-    D.dasanai("文書の表 han")
+    """資料の一覧の表の行 → 資料の名前のあとの括弧の中。han があれば han と hiduke、無ければ hiduke だけ（docs/design.md 3節）。"""
+    D.dasanai("資料の一覧の表 han")
     hi = hiduke_ji(D, b["hiduke"])
     return f"{S(b['han'])}、{E(hi)}" if b["han"] else E(hi)
 
@@ -245,11 +245,11 @@ def render(D, inp, tables, h, bkey, today):
     o.append(f"<p><a href='{E(url)}'>{E(D.bun('link'))}</a></p>" if url else f"<p>{E(D.bun('link-nashi'))}</p>")
     if b["konkyo"]:
         kp = D.bun("page", n=sj.page_no(b["konkyo_tokoro"]))
-        o.append(f"<h2>{E(D.kotoba('文書の表 konkyo'))}</h2><p class=q>「{S(b['konkyo'])}」（{E(kp)}）</p>")
+        o.append(f"<h2>{E(D.kotoba('資料の一覧の表 konkyo'))}</h2><p class=q>「{S(b['konkyo'])}」（{E(kp)}）</p>")
     hoka = hoka_bunsho(tables, h, bkey)
     if hoka:
         by = {r["bunsho"]: r for r in tables["bunsho"]}
-        D.kotoba("同じ定義の数値がある、ほかの文書")        # 見出しの文は midashi-onaji（design_problems で同じことを確認する）
+        D.kotoba("同じ項目の数値がある、ほかの資料")        # 見出しの文は midashi-onaji（design_problems で同じことを確認する）
         li = []
         for k in sorted(hoka, key=lambda k: (by[k]["hiduke"] or "9999", k)):
             pp = "、".join(str(p) for p in sorted(hoka[k]))
@@ -301,7 +301,7 @@ def build(inp, tables, bkey, n, kotoba, today, read_problems=(), design=None):
 def main(argv=None, teigi_dir=None):
     argv = sys.argv[1:] if argv is None else argv
     if len(argv) != 2 or not RE_BANGO.fullmatch(argv[1]):
-        print("使い方：python3 -B tools/build_hyo.py <文書の ID> <表の番号>", file=sys.stderr)
+        print("使い方：python3 -B tools/build_hyo.py <資料の ID> <表の番号>", file=sys.stderr)
         return 2
     bkey, n = argv
     try:
@@ -322,8 +322,8 @@ def main(argv=None, teigi_dir=None):
     with open(out, "w", encoding="utf-8") as f:
         f.write(page)
     print(f"{os.path.relpath(out, inputs.ROOT)}（{os.path.getsize(out)} バイト、{info['ji']} 文字）")
-    print(f"行 {info['gyo']}、列 {info['retsu']}、欄 {info['ran']}（原典の文字から取った欄 {info['moji']}、"
-          f"うち数値の表に行がある欄 {info['atai']}）")
+    print(f"行 {info['gyo']}、列 {info['retsu']}、欄 {info['ran']}（もとの資料から取り出した文字から取った欄 {info['moji']}、"
+          f"うち数値と内容の表に行がある欄 {info['atai']}）")
     return 0
 
 

@@ -84,7 +84,7 @@ class TestFake(unittest.TestCase):
         ron[ronten.KOTOGARA][0]["quote"] = "2,900平方メートル"     # 1字変える
         with self.assertRaises(bn.Stop) as c:
             self.build(fake_inputs(ron))
-        self.assertEqual(kinds(c.exception), {"(a) 引用が原典に無い"})
+        self.assertEqual(kinds(c.exception), {"(a) 引用がもとの資料に無い"})
         self.assertEqual(len(c.exception.problems), 1)
 
     def test_stop_katei_quote_changed(self):
@@ -92,14 +92,14 @@ class TestFake(unittest.TestCase):
         ron[ronten.KATEI][0]["quote"] = "令和7年9月"
         with self.assertRaises(bn.Stop) as c:
             self.build(fake_inputs(ron))
-        self.assertEqual(kinds(c.exception), {"(a) 引用が原典に無い"})
+        self.assertEqual(kinds(c.exception), {"(a) 引用がもとの資料に無い"})
 
     def test_stop_paragraph_missing(self):
         ron = fake_ronten()
         ron[ronten.TAIO][0]["hani"] = f"sp:{A1}/2-3"
         with self.assertRaises(bn.Stop) as c:
             self.build(fake_inputs(ron))
-        self.assertEqual(kinds(c.exception), {"(a) 引用が原典に無い"})
+        self.assertEqual(kinds(c.exception), {"(a) 引用がもとの資料に無い"})
 
     def test_stop_source_removed(self):
         for led, col in ((ronten.KOTOGARA, "source"), (ronten.KATEI, "sources"), (ronten.TAIO, "hani")):
@@ -286,7 +286,7 @@ class TestReal(unittest.TestCase):
                 return self.first_point_row(path, rows, "quote", lambda q: q[:-1] + ("あ" if q[-1] != "あ" else "い"))
         with self.assertRaises(bn.Stop) as c:
             self.build(Wrap(self.inp, change))
-        self.assertEqual([k for k, _ in c.exception.problems], ["(a) 引用が原典に無い"])
+        self.assertEqual([k for k, _ in c.exception.problems], ["(a) 引用がもとの資料に無い"])
 
     def test_stop_source_removed(self):
         def change(path, rows):
@@ -312,7 +312,7 @@ class TestReal(unittest.TestCase):
         t["chu"] = [dict(ext, text="総務省の資料では「表に無い字」とされています。")]
         with self.assertRaises(bn.Stop) as c:
             self.build(self.inp, t)
-        self.assertIn("(a) 引用が原典に無い", kinds(c.exception))
+        self.assertIn("(a) 引用がもとの資料に無い", kinds(c.exception))
 
     def with_chu(self, **kw):
         t = dict(self.teigi)
@@ -327,12 +327,12 @@ class TestReal(unittest.TestCase):
     def test_stop_chu_fragment_not_in_source(self):
         with self.assertRaises(bn.Stop) as c:
             self.build(self.inp, self.with_chu(text="表では「この字は資料に無い」とあります。"))
-        self.assertIn("(a) 引用が原典に無い", kinds(c.exception))
+        self.assertIn("(a) 引用がもとの資料に無い", kinds(c.exception))
 
     def test_stop_chu_source_unknown(self):
         with self.assertRaises(bn.Stop) as c:
             self.build(self.inp, self.with_chu(moto="doc:sonzai-shinai/1"))
-        self.assertTrue({"(a) 引用が原典に無い", "(b) 出典の無い記述"} & set(kinds(c.exception)))
+        self.assertTrue({"(a) 引用がもとの資料に無い", "(b) 出典の無い記述"} & set(kinds(c.exception)))
 
     def test_stop_word(self):
         t = dict(self.teigi)

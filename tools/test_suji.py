@@ -1,4 +1,4 @@
-"""数値の定義の表と数値の表、文書の表と文書の部分の表の検査（SCHEMA.md §6・§7）。"""
+"""項目の表と数値と内容の表、資料の一覧の表と資料の中の場所の表の検査（SCHEMA.md §6・§7）。"""
 import io
 import os
 import sys
@@ -97,7 +97,7 @@ class TestTeigi(unittest.TestCase):
     def test_id_duplicate(self):
         self.assertEqual(run(teigi=[teigi_row(), teigi_row(id="hoka")]), [])
         p = run(teigi=[teigi_row(), teigi_row()])
-        self.assertEqual(p, ["定義の id が重なっている（taiki）"] * 2)
+        self.assertEqual(p, ["項目の id が重なっている（taiki）"] * 2)
 
     def test_required_and_form(self):
         self.assertEqual(run(teigi=[teigi_row(kettei="2026-11-19", tani="", sei="")]), [])
@@ -111,7 +111,7 @@ class TestAtai(unittest.TestCase):
         self.assertEqual(run(), [])
 
     def test_suji_not_defined(self):
-        self.assertEqual(run(atai=[atai_row(suji="nai")]), ["suji が定義の表に無い（nai）"])
+        self.assertEqual(run(atai=[atai_row(suji="nai")]), ["suji が項目の表に無い（nai）"])
 
     def test_jotai(self):
         self.assertTrue(run(atai=[atai_row(jotai="不明")])[0].startswith("jotai が 数値がある・"))
@@ -286,7 +286,7 @@ class TestForm(unittest.TestCase):
         self.assertEqual(run(atai=[atai_row(nendo="令和7")]), ["nendo が西暦4桁でない（令和7）"])
 
 
-# ---------------------------------------------------------------- 文書と、文書の部分（SCHEMA.md §7）
+# ---------------------------------------------------------------- 資料と、資料の中の場所（SCHEMA.md §7）
 
 SID7 = "0000008489_20250613_0084"
 KODOMO_RAW = ("第３期\n子ども計画\n令和７年３月\f"
@@ -347,7 +347,7 @@ def run7(atai=None, bunsho=None, bubun=None, inp=None, kankei=None):
 
 
 def change(rows, bango, **kw):
-    """文書の部分の行の並びの、番号が bango の行を書き換えた並び。"""
+    """資料の中の場所の行の並びの、番号が bango の行を書き換えた並び。"""
     return [dict(r, **kw) if r["n"] == bango else r for r in rows]
 
 
@@ -358,7 +358,7 @@ class TestBunsho(unittest.TestCase):
         self.assertEqual((kazoe["taisho"], kazoe["atta"], kazoe["yonda"]), (1, 1, 0))
 
     def test_shurui_wa_keikaku(self):
-        """計画ライブラリの文書の shurui は keikaku。こちらで付けた名前は止まる（SCHEMA.md §7.1）。"""
+        """計画ライブラリの資料の shurui は keikaku。こちらで付けた名前は止まる（SCHEMA.md §7.1）。"""
         p, _ = run7(bunsho=[bunsho_row(shurui="法定の計画")])
         self.assertTrue(any("shurui が §7.1 と違う（keikaku のはず：法定の計画）" in x for x in p), p)
 
@@ -386,13 +386,13 @@ class TestBunsho(unittest.TestCase):
 
     def test_namae(self):
         p, _ = run7(bunsho=[bunsho_row(namae="第３期子ども・子育て支援事業計画")])
-        self.assertEqual(p, ["namae の字が、1ページの原典の文字に無い（第３期子ども・子育て支援事業計画）"])
+        self.assertEqual(p, ["namae の字が、1ページのもとの資料から取り出した文字に無い（第３期子ども・子育て支援事業計画）"])
 
     def test_konkyo(self):
         p, _ = run7(bunsho=[bunsho_row(konkyo_tokoro="pt:kodomo/honpen/2")])
-        self.assertEqual(p, ["konkyo の字が、konkyo_tokoro のページの原典の文字に無い（pt:kodomo/honpen/2）"])
+        self.assertEqual(p, ["konkyo の字が、konkyo_tokoro のページのもとの資料から取り出した文字に無い（pt:kodomo/honpen/2）"])
         p, _ = run7(bunsho=[bunsho_row(konkyo_tokoro="pt:youho/honpen/3")])
-        self.assertEqual(p, ["konkyo_tokoro が、この文書のページの ID でない（pt:youho/honpen/3）"])
+        self.assertEqual(p, ["konkyo_tokoro が、この資料のページの ID でない（pt:youho/honpen/3）"])
         p, _ = run7(bunsho=[bunsho_row(konkyo="", konkyo_tokoro="")])
         self.assertEqual(p, ["konkyo が空なのに、chu に探したページが無い"])
         p, _ = run7(bunsho=[bunsho_row(konkyo="", konkyo_tokoro="", chu="3ページを見た")])
@@ -406,7 +406,7 @@ class TestBunsho(unittest.TestCase):
         p, _ = run7(bunsho=[bunsho_row(hiduke_moto="")])
         self.assertEqual(p, ["hiduke があるのに、hiduke_moto が空"])
         p, _ = run7(bunsho=[bunsho_row(hiduke_moto="pt:youho/honpen/1")])
-        self.assertEqual(p, ["hiduke_moto が、この文書のページの ID でない（pt:youho/honpen/1）"])
+        self.assertEqual(p, ["hiduke_moto が、この資料のページの ID でない（pt:youho/honpen/1）"])
         self.assertEqual(run7(bunsho=[bunsho_row(hiduke_moto="shiga-hino-plans data/plans/kodomo.json")])[0], [])
         p, _ = run7(bunsho=[bunsho_row(hiduke_moto="台帳")])
         self.assertEqual(p, ["hiduke_moto が、ページの ID でも、入力の台帳の名前でもない（台帳）"])
@@ -414,14 +414,14 @@ class TestBunsho(unittest.TestCase):
         self.assertEqual(p, ["hiduke が空なのに、chu に理由が無い"])
 
     def test_han(self):
-        """版の表記（SCHEMA.md §7.1・§7.4）：han が han_tokoro のページの原典の文字にある。"""
+        """版の表記（SCHEMA.md §7.1・§7.4）：han が han_tokoro のページのもとの資料から取り出した文字にある。"""
         self.assertEqual(run7(bunsho=[bunsho_row(han="令和７年３月", han_tokoro="pt:kodomo/honpen/1")])[0], [])
         p, _ = run7(bunsho=[bunsho_row(han="令和８年６月一部改正", han_tokoro="pt:kodomo/honpen/1")])
-        self.assertEqual(p, ["han が、han_tokoro のページの原典の文字に無い（令和８年６月一部改正）"])
+        self.assertEqual(p, ["han が、han_tokoro のページのもとの資料から取り出した文字に無い（令和８年６月一部改正）"])
         p, _ = run7(bunsho=[bunsho_row(han="令和７年３月", han_tokoro="pt:youho/honpen/1")])
-        self.assertEqual(p, ["han_tokoro が、この文書のページの ID でない（pt:youho/honpen/1）"])
+        self.assertEqual(p, ["han_tokoro が、この資料のページの ID でない（pt:youho/honpen/1）"])
         p, _ = run7(bunsho=[bunsho_row(han="令和７年３月", han_tokoro="")])
-        self.assertEqual(p, ["han_tokoro が、この文書のページの ID でない（）"])
+        self.assertEqual(p, ["han_tokoro が、この資料のページの ID でない（）"])
         p, _ = run7(bunsho=[bunsho_row(han="", han_tokoro="pt:kodomo/honpen/1")])
         self.assertEqual(p, ["han が空なのに、han_tokoro がある"])
 
@@ -434,9 +434,9 @@ class TestBubun(unittest.TestCase):
         p, _ = run7(bubun=change(rows, "6", n="x"))
         self.assertIn("n が1からの整数でない（x）", p)
         p, _ = run7(bubun=[dict(r, bunsho="pt:youho/honpen", tokoro="pt:youho/honpen/2") for r in rows], atai=[])
-        self.assertIn("bunsho が文書の表に無い（pt:youho/honpen）", p)
+        self.assertIn("bunsho が資料の一覧の表に無い（pt:youho/honpen）", p)
         p, _ = run7(bubun=change(rows, "6", oya="20"))
-        self.assertEqual(p, ["oya が、同じ文書の部分の表に無い（20）"])
+        self.assertEqual(p, ["oya が、資料の中の場所の表の、同じ資料の行に無い（20）"])
         p, _ = run7(bubun=change(rows, "1", oya="2"))
         self.assertEqual(p, ["oya が、自分より小さい番号でない（2）"])
 
@@ -465,9 +465,9 @@ class TestBubun(unittest.TestCase):
     def test_name_and_jun(self):
         rows = bubun_rows()
         p, _ = run7(bubun=change(rows, "1", name="第６章 量の見込み"))
-        self.assertEqual(p, ["name の字が、tokoro のページの原典の文字に無い（第６章 量の見込み）"])
+        self.assertEqual(p, ["name の字が、tokoro のページのもとの資料から取り出した文字に無い（第６章 量の見込み）"])
         p, _ = run7(bubun=change(rows, "1", tokoro="pt:kodomo/honpen/1"))
-        self.assertEqual(p, ["name の字が、tokoro のページの原典の文字に無い（第５章 量の見込み）"])
+        self.assertEqual(p, ["name の字が、tokoro のページのもとの資料から取り出した文字に無い（第５章 量の見込み）"])
         p, _ = run7(bubun=change(rows, "5", jun=""))
         self.assertEqual(p, ["列の行で、jun が1からの整数でない（）"])
         p, _ = run7(bubun=change(rows, "6", jun="1"))
@@ -478,7 +478,7 @@ class TestBubun(unittest.TestCase):
     def test_name_yonda_kakunin(self):
         """torikata が「読んだ」で chu に確認の記録がある行は、name の検査から外し、数を出す（SCHEMA.md §7.4）。"""
         rows = bubun_rows()
-        nai = "name の字が、tokoro のページの原典の文字に無い（第６章 量の見込み）"
+        nai = "name の字が、tokoro のページのもとの資料から取り出した文字に無い（第６章 量の見込み）"
         for chu in ("生成AIが画像を2回読んで一致（2026-11-25）", "人が PDF で確認（2026-11-25）"):
             with self.subTest(chu=chu):
                 p, kazoe = run7(bubun=change(rows, "1", name="第６章 量の見込み", torikata="読んだ", chu=chu))
@@ -495,11 +495,11 @@ class TestBubun(unittest.TestCase):
         self.assertEqual(p, [nai])
 
     def test_matome(self):
-        """列のまとまりの見出し（SCHEMA.md §7.2・§7.4）：列の行だけに書け、tokoro のページの原典の文字にある。"""
+        """列のまとまりの見出し（SCHEMA.md §7.2・§7.4）：列の行だけに書け、tokoro のページのもとの資料から取り出した文字にある。"""
         rows = bubun_rows()
         self.assertEqual(run7(bubun=change(change(rows, "4", matome="（R7）"), "5", matome="（R7）"))[0], [])
         p, _ = run7(bubun=change(rows, "4", matome="待機児童数から除かれる者"))
-        self.assertEqual(p, ["matome が、tokoro のページの原典の文字に無い（待機児童数から除かれる者）"])
+        self.assertEqual(p, ["matome が、tokoro のページのもとの資料から取り出した文字に無い（待機児童数から除かれる者）"])
         p, _ = run7(bubun=change(rows, "6", matome="第５章 量の見込み"))
         self.assertEqual(p, ["列でない行に matome がある（第５章 量の見込み）"])
 
@@ -547,7 +547,7 @@ class TestAtaiBubun(unittest.TestCase):
         p, _ = run7(atai=[atai7(bubun="")])
         self.assertEqual(p, ["retsu があるのに、bubun が空"])
         p, _ = run7(atai=[atai7(bubun="30")])
-        self.assertEqual(p, ["bubun が、shiryo の文書の部分の表に無い（pt:kodomo/honpen の 30）"])
+        self.assertEqual(p, ["bubun が、shiryo の資料の中の場所の表に無い（pt:kodomo/honpen の 30）"])
         p, _ = run7(atai=[atai7(retsu="")])
         self.assertEqual(p, ["bubun が行なのに、retsu が空"])
         p, _ = run7(atai=[atai7(retsu="6")])
@@ -557,7 +557,7 @@ class TestAtaiBubun(unittest.TestCase):
         p, _ = run7(atai=[atai7(bubun="1", retsu="")])                  # 見出しを指す
         self.assertEqual(p, [])
         p, _ = run7(atai=[atai7(shiryo="doc:yosan-1/2", inyo="3,000,000", atai="3,000,000")])
-        self.assertEqual(p, ["shiryo の文書が、文書の表に無い（doc:yosan-1）"])
+        self.assertEqual(p, ["shiryo の資料が、資料の一覧の表に無い（doc:yosan-1）"])
         p, _ = run7(atai=[atai7(shiryo="ext:soumu-1/2", inyo="充当率90％", atai="90％")])
         self.assertEqual(p, ["bubun を書けない shiryo（ext:soumu-1/2）"])
 
@@ -638,7 +638,7 @@ class TestJitenKankei(unittest.TestCase):
     def test_nendo_to_tsuki(self):
         self.assertEqual(self.k(jiten="令和7年度", shiryo="pt:kodomo/honpen/72"), suji.KANKEI_ATO)     # 2025年4月 と 2025年3月
         self.assertEqual(self.k(jiten="令和6年度", nendo="2024", shiryo="pt:kodomo/honpen/72"), suji.KANKEI_MAE)
-        # 月が1〜3の定義は、年度の翌年の暦の年で比較する
+        # 月が1〜3の項目は、年度の翌年の暦の年で比較する
         self.assertEqual(self.k(teigi={"nendo_tsuki": "3"}, jiten="令和6年度", nendo="2024", shiryo="pt:kodomo/honpen/72"),
                          suji.KANKEI_MAE)                                                       # 2025年3月 と 2025年3月
         self.assertEqual(self.k(teigi={"nendo_tsuki": "3"}, jiten="令和7年度", nendo="2025", shiryo="pt:kodomo/honpen/72"),
@@ -663,8 +663,8 @@ class TestJitenKankei(unittest.TestCase):
     def test_dasanai(self):
         self.assertIsNone(self.k(nendo=""))
         self.assertIsNone(self.k(shiryo=""))
-        self.assertIsNone(self.k(shiryo="doc:fuhyo/1"))       # 文書の表の hiduke が空
-        self.assertIsNone(self.k(shiryo="doc:nai/1"))         # 文書の表に無い
+        self.assertIsNone(self.k(shiryo="doc:fuhyo/1"))       # 資料の一覧の表の hiduke が空
+        self.assertIsNone(self.k(shiryo="doc:nai/1"))         # 資料の一覧の表に無い
         self.assertIsNone(self.k(shiryo="plan:nai"))
 
     def test_jitsubutsu(self):
@@ -715,7 +715,7 @@ class TestJitenKankei(unittest.TestCase):
 
 
 class TestShurui(unittest.TestCase):
-    """shurui の字が、shiryo の原典の文字にあるか（SCHEMA.md §6.2・§6.4）。実際の入力と表で確認する。"""
+    """shurui の字が、shiryo のもとの資料から取り出した文字にあるか（SCHEMA.md §6.2・§6.4）。実際の入力と表で確認する。"""
 
     def setUp(self):
         self.inp = real_inputs()
@@ -737,10 +737,10 @@ class TestShurui(unittest.TestCase):
         self.assertEqual(r["shurui"], "")
         r["shurui"] = "実績"
         out, _ = suji.check_shurui(self.inp, rows)
-        self.assertEqual([(m.gyo, m.naiyo) for m in out], [(r["_gyo"], "shurui の字が、shiryo の原典の文字に無い（実績）")])
+        self.assertEqual([(m.gyo, m.naiyo) for m in out], [(r["_gyo"], "shurui の字が、shiryo のもとの資料から取り出した文字に無い（実績）")])
 
     def test_genten_no_moji_ga_nai(self):
-        """原典の文字が入力に無い資料（総合計画）の行は、検査から除いて数える。"""
+        """もとの資料から取り出した文字が入力に無い資料（総合計画）の行は、検査から除いて数える。"""
         rows = [dict(r) for r in self.rows if r["shiryo"] == "plan:sogo6" and r["shurui"]]
         self.assertTrue(rows)
         out, kazoe = suji.check_shurui(self.inp, rows)
@@ -859,7 +859,7 @@ def fake_shisetsu():
 
 
 class TestShisetsu(unittest.TestCase):
-    """文書の部分の表の shisetsu（SCHEMA.md §7.2・§7.4）。"""
+    """資料の中の場所の表の shisetsu（SCHEMA.md §7.2・§7.4）。"""
 
     REF = {r["key"]: r for r in SHISETSU_REF}
 
@@ -954,7 +954,7 @@ class TestShisetsuKakunin(unittest.TestCase):
         # shisetsu が空の行に、記録：止める
         p, _ = self.run_k("6", shisetsu_kakunin="人が確認（2026-11-24）")
         self.assertEqual(p, ["shisetsu が空の行に、shisetsu_kakunin がある（人が確認（2026-11-24））"])
-        # name が一致する行に、記録：止める（name の字は原典の文字に無いので、施設の検査だけを行う）
+        # name が一致する行に、記録：止める（name の字はもとの資料から取り出した文字に無いので、施設の検査だけを行う）
         rows = change(bubun_rows(), "2", name="南比都佐幼稚園", shisetsu="fa:minamihizusa-yo",
                       shisetsu_kakunin="人が確認（2026-11-24）")
         out, kazoe = suji.check_shisetsu(fake_shisetsu(), [dict({"shisetsu": "", "shisetsu_kakunin": ""}, **r, _gyo=i)
@@ -1069,7 +1069,7 @@ class TestShisetsuReal(unittest.TestCase):
                             if suji.shisetsu_icchi(r, ref) is False))
 
 
-# ---------------------------------------------------------------- 文書どうしの関係（SCHEMA.md §7.6・§7.4）
+# ---------------------------------------------------------------- 資料どうしの関係（SCHEMA.md §7.6・§7.4）
 
 def bunsho_youho():
     return bunsho_row(bunsho="pt:youho/honpen", namae="a", konkyo="", konkyo_tokoro="", hiduke="", hiduke_moto="",
@@ -1092,15 +1092,15 @@ class TestBunshoKankei(unittest.TestCase):
         self.assertEqual(self.run_k(), [])
 
     def test_bunsho(self):
-        self.assertEqual(self.run_k(kankei_row(e="pt:nai/honpen")), ["e が文書の表に無い（pt:nai/honpen）"])
+        self.assertEqual(self.run_k(kankei_row(e="pt:nai/honpen")), ["e が資料の一覧の表に無い（pt:nai/honpen）"])
         p = self.run_k(kankei_row(kara="doc:nai", tokoro="doc:nai/1"))
-        self.assertIn("kara が文書の表に無い（doc:nai）", p)
+        self.assertIn("kara が資料の一覧の表に無い（doc:nai）", p)
 
     def test_tokoro_inyo_hyogen(self):
         self.assertEqual(self.run_k(kankei_row(tokoro="pt:youho/honpen/2")),
-                         ["tokoro が、kara の文書のページの ID でない（pt:youho/honpen/2）"])
+                         ["tokoro が、kara の資料のページの ID でない（pt:youho/honpen/2）"])
         self.assertEqual(self.run_k(kankei_row(tokoro="pt:kodomo/honpen/2")),
-                         ["inyo が、tokoro のページの原典の文字に無い（pt:kodomo/honpen/2）"])
+                         ["inyo が、tokoro のページのもとの資料から取り出した文字に無い（pt:kodomo/honpen/2）"])
         self.assertEqual(self.run_k(kankei_row(hyogen="を上位計画とし")), ["hyogen が、inyo の中に無い（を上位計画とし）"])
         self.assertEqual(self.run_k(kankei_row(hyogen="")), ["必ず書く列が空（hyogen）"])
         self.assertEqual(self.run_k(kankei_row(inyo="", hyogen="")), ["必ず書く列が空（hyogen・inyo）"])
@@ -1119,15 +1119,15 @@ class TestBunshoKankei(unittest.TestCase):
         self.assertEqual(p, [])
         names = {r["bunsho"] for r in t["bunsho"]}
         self.assertEqual([m.naiyo for m in suji.check_bunsho_kankei(inp, rows, names)], [])
-        # 再編整備計画 令和7年3月の版の「基本とした」の行を、別の文書のページに置くと止まる
+        # 再編整備計画 令和7年3月の版の「基本とした」の行を、別の資料のページに置くと止まる
         r = next(x for x in rows if x["kara"] == "pt:youho/honpen-202503")
         bad = [dict(r, tokoro="pt:youho/honpen-202503/24")]
         self.assertEqual([m.naiyo for m in suji.check_bunsho_kankei(inp, bad, names)],
-                         ["inyo が、tokoro のページの原典の文字に無い（pt:youho/honpen-202503/24）"])
+                         ["inyo が、tokoro のページのもとの資料から取り出した文字に無い（pt:youho/honpen-202503/24）"])
 
 
 class TestKaiseiTsui(unittest.TestCase):
-    """一部改正の前後の数値の対（SCHEMA.md §6.2。tools/suji.py の kaisei_tsui）。kara は改正後、e は改正前。"""
+    """一部改正の前後の数値の組み合わせ（SCHEMA.md §6.2。tools/suji.py の kaisei_tsui）。kara は改正後、e は改正前。"""
 
     KARA, E = "pt:p/ato", "pt:p/mae"
     BUBUN = {(KARA, "1"): dict(shisetsu="", name="見出し"), (E, "1"): dict(shisetsu="", name="見出し"),
@@ -1144,43 +1144,43 @@ class TestKaiseiTsui(unittest.TestCase):
         return suji.kaisei_tsui(self.KARA, self.E, list(rows), self.BUBUN, {"s": 0, "t": 1})
 
     def test_jouken1(self):
-        # nendo が同じ行を対にする。atai が違えば chigau、同じなら数えるだけ
+        # nendo が同じ行を組み合わせる。atai が違えば chigau、同じなら数えるだけ
         x = self.tsui(self.r(self.E, "3", nendo="2024"), self.r(self.KARA, "4", nendo="2024"),
                       self.r(self.E, "5", nendo="2023"), self.r(self.KARA, "５", nendo="2023"))
         self.assertEqual([(a["atai"], b["atai"], jo) for a, b, jo in x.chigau], [("3", "4", 1)])
         self.assertEqual(x.onaji, 1)
         self.assertEqual((x.kuwawaru, x.nai, x.hoka, x.shinai), ([], [], [], []))
-        # kubun が違えば対にしない（片方にだけある行になる）
+        # kubun が違えば組み合わせない（片方にだけある行になる）
         x = self.tsui(self.r(self.E, "3", nendo="2024", kubun="0歳"), self.r(self.KARA, "3", nendo="2024"))
         self.assertEqual((len(x.kuwawaru), len(x.nai), x.onaji), (1, 1, 0))
-        # nendo が同じでも、施設が違えば対にしない
+        # nendo が同じでも、施設が違えば組み合わせない
         x = self.tsui(self.r(self.E, "3", nendo="2024", bubun="2"), self.r(self.KARA, "4", nendo="2024", bubun="5"))
         self.assertEqual((x.chigau, len(x.kuwawaru), len(x.nai), x.onaji), ([], 1, 1, 0))
-        # nendo も施設も同じなら対にする
+        # nendo も施設も同じなら組み合わせる
         x = self.tsui(self.r(self.E, "3", nendo="2024", bubun="2"), self.r(self.KARA, "4", nendo="2024", bubun="2"))
         self.assertEqual([(a["atai"], b["atai"], jo) for a, b, jo in x.chigau], [("3", "4", 1)])
 
     def test_jouken2(self):
-        # nendo が空で、施設と列の見出し（§3 の正規化のあと）が同じ行を対にする
+        # nendo が空で、施設と列の見出し（§3 の正規化のあと）が同じ行を組み合わせる
         x = self.tsui(self.r(self.E, "100", bubun="2", retsu="3", page="27"),
                       self.r(self.KARA, "120", bubun="2", retsu="3", page="27"),
                       self.r(self.E, "集約", bubun="2", retsu="4", page="27"),
                       self.r(self.KARA, "集約", bubun="2", retsu="4", page="27"))
         self.assertEqual([(a["atai"], b["atai"], jo) for a, b, jo in x.chigau], [("100", "120", 2)])
         self.assertEqual(x.onaji, 1)
-        # 施設が違えば対にしない
+        # 施設が違えば組み合わせない
         x = self.tsui(self.r(self.E, "100", bubun="2", retsu="3"), self.r(self.KARA, "100", bubun="5", retsu="3"))
         self.assertEqual((x.onaji, len(x.kuwawaru), len(x.nai)), (0, 1, 1))
         self.assertEqual(x.kuwawaru[0][1], 2)
 
     def test_jouken3(self):
-        # nendo も施設も空で、1行ずつだけなら対にする
+        # nendo も施設も空で、1行ずつだけなら組み合わせる
         x = self.tsui(self.r(self.E, "令和10年度", page="34"), self.r(self.KARA, "令和11年度", page="34"))
         self.assertEqual([(a["atai"], b["atai"], jo) for a, b, jo in x.chigau], [("令和10年度", "令和11年度", 3)])
-        # 片方に2行あれば対にせず、出さない（shinai に数える）
+        # 片方に2行あれば組み合わせず、出さない（shinai に数える）
         x = self.tsui(self.r(self.E, "a"), self.r(self.E, "b", page="2"), self.r(self.KARA, "c"))
         self.assertEqual((x.chigau, x.onaji, x.kuwawaru, x.nai, len(x.shinai)), ([], 0, [], [], 3))
-        # 片方の文書にしか無い行も、加わっている数値としては出さない
+        # 片方の資料にしか無い行も、加わっている数値としては出さない
         x = self.tsui(self.r(self.KARA, "c"))
         self.assertEqual((x.kuwawaru, len(x.shinai)), ([], 1))
 
@@ -1196,28 +1196,28 @@ class TestKaiseiTsui(unittest.TestCase):
                       self.r(self.E, "1", suji_id="t", nendo="2018"), self.r(self.KARA, "1", suji_id="t", nendo="2018"))
         self.assertEqual([(r["nendo"], jo) for r, jo in x.kuwawaru], [("2025", 1)])
         self.assertEqual([(r["nendo"], jo) for r, jo in x.nai], [("2017", 1)])
-        # 数値がある でない行は対にしない
+        # 数値がある でない行は組み合わせない
         x = self.tsui(self.r(self.KARA, "", nendo="2025", jotai=suji.KARA))
         self.assertEqual((x.kuwawaru, x.shinai), ([], []))
 
     def test_hoka_page(self):
-        # 同じ文書の、同じ suji・kubun・nendo の行がほかのページにあり、その行が対になっていれば、出さない
+        # 同じ資料の、同じ suji・kubun・nendo の行がほかのページにあり、その行が組み合わされていれば、出さない
         x = self.tsui(self.r(self.E, "34", nendo="2024", page="11"), self.r(self.E, "34", nendo="2024", page="21"),
                       self.r(self.KARA, "34", nendo="2024", page="11"))
         self.assertEqual((x.onaji, x.kuwawaru, x.nai, len(x.hoka), x.shinai), (1, [], [], 1, []))
         self.assertEqual(x.hoka[0]["shiryo"], f"{self.E}/21")
-        # ページが違っても、1行ずつなら対にする
+        # ページが違っても、1行ずつなら組み合わせる
         x = self.tsui(self.r(self.E, "34", nendo="2024", page="11"), self.r(self.KARA, "35", nendo="2024", page="12"))
         self.assertEqual(len(x.chigau), 1)
 
     def test_onaji_page_shisetsu(self):
-        # 同じページに、同じ nendo の行が施設ごとにあるときは、施設が同じ行どうしを対にする
+        # 同じページに、同じ nendo の行が施設ごとにあるときは、施設が同じ行どうしを組み合わせる
         x = self.tsui(self.r(self.E, "10", nendo="2024", retsu="2"), self.r(self.E, "20", nendo="2024", retsu="5"),
                       self.r(self.KARA, "20", nendo="2024", retsu="5"), self.r(self.KARA, "10", nendo="2024", retsu="2"))
         self.assertEqual((x.chigau, x.onaji), ([], 2))
 
     def test_narabi(self):
-        # 定義の表の順に並べる
+        # 項目の表の順に並べる
         x = self.tsui(self.r(self.KARA, "1", suji_id="t", nendo="2025"), self.r(self.KARA, "1", nendo="2025"))
         self.assertEqual([r["suji"] for r, _ in x.kuwawaru], ["s", "t"])
 
@@ -1267,14 +1267,14 @@ class TestMain(unittest.TestCase):
                                   "atai.tsv": tsv(suji.ATAI_COLUMNS, [atai_row(), atai_row(jotai=suji.KARA, atai="",
                                                                                            inyo="")])})
         self.assertEqual(code, 0)
-        self.assertIn("定義：1 行", out)
+        self.assertIn("項目：1 行", out)
         self.assertIn("数値：2 行", out)
         self.assertIn("数値がある：1 行", out)
         self.assertIn("欄が空：1 行", out)
         self.assertIn("inyo の照合：対象 1、合った 1、合わなかった 0", out)
 
     def test_kankei_dake(self):
-        """文書どうしの関係の表があり、文書の表と文書の部分の表が無ければ止まる。"""
+        """資料どうしの関係の表があり、資料の一覧の表と資料の中の場所の表が無ければ止まる。"""
         code, _, err = self.main({"suji.tsv": tsv(suji.SUJI_COLUMNS, [teigi_row()]),
                                   "atai.tsv": tsv(suji.ATAI_COLUMNS, [atai_row()]),
                                   "bunsho-kankei.tsv": tsv(suji.BUNSHO_KANKEI_COLUMNS, [kankei_row()])})
@@ -1286,7 +1286,7 @@ class TestMain(unittest.TestCase):
                                   "atai.tsv": tsv(suji.ATAI_COLUMNS, [atai_row(nendo="R7")])})
         self.assertEqual(code, 1)
         self.assertIn("問題が 3 件", err)
-        self.assertIn("teigi/suji.tsv の 3 行目：定義の id が重なっている（taiki）", err)
+        self.assertIn("teigi/suji.tsv の 3 行目：項目の id が重なっている（taiki）", err)
         self.assertIn("teigi/atai.tsv の 2 行目：nendo が西暦4桁でない（R7）", err)
 
 

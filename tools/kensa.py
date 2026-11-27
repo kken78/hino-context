@@ -3,7 +3,7 @@
 次の順に行い、1つでも失敗したら、そこで止まって終了コード 1 で終わる。全部通れば 0。
   1. 書き方の検査（tools/bunsho.py）
   2. build/ を消して、全部のテスト
-  3. 数値の表と、文書の表・文書の部分の表の検査（tools/suji.py）
+  3. 数値と内容の表と、資料の一覧の表・資料の中の場所の表の検査（tools/suji.py）
   4. 試作のページの作成（tools/build_note.py hoiku）
   5. 数値のページの作成（tools/build_suji.py taiki）
   6. 資料の表のページの作成（tools/build_hyo.py pt:youho/honpen 4）

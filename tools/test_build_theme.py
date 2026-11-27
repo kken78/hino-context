@@ -166,14 +166,14 @@ class TestThemeCheck(unittest.TestCase):
                 p = theme_check(theme_rows(dict(ok, chu=chu)))
                 self.assertEqual(len(p), 1)
                 self.assertIn("人が PDF で確認", p[0])
-        # inyo がページの原典の文字に無い。こちらで書いた文は入らない
+        # inyo がページのもとの資料から取り出した文字に無い。こちらで書いた文は入らない
         p = theme_check(theme_rows(dict(ok, inyo="町は保育を充実させます。")))
-        self.assertEqual(p, [f"inyo が、tokoro のページの原典の文字に無い（{KOHO}/1）"])
+        self.assertEqual(p, [f"inyo が、tokoro のページのもとの資料から取り出した文字に無い（{KOHO}/1）"])
         self.assertEqual(theme_check(theme_rows(dict(ok, inyo=""))), ["「説明の文」の行で、inyo が空"])
         self.assertEqual(len(theme_check(theme_rows(dict(ok, hyo="1")))), 1)          # 説明の文に hyo がある
-        # tokoro の文書が文書の表に無い。ページの ID でない
+        # tokoro の資料が資料の一覧の表に無い。ページの ID でない
         self.assertEqual(theme_check(theme_rows(dict(ok, tokoro="doc:gijiroku-1/1"))),
-                         ["tokoro の文書が、文書の表に無い（doc:gijiroku-1）"])
+                         ["tokoro の資料が、資料の一覧の表に無い（doc:gijiroku-1）"])
         self.assertEqual(len(theme_check(theme_rows(dict(ok, tokoro=KOHO)))), 1)
 
     def test_shu_jun_theme(self):
@@ -205,7 +205,7 @@ class TestThemeCheck(unittest.TestCase):
         self.assertEqual(theme_check([dict(r, inyo="構想")]), ["「施設の表」の行に inyo がある"])
 
 
-# テーマの資料（広報ひの koho-1）の表。行が施設を指し、欄は文。見出しは原典の文字に無く、確認の記録がある
+# テーマの資料（広報ひの koho-1）の表。行が施設を指し、欄は文。見出しはもとの資料から取り出した文字に無く、確認の記録がある
 IRAI = "人が PDF で確認（2026-11-25）"
 
 
@@ -266,7 +266,7 @@ class TestPage(unittest.TestCase):
         self.assertIn("<td>2021年1月</td><td>提言</td>", page)
         self.assertIn("<td>2022年7月12日〜2024年1月12日</td>", page)
         self.assertIn("<td>2022年7月〜</td>", page)
-        # 文書の表に無い資料は sources.tsv の title、広報ひのは号と題
+        # 資料の一覧の表に無い資料は sources.tsv の title、広報ひのは号と題
         self.assertIn("第1回議事録　1ページ", page)
         self.assertIn("広報ひの 2026年7月号「お知らせ」　1ページ", page)
         # 施設ごとの記述：前の名前、資料の日付の順、target は括弧
@@ -322,7 +322,7 @@ class TestPage(unittest.TestCase):
         self.assertLess(page.index("id='fa-s2'"), page.index("id='fa-shin'"))
 
     def test_hyo_kijutsu(self):
-        # テーマの資料の文書の表の欄は、施設ごとの記述にだけ出し、施設の表には出さない（docs/design.md 4節）
+        # テーマの資料の表の欄は、施設ごとの記述にだけ出し、施設の表には出さない（docs/design.md 4節）
         page, info = self.build(t=tables_koho())
         self.assertEqual(info["hyo_kijutsu"], 2)
         head = (f"<thead><tr><th></th><th></th><th>{D.kotoba('施設の記録 aspect が「運営」')}</th>"
@@ -335,7 +335,7 @@ class TestPage(unittest.TestCase):
         s = page.index(f"<h2>{D.kotoba('テーマの表 shu が「施設の表」')}</h2>")
         self.assertEqual(page[s:page.index("<h2>", s + 1)], mae[s:mae.index("<h2>", s + 1)])
         # 施設ごとの記述：見出し、もとの資料、表の題、行の見出し、欄（列の見出し：内容）
-        midashi = f"<h4>{D.kotoba('文書の部分の表 shisetsu、oya')}</h4>"
+        midashi = f"<h4>{D.kotoba('資料の中の場所の表 shisetsu、oya')}</h4>"
         self.assertEqual(page.count(midashi), 2)
         ran = D.bun("hyo-kijutsu-ran", midashi="整備方針", atai="集約化") + "<br>" + D.bun(
             "hyo-kijutsu-ran", midashi="形態", atai="こども園")
@@ -354,7 +354,7 @@ class TestPage(unittest.TestCase):
         kinds, p = self.stop(t=tables_koho(**{"3": dict(shisetsu_kakunin="")}))
         self.assertEqual(kinds, {"(g) 施設の割り当て"})
         self.assertIn("桜谷第１", p[0][1])
-        # 見出しの確認の記録が無い部分は、表の検査で止まる（name が原典の文字に無い）
+        # 見出しの確認の記録が無い部分は、表の検査で止まる（name がもとの資料から取り出した文字に無い）
         kinds, _ = self.stop(t=tables_koho(**{"4": dict(chu="")}))
         self.assertEqual(kinds, {"(a) 表の検査"})
 
@@ -417,7 +417,7 @@ class TestPage(unittest.TestCase):
 
     def test_hidari(self):
         # テーマのページの左の列の形（表の名前と列。「、」で区切った列もそれぞれ確認する）
-        for k in ("過程の記録 from、to", "施設の記録 value、target", "文書どうしの関係の表 kara、e",
+        for k in ("過程の記録 from、to", "施設の記録 value、target", "資料どうしの関係の表 kara、e",
                   "テーマの表 shu が「説明の文」", "会議録の発言者の役職が「数字＋番」"):
             self.assertEqual(bs.hidari_problems(k), [], k)
         self.assertEqual(len(bs.hidari_problems("過程の記録 from、tsugi")), 1)
@@ -452,7 +452,7 @@ class TestKaisei(unittest.TestCase):
     def test_nai(self):
         # 構想（e）にだけある定員の2行は、改正後に無い数値。経過の3行め（もとの資料が広報）の下に出す
         page, info = self.build()
-        mae = D.kotoba("文書どうしの関係の表 hyogen が「一部改正」の行の e")
+        mae = D.kotoba("資料どうしの関係の表 hyogen が「一部改正」の行の e")
         i = page.index("<td>提言</td>")
         row = page[i:page.index("</tr>", page.index("</tr>", i) + 1)]
         self.assertIn(f"<p>{mae}：", row)
@@ -460,7 +460,7 @@ class TestKaisei(unittest.TestCase):
         self.assertIn(D.bun("kaisei-hani"), row)
         self.assertEqual(row.count("<li>"), 2)
         self.assertIn(D.bun("kaisei-nai", name="<a href='../suji/teiin.html'>定員</a>", jiki="令和7年4月1日現在",
-                             nakami=D.kotoba("数値の表 atai"), page=D.bun("page", n=2)), row)
+                             nakami=D.kotoba("数値と内容の表 atai"), page=D.bun("page", n=2)), row)
         self.assertEqual(page.count("<td colspan=3>"), 1)
         self.assertEqual(info["kaisei_shinai"], 0)
         # 画面には ID を出さない
@@ -469,15 +469,15 @@ class TestKaisei(unittest.TestCase):
     def test_chigau_nashi(self):
         # 違う数値も片方にだけある数値も無いときは、改正前の行だけを出し、見出しは出さない
         page, _ = self.build(atai=[])
-        self.assertIn(D.kotoba("文書どうしの関係の表 hyogen が「一部改正」の行の e"), page)
-        self.assertNotIn(D.kotoba("文書どうしの関係の表 kara、e の文書の数値の対で、atai が違うもの"), page)
+        self.assertIn(D.kotoba("資料どうしの関係の表 hyogen が「一部改正」の行の e"), page)
+        self.assertNotIn(D.kotoba("資料どうしの関係の表 kara、e の資料の、同じ項目の、改正前と改正後の組み合わせで、atai が違うもの"), page)
         self.assertNotIn("<li>", page)
 
     def test_kankei_nashi(self):
         # 「一部改正」の関係が無いテーマでは、出力が変わらない
         page, _ = bt.build(fake(), tables(), "hoiku", self.kotoba, TODAY, design=D)
         self.assertNotIn("<td colspan=3>", page)
-        self.assertNotIn(D.kotoba("文書どうしの関係の表 hyogen が「一部改正」の行の e") + "：", page)
+        self.assertNotIn(D.kotoba("資料どうしの関係の表 hyogen が「一部改正」の行の e") + "：", page)
         moto = bt.Page.kaisei_gyo
         try:
             bt.Page.kaisei_gyo = lambda self, srcs: []
@@ -488,7 +488,7 @@ class TestKaisei(unittest.TestCase):
 
 
 class TestReal(unittest.TestCase):
-    """lock の版の入力と実際の表で、幼保のテーマのページを作る。施設の表は、基本構想の14ページの表（文書の部分の表の18）。"""
+    """lock の版の入力と実際の表で、幼保のテーマのページを作る。施設の表は、基本構想の14ページの表（資料の中の場所の表の18）。"""
 
     @classmethod
     def setUpClass(cls):
@@ -521,7 +521,7 @@ class TestReal(unittest.TestCase):
         page, _ = bt.build(self.inp, self.tables, "hoiku", bn.read_kotoba(), TODAY, self.read_problems, D)
         self.assertIn("指定避難所・指定緊急避難場所一覧（2018年度）　1ページ", page)
         self.assertIn(D.bun("kijutsu-setsumei") + D.bun("hiduke-nendo-setsumei") + D.bun("hiduke-nashi-setsumei"), page)
-        # 文書の表で hiduke が空の文書は、施設の記録の source_date によらず、最後に置く
+        # 資料の一覧の表で hiduke が空の資料は、施設の記録の source_date によらず、最後に置く
         th = bt.Theme(self.inp, "hoiku")
         n = bt.Namae(D, self.inp, {r["bunsho"]: r for r in self.tables["bunsho"]})
         rs = sorted((r for r in self.inp.shisetsu_kiroku() if r["facility"] in th.shisetsu), key=n.kiroku_jun)
@@ -533,7 +533,7 @@ class TestReal(unittest.TestCase):
         """再編整備計画 27ページの表（2つの版）の欄は、施設ごとの記述にだけ出し、町内の施設の表には出さない。"""
         page, info = bt.build(self.inp, self.tables, "hoiku", bn.read_kotoba(), TODAY, self.read_problems, D)
         self.assertEqual(info["hyo_kijutsu"], 18)
-        midashi = f"<h4>{D.kotoba('文書の部分の表 shisetsu、oya')}</h4>"
+        midashi = f"<h4>{D.kotoba('資料の中の場所の表 shisetsu、oya')}</h4>"
         self.assertEqual(page.count(midashi), 9)
         s = page.index(f"<h2>{D.kotoba('テーマの表 shu が「施設の表」')}</h2>")
         hyo = page[s:page.index("<h2>", s + 1)]
@@ -564,14 +564,14 @@ class TestReal(unittest.TestCase):
         self.assertLess(page.index("<td>再編整備計画の一部改正</td>"), i)
         row = page[i:page.index("</tr>", i)]
         self.assertIn("日野町幼児教育保育施設再編整備計画（2025年3月）</a>", row)
-        mae = D.bun("kaisei-atai", kaisei=D.kotoba("数値の表 atai（一部改正の対の、e の文書の側）"), atai="令和10年度",
+        mae = D.bun("kaisei-atai", kaisei=D.kotoba("数値と内容の表 atai（一部改正の組み合わせの、e の資料の側）"), atai="令和10年度",
                     page=D.bun("page", n=34))
-        ato = D.bun("kaisei-atai", kaisei=D.kotoba("数値の表 atai（一部改正の対の、kara の文書の側）"), atai="令和11年度",
+        ato = D.bun("kaisei-atai", kaisei=D.kotoba("数値と内容の表 atai（一部改正の組み合わせの、kara の資料の側）"), atai="令和11年度",
                     page=D.bun("page", n=34))
         self.assertIn(D.bun("kaisei-tsui", name="<a href='../suji/kaien.html'>新こども園の開園の時期</a>", mae=mae,
                             ato=ato), row)
         self.assertIn(D.bun("kaisei-kuwawaru", name="<a href='../suji/taiki.html'>待機児童数</a>", jiki="令和7年4月",
-                            nakami=D.kotoba("数値の表 atai"), page=D.bun("page", n=11)), row)
+                            nakami=D.kotoba("数値と内容の表 atai"), page=D.bun("page", n=11)), row)
         self.assertIn("待機児童数から除かれる者の小計：", row)
         self.assertEqual(row.count("<li>"), 3)
         self.assertEqual((info["kaisei_shinai"], info["kaisei_hoka"]), (0, 1))

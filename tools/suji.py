@@ -1,12 +1,12 @@
-"""数値の定義の表と数値の表、文書の表と文書の部分の表の検査（SCHEMA.md §6・§7）。
+"""項目の表と数値と内容の表、資料の一覧の表と資料の中の場所の表の検査（SCHEMA.md §6・§7）。
 
 使い方：python3 -B tools/suji.py
-  teigi/suji.tsv（定義）と teigi/atai.tsv（数値）を読み、SCHEMA.md §6.4 の検査を行う。
-  teigi/bunsho.tsv（文書）と teigi/bubun.tsv（文書の部分）があれば、SCHEMA.md §7.4 の検査も行う。
-  teigi/bunsho-kankei.tsv（文書どうしの関係。SCHEMA.md §7.6）があれば、その検査も行う。文書の表が要る。
-  teigi/theme.tsv（テーマの表。SCHEMA.md §7.7）があれば、その検査も行う。文書の表と文書の部分の表が要る。
-  定義と数値の2つの表がどちらも無ければ「表がまだ無い」と出して、終了コード 0 で終わる。
-  文書と文書の部分の2つの表は、どちらも無ければ検査しない。片方しか無ければ止まる。
+  teigi/suji.tsv（項目）と teigi/atai.tsv（数値）を読み、SCHEMA.md §6.4 の検査を行う。
+  teigi/bunsho.tsv（資料の一覧）と teigi/bubun.tsv（資料の中の場所）があれば、SCHEMA.md §7.4 の検査も行う。
+  teigi/bunsho-kankei.tsv（資料どうしの関係。SCHEMA.md §7.6）があれば、その検査も行う。資料の一覧の表が要る。
+  teigi/theme.tsv（テーマの表。SCHEMA.md §7.7）があれば、その検査も行う。資料の一覧の表と資料の中の場所の表が要る。
+  項目と数値と内容の2つの表がどちらも無ければ「表がまだ無い」と出して、終了コード 0 で終わる。
+  資料の一覧と資料の中の場所の2つの表は、どちらも無ければ検査しない。片方しか無ければ止まる。
   問題があれば、件数と、表の何行目か・何が問題かを出して、終了コード 1 で終わる。
   inyo の照合は tools/shogo.py の照合（SCHEMA.md §3）をそのまま使う。
 """
@@ -52,7 +52,7 @@ NAI = "調べた範囲に見つからない"
 JOTAI = (ARU, KARA, SETSUMEI, NAI)
 # 状態ごとに必ず書く列（SCHEMA.md §6.3）。数値がある の行の inyo は別に扱う（書けないときは chu に理由）。
 HISSU = {ARU: ("atai", "shiryo"), KARA: ("shiryo",), SETSUMEI: ("shiryo", "inyo"), NAI: ("hani", "kakunin")}
-# 定義の表で空にできない列（SCHEMA.md §6.1 で「無ければ空」「決めていなければ空」とされていない列のうち、
+# 項目の表で空にできない列（SCHEMA.md §6.1 で「無ければ空」「決めていなければ空」とされていない列のうち、
 # 数値を見分けるのに要る列）。
 SUJI_HISSU = ("id", "name", "nani", "kettei")
 
@@ -64,7 +64,7 @@ RE_KAKUNIN = re.compile(r"人が PDF で確認（([0-9]{4}-[0-9]{2}-[0-9]{2})）
 # 生成AIが、画像を2回、別々に読んで一致した記録（SCHEMA.md §6.3）。inyo が空の行は、どちらかの記録が要る。
 RE_NISHA = re.compile(r"生成AIが画像を2回読んで一致（([0-9]{4}-[0-9]{2}-[0-9]{2})）")
 KOHO = "koho"   # hino-town-docs の sources.tsv の category。広報ひの
-KEIKAKU = "keikaku"   # 計画ライブラリの文書（pt・plan の ID）の shurui（SCHEMA.md §7.1）
+KEIKAKU = "keikaku"   # 計画ライブラリの資料（pt・plan の ID）の shurui（SCHEMA.md §7.1）
 
 Mondai = namedtuple("Mondai", "hyo gyo naiyo")   # 表の名前、行の番号（列名の行は1）、何が問題か
 
@@ -165,17 +165,17 @@ def has_kakunin(chu):
     return any(is_ymd(d) for d in RE_KAKUNIN.findall(chu or ""))
 
 
-# inyo を、並びが崩れた原典の文字から取った行の、chu の決まった字（SCHEMA.md §6.2。2026-11-27）
+# inyo を、並びが崩れたもとの資料から取り出した文字から取った行の、chu の決まった字（SCHEMA.md §6.2。2026-11-27）
 KUZURE = "抽出した文字の並びが崩れている"
 
 
 def inyo_kuzure(r):
-    """数値の表の行の inyo が、並びが崩れた原典の文字から取った字か（chu に KUZURE がある）。この関数だけで判定する。"""
+    """数値と内容の表の行の inyo が、並びが崩れたもとの資料から取り出した文字から取った字か（chu に KUZURE がある）。この関数だけで判定する。"""
     return KUZURE in (r.get("chu") or "")
 
 
 def tani_nashi(t):
-    """定義の表の行が、単位（tani）の無い項目か。画面と MCP の応答で、その項目の数値を「内容」と書く
+    """項目の表の行が、単位（tani）の無い項目か。画面と MCP の応答で、その項目の数値を「内容」と書く
     （docs/design.md 3節。2026-11-27）。判定は tani だけで行い、この関数だけで行う。"""
     return not (t.get("tani") or "").strip()
 
@@ -282,7 +282,7 @@ GENGO = {"令和": 2018, "平成": 1988}
 
 
 def shiryo_nengetsu(shiryo, bunsho_by_key):
-    """資料の日付 → (年, 月)。発言は発言の日、ほかは文書の表の hiduke。分からなければ None。"""
+    """資料の日付 → (年, 月)。発言は発言の日、ほかは資料の一覧の表の hiduke。分からなければ None。"""
     try:
         kind, g = keys.parse(shiryo)
     except keys.KeyFormError:
@@ -297,7 +297,7 @@ def shiryo_nengetsu(shiryo, bunsho_by_key):
 def jiten_kankei(r, teigi, bunsho_by_key):
     """数値の行 → 時点の関係の印（ato・mae・tochu）。条件に当てはまらない行は None（SCHEMA.md §7.3）。
 
-    r は数値の表の行、teigi はその定義の行、bunsho_by_key は文書の ID → 文書の表の行。
+    r は数値と内容の表の行、teigi はその項目の行、bunsho_by_key は資料の ID → 資料の一覧の表の行。
     """
     if not r["nendo"].strip() or not r["shiryo"].strip():
         return None
@@ -309,10 +309,10 @@ def jiten_kankei(r, teigi, bunsho_by_key):
     tsuki = (teigi or {}).get("nendo_tsuki", "")
     if m:                                   # 年月の字。暦の年は元号から出す（1〜3月は、年度と暦の年が違う）
         toki = (GENGO[m.group(1)] + (1 if m.group(2) == "元" else int(m.group(2))), int(m.group(3)))
-    elif tsuki in NENDO_TSUKI:              # 年度の字で、定義が月を決めている
+    elif tsuki in NENDO_TSUKI:              # 年度の字で、項目が月を決めている
         t = int(tsuki)
         toki = (nendo if t >= 4 else nendo + 1, t)
-    else:                                   # 年度の字で、定義が月を決めていない。年度を期間として扱う
+    else:                                   # 年度の字で、項目が月を決めていない。年度を期間として扱う
         if hi < (nendo, 4):
             return KANKEI_ATO
         return KANKEI_MAE if hi > (nendo + 1, 3) else KANKEI_TOCHU
@@ -327,9 +327,9 @@ def count_kankei(suji_rows, atai_rows, bunsho_rows):
 
 
 def check_shurui(inp, rows):
-    """shurui の字が、shiryo のページ（発言はその発言）の原典の文字にあるか（SCHEMA.md §6.2・§6.4）。
+    """shurui の字が、shiryo のページ（発言はその発言）のもとの資料から取り出した文字にあるか（SCHEMA.md §6.2・§6.4）。
 
-    → (問題の並び, 数えた結果)。原典の文字が入力に無い資料の行と、shiryo が空の行は除いて、数を出す。
+    → (問題の並び, 数えた結果)。もとの資料から取り出した文字が入力に無い資料の行と、shiryo が空の行は除いて、数を出す。
     確認するのは、字がページにあることまで。その数値についての字かどうかは、この検査では分からない。
     """
     out, kazoe = [], Counter()
@@ -345,12 +345,12 @@ def check_shurui(inp, rows):
             continue
         kazoe["shurui_taisho"] += 1
         if not any(shogo.norm(sh) in shogo.norm(t) for t in texts if t):
-            out.append(Mondai(ATAI_NAME, r["_gyo"], f"shurui の字が、shiryo の原典の文字に無い（{sh}）"))
+            out.append(Mondai(ATAI_NAME, r["_gyo"], f"shurui の字が、shiryo のもとの資料から取り出した文字に無い（{sh}）"))
     return out, kazoe
 
 
 def check_suji(rows):
-    """定義の表の検査。"""
+    """項目の表の検査。"""
     out = []
     ids = Counter(r["id"] for r in rows if r["id"])
     for r in rows:
@@ -361,7 +361,7 @@ def check_suji(rows):
         if r["id"] and not re.fullmatch(r"[a-z0-9-]+", r["id"]):
             out.append(Mondai(SUJI_NAME, n, f"id の形が違う（英小文字・数字・ハイフンのはず：{r['id']}）"))
         if r["id"] and ids[r["id"]] > 1:
-            out.append(Mondai(SUJI_NAME, n, f"定義の id が重なっている（{r['id']}）"))
+            out.append(Mondai(SUJI_NAME, n, f"項目の id が重なっている（{r['id']}）"))
         if r["nendo_tsuki"] and r["nendo_tsuki"] not in NENDO_TSUKI:
             out.append(Mondai(SUJI_NAME, n, f"nendo_tsuki の形が違う（空か、1〜12の数のはず：{r['nendo_tsuki']}）"))
         if r["kettei"] and r["kettei"] != "案" and not is_ymd(r["kettei"]):
@@ -370,13 +370,13 @@ def check_suji(rows):
 
 
 def check_atai(rows, suji_ids):
-    """数値の表の検査のうち、資料の本文を読まない物。照合する行の並びも返す。"""
+    """数値と内容の表の検査のうち、資料の本文を読まない物。照合する行の並びも返す。"""
     out, quotes = [], []
     for r in rows:
         n = r["_gyo"]
         j = r["jotai"]
         if r["suji"] not in suji_ids:
-            out.append(Mondai(ATAI_NAME, n, f"suji が定義の表に無い（{r['suji']}）"))
+            out.append(Mondai(ATAI_NAME, n, f"suji が項目の表に無い（{r['suji']}）"))
         if not r["jiten"].strip():
             out.append(Mondai(ATAI_NAME, n, "jiten（いつの数値か）が空"))
         if j not in JOTAI:
@@ -410,7 +410,7 @@ def check_atai(rows, suji_ids):
     return out, quotes
 
 
-# ---------------------------------------------------------------- 文書と、文書の部分（SCHEMA.md §7）
+# ---------------------------------------------------------------- 資料と、資料の中の場所（SCHEMA.md §7）
 
 MIDASHI, HYO, GYO, RETSU = "見出し", "表", "行", "列"
 SHU = (MIDASHI, HYO, GYO, RETSU)
@@ -425,13 +425,13 @@ def kakunin_ari(chu):
 
 
 def mikakunin(r):
-    """文書の部分の行に、未確認の印を付けるか（SCHEMA.md §7.2）。torikata が「読んだ」で、chu に確認の記録が無い行。
+    """資料の中の場所の行に、未確認の印を付けるか（SCHEMA.md §7.2）。torikata が「読んだ」で、chu に確認の記録が無い行。
     印を付ける条件は、この関数だけで判定する（tools/build_hyo.py と tools/build_suji.py が使う）。"""
     return r["torikata"] == YONDA and not kakunin_ari(r["chu"])
 
 
 def name_kensa_nozoku(r):
-    """文書の部分の行を、name が tokoro のページの原典の文字にあることの検査から外すか（SCHEMA.md §7.4）。
+    """資料の中の場所の行を、name が tokoro のページのもとの資料から取り出した文字にあることの検査から外すか（SCHEMA.md §7.4）。
     torikata が「読んだ」で、chu に確認の記録（日付の形が合うもの）がある行。2026-11-25 の依頼者の了承による。"""
     return r["torikata"] == YONDA and kakunin_ari(r["chu"])
 
@@ -447,7 +447,7 @@ RE_KAZU = re.compile(r"[▲△\-−]?[0-9]+(?:,[0-9]{3})*(?:\.[0-9]+)?")
 
 
 def bunsho_of(key):
-    """資料の ID（§2）→ 文書の ID（§7.1）。pt と doc はページを除く。plan はそのまま。ほかは None。"""
+    """資料の ID（§2）→ 資料の ID（§7.1）。pt と doc はページを除く。plan はそのまま。ほかは None。"""
     try:
         kind, g = keys.parse(key)
     except keys.KeyFormError:
@@ -471,7 +471,7 @@ def page_no(key):
 
 
 def bunsho_aru(inp, bunsho):
-    """文書の ID の形が §7.1 に合い、lock の版の入力にあるか。→ (形が合うか, 入力にあるか)。"""
+    """資料の ID の形が §7.1 に合い、lock の版の入力にあるか。→ (形が合うか, 入力にあるか)。"""
     m = RE_BUNSHO_PT.fullmatch(bunsho or "")
     if m:
         return True, any(inp.pt_text(m[1], m[2], layer) is not None for layer in ("text", "text_raw"))
@@ -485,7 +485,7 @@ def bunsho_aru(inp, bunsho):
 
 
 def page_raw(inp, page_key):
-    """pt・doc のページの ID → 原典の文字のうち、行の並びを保った物（text_raw）の、そのページ。無ければ None。"""
+    """pt・doc のページの ID → もとの資料から取り出した文字のうち、行の並びを保った物（text_raw）の、そのページ。無ければ None。"""
     try:
         kind, g = keys.parse(page_key)
     except keys.KeyFormError:
@@ -498,14 +498,14 @@ def page_raw(inp, page_key):
 
 
 def on_page(inp, text, page_key):
-    """text の字が、ページの原典の文字（text か text_raw）にあるか（§3 の正規化）。"""
+    """text の字が、ページのもとの資料から取り出した文字（text か text_raw）にあるか（§3 の正規化）。"""
     texts = shogo.source_texts(inp, page_key)
     q = shogo.norm(text)
     return bool(q) and bool(texts) and any(q in shogo.norm(t) for t in texts)
 
 
 def check_bunsho(inp, rows):
-    """文書の表の検査（SCHEMA.md §7.4）。→ (問題の並び, 文書の ID の集合)。"""
+    """資料の一覧の表の検査（SCHEMA.md §7.4）。→ (問題の並び, 資料の ID の集合)。"""
     out, names = [], set()
     count = Counter(r["bunsho"] for r in rows)
     for r in rows:
@@ -525,13 +525,13 @@ def check_bunsho(inp, rows):
         if not r["namae"].strip():
             out.append(Mondai(BUNSHO_NAME, n, "namae が空"))
         elif katachi and aru and not b.startswith("plan:") and not on_page(inp, r["namae"], b + "/1"):
-            out.append(Mondai(BUNSHO_NAME, n, f"namae の字が、1ページの原典の文字に無い（{r['namae']}）"))
+            out.append(Mondai(BUNSHO_NAME, n, f"namae の字が、1ページのもとの資料から取り出した文字に無い（{r['namae']}）"))
         if r["konkyo"].strip():
             t = r["konkyo_tokoro"]
             if bunsho_of(t) != b or page_no(t) is None:
-                out.append(Mondai(BUNSHO_NAME, n, f"konkyo_tokoro が、この文書のページの ID でない（{t}）"))
+                out.append(Mondai(BUNSHO_NAME, n, f"konkyo_tokoro が、この資料のページの ID でない（{t}）"))
             elif not on_page(inp, r["konkyo"], t):
-                out.append(Mondai(BUNSHO_NAME, n, f"konkyo の字が、konkyo_tokoro のページの原典の文字に無い（{t}）"))
+                out.append(Mondai(BUNSHO_NAME, n, f"konkyo の字が、konkyo_tokoro のページのもとの資料から取り出した文字に無い（{t}）"))
         else:
             if r["konkyo_tokoro"].strip():
                 out.append(Mondai(BUNSHO_NAME, n, "konkyo が空なのに、konkyo_tokoro がある"))
@@ -545,7 +545,7 @@ def check_bunsho(inp, rows):
                 out.append(Mondai(BUNSHO_NAME, n, "hiduke があるのに、hiduke_moto が空"))
             elif hm.startswith(("pt:", "doc:")):
                 if bunsho_of(hm) != b or page_no(hm) is None or shogo.source_texts(inp, hm) is None:
-                    out.append(Mondai(BUNSHO_NAME, n, f"hiduke_moto が、この文書のページの ID でない（{hm}）"))
+                    out.append(Mondai(BUNSHO_NAME, n, f"hiduke_moto が、この資料のページの ID でない（{hm}）"))
             elif hm.split(" ")[0] not in inputs.REPOS:
                 out.append(Mondai(BUNSHO_NAME, n, f"hiduke_moto が、ページの ID でも、入力の台帳の名前でもない（{hm}）"))
         elif not r["chu"].strip():
@@ -555,27 +555,27 @@ def check_bunsho(inp, rows):
 
 
 def check_han(inp, r):
-    """文書の表の han と han_tokoro（SCHEMA.md §7.4）。han があれば、han_tokoro がこの文書のページの ID で、
-    han がそのページの原典の文字にある。han が空なら、han_tokoro も空。"""
+    """資料の一覧の表の han と han_tokoro（SCHEMA.md §7.4）。han があれば、han_tokoro がこの資料のページの ID で、
+    han がそのページのもとの資料から取り出した文字にある。han が空なら、han_tokoro も空。"""
     n, b, han, t = r["_gyo"], r["bunsho"], r["han"], r["han_tokoro"]
     if not han.strip():
         return [Mondai(BUNSHO_NAME, n, "han が空なのに、han_tokoro がある")] if t.strip() else []
     if bunsho_of(t) != b or page_no(t) is None:
-        return [Mondai(BUNSHO_NAME, n, f"han_tokoro が、この文書のページの ID でない（{t}）")]
+        return [Mondai(BUNSHO_NAME, n, f"han_tokoro が、この資料のページの ID でない（{t}）")]
     if not on_page(inp, han, t):
-        return [Mondai(BUNSHO_NAME, n, f"han が、han_tokoro のページの原典の文字に無い（{han}）")]
+        return [Mondai(BUNSHO_NAME, n, f"han が、han_tokoro のページのもとの資料から取り出した文字に無い（{han}）")]
     return []
 
 
 def table_range(inp, bubun_rows, hyo):
-    """表の部分 → (原典の文字（text_raw）の、表の範囲の行の並び, 問題の字)。
+    """表の部分 → (もとの資料から取り出した文字（text_raw）の、表の範囲の行の並び, 問題の字)。
 
-    範囲は、表の題（name）と同じ字の行のあとから、同じ文書の部分の表にある別の表の題と同じ字の行の前まで。
+    範囲は、表の題（name）と同じ字の行のあとから、同じ資料の、資料の中の場所の表にある別の表の題と同じ字の行の前まで。
     別の表の題が無ければ、そのページの終わりまで。題の行が、そのページに1つでなければ、問題の字を返す。
     """
     raw = page_raw(inp, hyo["tokoro"])
     if raw is None:
-        return None, f"表の tokoro のページの原典の文字（text_raw）が無い（{hyo['tokoro']}）"
+        return None, f"表の tokoro のページのもとの資料から取り出した文字（text_raw）が無い（{hyo['tokoro']}）"
     lines = raw.split("\n")
     title = shogo.norm(hyo["name"])
     at = [i for i, ln in enumerate(lines) if shogo.norm(ln) == title]
@@ -588,7 +588,7 @@ def table_range(inp, bubun_rows, hyo):
 
 
 def row_numbers(line, name):
-    """原典の文字の1行が、行の見出し name と、それに続く数値だけでできていれば、数値の並び（NFKC のあとの字）。
+    """もとの資料から取り出した文字の1行が、行の見出し name と、それに続く数値だけでできていれば、数値の並び（NFKC のあとの字）。
 
     行の見出しの字は §3 の正規化で比較する。数値は空白で区切り、1つずつ RE_KAZU に合う物（「▲5」は1つの数値）。
     そうでなければ None。
@@ -612,7 +612,7 @@ def row_in_range(lines, name):
 
 
 def check_bubun(inp, rows, bunsho_names):
-    """文書の部分の表の検査（SCHEMA.md §7.4）。→ (問題の並び, (文書, 番号) → 行)。"""
+    """資料の中の場所の表の検査（SCHEMA.md §7.4）。→ (問題の並び, (資料, 番号) → 行)。"""
     out, index = [], {}
     for r in rows:
         if re.fullmatch(r"[1-9][0-9]*", r["n"]):
@@ -624,7 +624,7 @@ def check_bubun(inp, rows, bunsho_names):
         elif len(index[(b, r["n"])]) > 1:
             out.append(Mondai(BUBUN_NAME, g, f"bunsho と n の組が重なっている（{b} の {r['n']}）"))
         if b not in bunsho_names:
-            out.append(Mondai(BUBUN_NAME, g, f"bunsho が文書の表に無い（{b}）"))
+            out.append(Mondai(BUBUN_NAME, g, f"bunsho が資料の一覧の表に無い（{b}）"))
         if r["shu"] not in SHU:
             out.append(Mondai(BUBUN_NAME, g, f"shu が {'・'.join(SHU)} のどれでもない（{r['shu']}）"))
         if r["torikata"] not in TORIKATA:
@@ -635,7 +635,7 @@ def check_bubun(inp, rows, bunsho_names):
         if r["oya"]:
             cand = index.get((b, r["oya"])) or []
             if not cand:
-                out.append(Mondai(BUBUN_NAME, g, f"oya が、同じ文書の部分の表に無い（{r['oya']}）"))
+                out.append(Mondai(BUBUN_NAME, g, f"oya が、資料の中の場所の表の、同じ資料の行に無い（{r['oya']}）"))
             elif not (r["n"].isdigit() and int(r["oya"]) < int(r["n"])):
                 out.append(Mondai(BUBUN_NAME, g, f"oya が、自分より小さい番号でない（{r['oya']}）"))
             else:
@@ -647,11 +647,11 @@ def check_bubun(inp, rows, bunsho_names):
                 out.append(Mondai(BUBUN_NAME, g, f"「{r['shu']}」の親の種類が違う（{want} のはず：{oshu or '無し'}）"))
         t = r["tokoro"]
         if bunsho_of(t) != b or page_no(t) is None:
-            out.append(Mondai(BUBUN_NAME, g, f"tokoro が、この文書のページの ID でない（{t}）"))
+            out.append(Mondai(BUBUN_NAME, g, f"tokoro が、この資料のページの ID でない（{t}）"))
         elif not r["name"].strip():
             out.append(Mondai(BUBUN_NAME, g, "name が空"))
         elif not name_kensa_nozoku(r) and not on_page(inp, r["name"], t):
-            out.append(Mondai(BUBUN_NAME, g, f"name の字が、tokoro のページの原典の文字に無い（{r['name']}）"))
+            out.append(Mondai(BUBUN_NAME, g, f"name の字が、tokoro のページのもとの資料から取り出した文字に無い（{r['name']}）"))
         elif oya and page_no(oya["tokoro"]) is not None and page_no(oya["tokoro"]) > page_no(t):
             out.append(Mondai(BUBUN_NAME, g, f"tokoro のページが、親の tokoro のページより前（{t}）"))
         if r["shu"] == RETSU and not re.fullmatch(r"[1-9][0-9]*", r["jun"]):
@@ -662,13 +662,13 @@ def check_bubun(inp, rows, bunsho_names):
             if r["shu"] != RETSU:
                 out.append(Mondai(BUBUN_NAME, g, f"列でない行に matome がある（{r['matome']}）"))
             elif bunsho_of(t) == b and page_no(t) is not None and not on_page(inp, r["matome"], t):
-                out.append(Mondai(BUBUN_NAME, g, f"matome が、tokoro のページの原典の文字に無い（{r['matome']}）"))
+                out.append(Mondai(BUBUN_NAME, g, f"matome が、tokoro のページのもとの資料から取り出した文字に無い（{r['matome']}）"))
     out += check_tables(inp, rows, index)
     return out, index
 
 
 def check_tables(inp, rows, index):
-    """表の行と列を、原典の文字（text_raw）の、親の表の範囲で確認する（SCHEMA.md §7.4）。torikata が「読んだ」の表は除く。"""
+    """表の行と列を、もとの資料から取り出した文字（text_raw）の、親の表の範囲で確認する（SCHEMA.md §7.4）。torikata が「読んだ」の表は除く。"""
     out = []
     hyos = [r for r in rows if r["shu"] == HYO and r["torikata"] == KIKAI]
     for hyo in hyos:
@@ -716,7 +716,7 @@ RE_ALIAS_CHUKI = re.compile(r"（[^（）]*から）$")
 
 
 def shisetsu_keys(shisetsu):
-    """文書の部分の表の shisetsu → ID の並び（「;」で区切る）。空なら空の並び。"""
+    """資料の中の場所の表の shisetsu → ID の並び（「;」で区切る）。空なら空の並び。"""
     return shisetsu.split(";") if shisetsu.strip() else []
 
 
@@ -727,7 +727,7 @@ def shisetsu_namae(ref_row):
 
 
 def shisetsu_icchi(r, ref_by_key):
-    """文書の部分の行の name が、shisetsu のどの ID の施設の name か aliases とも、§3 の正規化のあとで一致するか
+    """資料の中の場所の行の name が、shisetsu のどの ID の施設の name か aliases とも、§3 の正規化のあとで一致するか
     （SCHEMA.md §7.2 の判定の条件）。shisetsu が空の行と、参照表に無い ID がある行は None。"""
     ks = shisetsu_keys(r["shisetsu"])
     if not ks or any(k not in ref_by_key for k in ks):
@@ -747,14 +747,14 @@ def shisetsu_kakunin_ari(kakunin):
 
 
 def shisetsu_mikakunin(r, ref_by_key):
-    """文書の部分の行の、施設の割り当てに未確認の印を付けるか（SCHEMA.md §7.2）。shisetsu があり、name が施設の name か
+    """資料の中の場所の行の、施設の割り当てに未確認の印を付けるか（SCHEMA.md §7.2）。shisetsu があり、name が施設の name か
     aliases と一致せず、shisetsu_kakunin に日付の形が合う記録が無い行。印を付ける条件は、この関数だけで判定する。
     shisetsu が空の行と、参照表に無い ID がある行は False（ID の誤りは check_shisetsu で止める）。"""
     return shisetsu_icchi(r, ref_by_key) is False and not shisetsu_kakunin_ari(r.get("shisetsu_kakunin", ""))
 
 
 def check_shisetsu(inp, rows):
-    """文書の部分の表の shisetsu と shisetsu_kakunin の検査（SCHEMA.md §7.4）。→ (問題の並び, 数えた結果)。
+    """資料の中の場所の表の shisetsu と shisetsu_kakunin の検査（SCHEMA.md §7.4）。→ (問題の並び, 数えた結果)。
 
     shisetsu がある行が無ければ、施設の参照表を読まない。数えるのは、name と一致する行（shisetsu_icchi）と、一致しない行
     （shisetsu_fuicchi）、一致しない行のうち未確認の行（shisetsu_mikakunin）。
@@ -797,8 +797,8 @@ HIKAKU_SHURUI = ("", "実績")
 
 
 def atai_shisetsu(r, bubun_by):
-    """数値の表の行 → その行が指す文書の部分（bubun の行と retsu の列）の shisetsu の ID の並び（重なりを除き、並べ替えた tuple）。
-    bubun_by は (文書の ID, 番号) → 文書の部分の行。shisetsu が無い行と、発言を指す行は、空の tuple（SCHEMA.md §6.2）。"""
+    """数値と内容の表の行 → その行が指す資料の中の場所（bubun の行と retsu の列）の shisetsu の ID の並び（重なりを除き、並べ替えた tuple）。
+    bubun_by は (資料の ID, 番号) → 資料の中の場所の行。shisetsu が無い行と、発言を指す行は、空の tuple（SCHEMA.md §6.2）。"""
     b = bunsho_of(r["shiryo"]) if r["shiryo"].strip() else None
     if b is None:
         return ()
@@ -811,7 +811,7 @@ def atai_shisetsu(r, bubun_by):
 
 
 def ichi_shinai(rows, bubun_by):
-    """同じ定義・同じ時点の数値の行の並びで、資料の間で数値が一致しないか（SCHEMA.md §6.2）。
+    """同じ項目・同じ時点の数値の行の並びで、資料の間で数値が一致しないか（SCHEMA.md §6.2）。
 
     比較するのは「数値がある」で、shurui が空か「実績」の行。施設（atai_shisetsu）が同じ行どうしだけを比較する。
     施設が無い行は、施設が無い行どうしで比較する。どれかの組で、atai の字（§3 の正規化のあと）が違えば True。
@@ -823,21 +823,21 @@ def ichi_shinai(rows, bubun_by):
     return any(len(v) > 1 for v in kumi.values())
 
 
-# 文書どうしの関係の表の hyogen のうち、改正前と改正後の対を作る行の字（SCHEMA.md §6.2。2026-11-27 の依頼者の決定）
+# 資料どうしの関係の表の hyogen のうち、改正前と改正後の組み合わせを作る行の字（SCHEMA.md §6.2。2026-11-27 の依頼者の決定）
 ICHIBU_KAISEI = "一部改正"
 
-# 一部改正の前後の数値の対（kaisei_tsui の結果）。
-#   chigau：(e の行, kara の行, 条件) の並び。atai が違う対。条件は 1・2・3（SCHEMA.md §6.2 の (1)〜(3)）
-#   onaji：atai が同じ対の数
-#   kuwawaru：(kara の行, 条件) の並び。kara の文書にだけある行（条件 1・2 で相手が無い）
-#   nai：(e の行, 条件) の並び。e の文書にだけある行（条件 1・2 で相手が無い）
-#   hoka：同じ文書の、suji・kubun・nendo（条件 2 は施設と列の見出し）が同じ行が、ほかのページで対になっているので出さない行
-#   shinai：対にしなかった行（条件 3 に当たらない行と、条件 1・2 で、どちらの文書にも複数の行があり、ページで対にならない行）
+# 一部改正の前後の数値の組み合わせ（kaisei_tsui の結果）。
+#   chigau：(e の行, kara の行, 条件) の並び。atai が違う組み合わせ。条件は 1・2・3（SCHEMA.md §6.2 の (1)〜(3)）
+#   onaji：atai が同じ組み合わせの数
+#   kuwawaru：(kara の行, 条件) の並び。kara の資料にだけある行（条件 1・2 で相手が無い）
+#   nai：(e の行, 条件) の並び。e の資料にだけある行（条件 1・2 で相手が無い）
+#   hoka：同じ資料の、suji・kubun・nendo（条件 2 は施設と列の見出し）が同じ行が、ほかのページで組み合わされているので出さない行
+#   shinai：組み合わせなかった行（条件 3 に当たらない行と、条件 1・2 で、どちらの資料にも複数の行があり、ページで組み合わされない行）
 KaiseiTsui = namedtuple("KaiseiTsui", "chigau onaji kuwawaru nai hoka shinai")
 
 
 def kaisei_kankei(kankei_rows):
-    """文書どうしの関係の表 → hyogen が「一部改正」の行の kara（改正後）→ e（改正前）の並び（表の順）の辞書。"""
+    """資料どうしの関係の表 → hyogen が「一部改正」の行の kara（改正後）→ e（改正前）の並び（表の順）の辞書。"""
     out = {}
     for r in kankei_rows:
         if r["hyogen"].strip() == ICHIBU_KAISEI:
@@ -846,7 +846,7 @@ def kaisei_kankei(kankei_rows):
 
 
 def _tsui_kagi(r, bubun_by):
-    """数値の行 → (条件, 対にする ID)。条件は SCHEMA.md §6.2 の (1)〜(3)。"""
+    """数値の行 → (条件, 組み合わせる ID)。条件は SCHEMA.md §6.2 の (1)〜(3)。"""
     ks = atai_shisetsu(r, bubun_by)
     if r["nendo"].strip():
         return 1, (r["suji"], r["kubun"], r["nendo"].strip(), ks)
@@ -858,11 +858,11 @@ def _tsui_kagi(r, bubun_by):
 
 
 def kaisei_tsui(kara, e, atai_rows, bubun_by, suji_jun=None):
-    """一部改正の kara の文書（改正後）と e の文書（改正前）の、数値がある行の対（SCHEMA.md §6.2）。→ KaiseiTsui。
+    """一部改正の kara の資料（改正後）と e の資料（改正前）の、数値がある行の組み合わせ（SCHEMA.md §6.2）。→ KaiseiTsui。
 
-    bubun_by は (文書の ID, 番号) → 文書の部分の行。suji_jun は定義の id → 定義の表の順（並べるときに使う）。
-    条件 (1)・(2) で、同じ ID の行が片方の文書に2行以上あるときは、同じページの行どうしを対にし、残りが1行ずつなら
-    対にする。残った行は、同じ文書の同じ ID の行が対になっていれば hoka（出さない）、なっていなければ shinai にする。
+    bubun_by は (資料の ID, 番号) → 資料の中の場所の行。suji_jun は項目の id → 項目の表の順（並べるときに使う）。
+    条件 (1)・(2) で、同じ ID の行が片方の資料に2行以上あるときは、同じページの行どうしを組み合わせ、残りが1行ずつなら
+    組み合わせる。残った行は、同じ資料の同じ ID の行が組み合わされていれば hoka（出さない）、なっていなければ shinai にする。
     """
     def rows_of(b):
         return [r for r in atai_rows if r["jotai"] == ARU and r["shiryo"].strip() and bunsho_of(r["shiryo"]) == b]
@@ -909,25 +909,25 @@ def kaisei_tsui(kara, e, atai_rows, bubun_by, suji_jun=None):
                       hoka, shinai)
 
 
-# ---------------------------------------------------------------- 文書どうしの関係（SCHEMA.md §7.6）
+# ---------------------------------------------------------------- 資料どうしの関係（SCHEMA.md §7.6）
 
 def check_bunsho_kankei(inp, rows, bunsho_names):
-    """文書どうしの関係の表の検査（SCHEMA.md §7.4）。"""
+    """資料どうしの関係の表の検査（SCHEMA.md §7.4）。"""
     out = []
     for r in rows:
         g = r["_gyo"]
         for c in ("kara", "e"):
             if r[c] not in bunsho_names:
-                out.append(Mondai(BUNSHO_KANKEI_NAME, g, f"{c} が文書の表に無い（{r[c]}）"))
+                out.append(Mondai(BUNSHO_KANKEI_NAME, g, f"{c} が資料の一覧の表に無い（{r[c]}）"))
         kara = [c for c in ("hyogen", "inyo") if not r[c].strip()]
         if kara:
             out.append(Mondai(BUNSHO_KANKEI_NAME, g, f"必ず書く列が空（{'・'.join(kara)}）"))
             continue
         t = r["tokoro"]
         if bunsho_of(t) != r["kara"] or page_no(t) is None:
-            out.append(Mondai(BUNSHO_KANKEI_NAME, g, f"tokoro が、kara の文書のページの ID でない（{t}）"))
+            out.append(Mondai(BUNSHO_KANKEI_NAME, g, f"tokoro が、kara の資料のページの ID でない（{t}）"))
         elif not on_page(inp, r["inyo"], t):
-            out.append(Mondai(BUNSHO_KANKEI_NAME, g, f"inyo が、tokoro のページの原典の文字に無い（{t}）"))
+            out.append(Mondai(BUNSHO_KANKEI_NAME, g, f"inyo が、tokoro のページのもとの資料から取り出した文字に無い（{t}）"))
         if shogo.norm(r["hyogen"]) not in shogo.norm(r["inyo"]):
             out.append(Mondai(BUNSHO_KANKEI_NAME, g, f"hyogen が、inyo の中に無い（{r['hyogen']}）"))
     return out
@@ -936,13 +936,13 @@ def check_bunsho_kankei(inp, rows, bunsho_names):
 # ---------------------------------------------------------------- テーマの表（SCHEMA.md §7.7）
 
 def theme_hyo_bubun(r, index):
-    """テーマの表の「施設の表」の行 → 指している文書の部分の表の行（表）。無ければ None。"""
+    """テーマの表の「施設の表」の行 → 指している資料の中の場所の表の行（表）。無ければ None。"""
     xs = index.get((bunsho_of(r["tokoro"]), r["hyo"])) or []
     return xs[0] if len(xs) == 1 else None
 
 
 def theme_hyo_gyo(hyo, bubun_rows):
-    """表（文書の部分の表の行）→ その表を親にする行か列のうち、shisetsu がある行の並び。"""
+    """表（資料の中の場所の表の行）→ その表を親にする行か列のうち、shisetsu がある行の並び。"""
     return [x for x in bubun_rows if x["bunsho"] == hyo["bunsho"] and x["oya"] == hyo["n"]
             and x["shu"] in (GYO, RETSU) and x["shisetsu"].strip()]
 
@@ -978,7 +978,7 @@ def check_theme(inp, rows, bunsho_names, bubun_rows, index):
             out.append(Mondai(THEME_NAME, g, f"tokoro が、doc か pt のページの ID でない（{t}）"))
             continue
         if bunsho_of(t) not in bunsho_names:
-            out.append(Mondai(THEME_NAME, g, f"tokoro の文書が、文書の表に無い（{bunsho_of(t)}）"))
+            out.append(Mondai(THEME_NAME, g, f"tokoro の資料が、資料の一覧の表に無い（{bunsho_of(t)}）"))
             continue
         if r["shu"] == SETSUMEI_BUN:
             if r["hyo"]:
@@ -986,7 +986,7 @@ def check_theme(inp, rows, bunsho_names, bubun_rows, index):
             if not r["inyo"].strip():
                 out.append(Mondai(THEME_NAME, g, "「説明の文」の行で、inyo が空"))
             elif not on_page(inp, r["inyo"], t):
-                out.append(Mondai(THEME_NAME, g, f"inyo が、tokoro のページの原典の文字に無い（{t}）"))
+                out.append(Mondai(THEME_NAME, g, f"inyo が、tokoro のページのもとの資料から取り出した文字に無い（{t}）"))
             if is_koho(inp, t) and not has_kakunin(r["chu"]):
                 out.append(Mondai(THEME_NAME, g,
                                   "広報ひのの「説明の文」の行で、chu に「人が PDF で確認（YYYY-MM-DD）」が無い"))
@@ -998,7 +998,7 @@ def check_theme(inp, rows, bunsho_names, bubun_rows, index):
             out.append(Mondai(THEME_NAME, g, f"テーマ（{th}）に「{SHISETSU_HYO}」の行が {hyo_kazu[th]} 行ある（1行まで）"))
         hyo = theme_hyo_bubun(r, index) if re.fullmatch(r"[1-9][0-9]*", r["hyo"]) else None
         if hyo is None or hyo["shu"] != HYO:
-            out.append(Mondai(THEME_NAME, g, f"hyo が、tokoro の文書の、文書の部分の表の表でない（{r['hyo']}）"))
+            out.append(Mondai(THEME_NAME, g, f"hyo が、tokoro の資料の、資料の中の場所の表の表でない（{r['hyo']}）"))
         elif hyo["tokoro"] != t:
             out.append(Mondai(THEME_NAME, g, f"tokoro が、表の tokoro（{hyo['tokoro']}）と違う（{t}）"))
         elif not theme_hyo_gyo(hyo, bubun_rows):
@@ -1007,7 +1007,7 @@ def check_theme(inp, rows, bunsho_names, bubun_rows, index):
 
 
 def check_atai_bubun(inp, rows, bubun_rows, index, bunsho_names):
-    """数値の表の bubun と retsu の検査と、行と列を指す数値の検査（SCHEMA.md §7.4）。→ (問題の並び, 数えた結果)。"""
+    """数値と内容の表の bubun と retsu の検査と、行と列を指す数値の検査（SCHEMA.md §7.4）。→ (問題の並び, 数えた結果)。"""
     out = []
     kazoe = Counter()
     for r in rows:
@@ -1030,11 +1030,11 @@ def check_atai_bubun(inp, rows, bubun_rows, index, bunsho_names):
             out.append(Mondai(ATAI_NAME, n, f"bubun を書けない shiryo（{r['shiryo']}）"))
             continue
         if b not in bunsho_names:
-            out.append(Mondai(ATAI_NAME, n, f"shiryo の文書が、文書の表に無い（{b}）"))
+            out.append(Mondai(ATAI_NAME, n, f"shiryo の資料が、資料の一覧の表に無い（{b}）"))
             continue
         gyo = (index.get((b, bu)) or [None])[0]
         if gyo is None:
-            out.append(Mondai(ATAI_NAME, n, f"bubun が、shiryo の文書の部分の表に無い（{b} の {bu}）"))
+            out.append(Mondai(ATAI_NAME, n, f"bubun が、shiryo の資料の中の場所の表に無い（{b} の {bu}）"))
             continue
         if not re_:
             if gyo["shu"] == GYO:
@@ -1044,7 +1044,7 @@ def check_atai_bubun(inp, rows, bubun_rows, index, bunsho_names):
             continue
         retsu = (index.get((b, re_)) or [None])[0]
         if retsu is None:
-            out.append(Mondai(ATAI_NAME, n, f"retsu が、shiryo の文書の部分の表に無い（{b} の {re_}）"))
+            out.append(Mondai(ATAI_NAME, n, f"retsu が、shiryo の資料の中の場所の表に無い（{b} の {re_}）"))
             continue
         if retsu["shu"] != RETSU or gyo["shu"] != GYO:
             out.append(Mondai(ATAI_NAME, n, f"bubun が行、retsu が列でない（bubun：{gyo['shu']}、retsu：{retsu['shu']}）"))
@@ -1054,7 +1054,7 @@ def check_atai_bubun(inp, rows, bubun_rows, index, bunsho_names):
             continue
         hyo = (index.get((b, gyo["oya"])) or [None])[0]
         if hyo is None:
-            continue    # 親が無いことは、文書の部分の表の検査で出す
+            continue    # 親が無いことは、資料の中の場所の表の検査で出す
         if YONDA in (hyo["torikata"], gyo["torikata"]):
             kazoe["yonda"] += 1
             continue
@@ -1114,8 +1114,8 @@ def check_all(inp, suji_rows, atai_rows, bunsho_rows=None, bubun_rows=None, kank
     """SCHEMA.md §6.4 と §7.4 の検査。→ (問題の並び, inyo の照合の結果, 行と列を指す数値の検査で数えた結果)。
 
     問題は表と行の番号の順。inp は入力の読み口（inputs.Inputs か、テストの偽の入力）。照合する inyo が無ければ読まない。
-    文書の表と文書の部分の表（§7）は、どちらかがあるか、数値の表に bubun か retsu がある行があるか、
-    文書どうしの関係の表（kankei_rows）か、テーマの表（theme_rows）があるときに検査する。
+    資料の一覧の表と資料の中の場所の表（§7）は、どちらかがあるか、数値と内容の表に bubun か retsu がある行があるか、
+    資料どうしの関係の表（kankei_rows）か、テーマの表（theme_rows）があるときに検査する。
     """
     out = check_suji(suji_rows)
     ids = {r["id"] for r in suji_rows if r["id"]}
@@ -1212,7 +1212,7 @@ def main(argv=None, teigi_dir=None):
         print(f"止めた：lock と入力、または表を読めない\n{e}", file=sys.stderr)
         return 1
     problems = p1 + p2 + p3 + p4 + p5 + p6 + problems
-    print(f"定義：{len(suji_rows)} 行")
+    print(f"項目：{len(suji_rows)} 行")
     print(f"数値：{len(atai_rows)} 行")
     c = Counter(r["jotai"] for r in atai_rows)
     for j in JOTAI:
@@ -1222,29 +1222,29 @@ def main(argv=None, teigi_dir=None):
         print(f"  （4つの状態のどれでもない：{hoka} 行）")
     print(f"inyo の照合：対象 {res.total}、合った {res.matched}、合わなかった {len(res.mismatched)}")
     if bunsho_rows is not None:
-        print(f"文書：{len(bunsho_rows)} 行")
+        print(f"資料：{len(bunsho_rows)} 行")
         cs, ct = Counter(r["shu"] for r in bubun_rows), Counter(r["torikata"] for r in bubun_rows)
-        print(f"文書の部分：{len(bubun_rows)} 行（" + "、".join(f"{x} {cs.get(x, 0)}" for x in SHU) + "。"
+        print(f"資料の中の場所：{len(bubun_rows)} 行（" + "、".join(f"{x} {cs.get(x, 0)}" for x in SHU) + "。"
               + "、".join(f"{x} {ct.get(x, 0)}" for x in TORIKATA) + "）")
         if n_shisetsu is not None:
             print(f"施設の参照表：{n_shisetsu} 行。施設の記録（確定済み）：{n_kiroku} 行")
-        print(f"name が原典の文字にあることの検査：torikata が「読んだ」で、chu に確認の記録があり、"
+        print(f"name がもとの資料から取り出した文字にあることの検査：torikata が「読んだ」で、chu に確認の記録があり、"
               f"検査から外した行 {kazoe['name_nozoita']}")
-        print(f"文書の部分で、shisetsu がある行：{sum(1 for r in bubun_rows if r['shisetsu'].strip())}"
+        print(f"資料の中の場所で、shisetsu がある行：{sum(1 for r in bubun_rows if r['shisetsu'].strip())}"
               f"（name と一致 {kazoe['shisetsu_icchi']}、一致しない {kazoe['shisetsu_fuicchi']}。"
               f"一致しない行のうち、shisetsu_kakunin に記録が無い行 {kazoe['shisetsu_mikakunin']}）")
     if kankei_rows is not None:
-        print(f"文書どうしの関係：{len(kankei_rows)} 行")
+        print(f"資料どうしの関係：{len(kankei_rows)} 行")
     if theme_rows is not None:
         ct = Counter(r["shu"] for r in theme_rows)
         print(f"テーマの表：{len(theme_rows)} 行（" + "、".join(f"{x} {ct.get(x, 0)}" for x in THEME_SHU) + "）")
-    print(f"数値の表で、bubun がある行：{sum(1 for r in atai_rows if r['bubun'])}、"
+    print(f"数値と内容の表で、bubun がある行：{sum(1 for r in atai_rows if r['bubun'])}、"
           f"retsu がある行：{sum(1 for r in atai_rows if r['retsu'])}")
     print(f"行と列を指す数値の検査：対象 {kazoe['taisho']}、合った {kazoe['atta']}。"
           f"torikata が「読んだ」で検査から外した行 {kazoe['yonda']}")
     kk = count_kankei(suji_rows, atai_rows, bunsho_rows)
     print(f"時点の関係：ato {kk[KANKEI_ATO]}、mae {kk[KANKEI_MAE]}、tochu {kk[KANKEI_TOCHU]}、無し {kk[None]}")
-    print(f"shurui の字の検査：対象 {kazoe['shurui_taisho']}。原典の文字が入力に無くて除いた行 {kazoe['shurui_nozoita']}")
+    print(f"shurui の字の検査：対象 {kazoe['shurui_taisho']}。もとの資料から取り出した文字が入力に無くて除いた行 {kazoe['shurui_nozoita']}")
     if problems:
         print(f"止めた：問題が {len(problems)} 件", file=sys.stderr)
         for m in problems:

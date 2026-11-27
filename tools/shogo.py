@@ -1,4 +1,4 @@
-"""引用を原典と照合する（SCHEMA.md §3）。結果は、件数と、合わなかった行の一覧で返す。"""
+"""引用をもとの資料と照合する（SCHEMA.md §3）。結果は、件数と、合わなかった行の一覧で返す。"""
 import re
 import unicodedata
 from dataclasses import dataclass, field
