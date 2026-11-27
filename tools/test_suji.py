@@ -1137,6 +1137,12 @@ class TestKaiseiTsui(unittest.TestCase):
         # kubun が違えば対にしない（片方にだけある行になる）
         x = self.tsui(self.r(self.E, "3", nendo="2024", kubun="0歳"), self.r(self.KARA, "3", nendo="2024"))
         self.assertEqual((len(x.kuwawaru), len(x.nai), x.onaji), (1, 1, 0))
+        # nendo が同じでも、施設が違えば対にしない
+        x = self.tsui(self.r(self.E, "3", nendo="2024", bubun="2"), self.r(self.KARA, "4", nendo="2024", bubun="5"))
+        self.assertEqual((x.chigau, len(x.kuwawaru), len(x.nai), x.onaji), ([], 1, 1, 0))
+        # nendo も施設も同じなら対にする
+        x = self.tsui(self.r(self.E, "3", nendo="2024", bubun="2"), self.r(self.KARA, "4", nendo="2024", bubun="2"))
+        self.assertEqual([(a["atai"], b["atai"], jo) for a, b, jo in x.chigau], [("3", "4", 1)])
 
     def test_jouken2(self):
         # nendo が空で、施設と列の見出し（§3 の正規化のあと）が同じ行を対にする

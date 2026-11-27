@@ -840,9 +840,9 @@ def kaisei_kankei(kankei_rows):
 
 def _tsui_kagi(r, bubun_by):
     """数値の行 → (条件, 対にする鍵)。条件は SCHEMA.md §6.2 の (1)〜(3)。"""
-    if r["nendo"].strip():
-        return 1, (r["suji"], r["kubun"], r["nendo"].strip())
     ks = atai_shisetsu(r, bubun_by)
+    if r["nendo"].strip():
+        return 1, (r["suji"], r["kubun"], r["nendo"].strip(), ks)
     if ks:
         b = bunsho_of(r["shiryo"])
         retsu = bubun_by.get((b, r["retsu"])) if r["retsu"] else None
@@ -854,7 +854,7 @@ def kaisei_tsui(kara, e, atai_rows, bubun_by, suji_jun=None):
     """一部改正の kara の文書（改正後）と e の文書（改正前）の、数値がある行の対（SCHEMA.md §6.2）。→ KaiseiTsui。
 
     bubun_by は (文書の鍵, 番号) → 文書の部分の行。suji_jun は定義の id → 定義の表の順（並べるときに使う）。
-    条件 (1)・(2) で、同じ鍵の行が片方の文書に2行以上あるときは、同じページの行どうし（施設が同じ行を先に）を対にし、残りが1行ずつなら
+    条件 (1)・(2) で、同じ鍵の行が片方の文書に2行以上あるときは、同じページの行どうしを対にし、残りが1行ずつなら
     対にする。残った行は、同じ文書の同じ鍵の行が対になっていれば hoka（出さない）、なっていなければ shinai にする。
     """
     def rows_of(b):
@@ -880,7 +880,6 @@ def kaisei_tsui(kara, e, atai_rows, bubun_by, suji_jun=None):
         es, ks, aru = list(es), list(ks), []
         for k in list(ks):
             same = [x for x in es if page_no(x["shiryo"]) == page_no(k["shiryo"])]
-            same.sort(key=lambda x: atai_shisetsu(x, bubun_by) != atai_shisetsu(k, bubun_by))   # 施設が同じ行を先に
             if same:
                 aru.append((same[0], k, jo))
                 es.remove(same[0])
