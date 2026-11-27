@@ -130,7 +130,7 @@ class TestReal(unittest.TestCase):
             self.assertIn(k, issue)
         self.assertEqual(sum(1 for k in o["item"] if re.fullmatch(r"item=[a-z0-9-]+", k)), 27)
         self.assertEqual(sum(1 for k in o["facility"] if "page" not in k), 13)
-        self.assertEqual(sum(1 for k in o["document"] if re.fullmatch(r"document=[^&]+", k)), 22)
+        self.assertEqual(sum(1 for k in o["document"] if re.fullmatch(r"document=[^&]+", k)), 23)
         self.assertEqual(sum(1 for k in o["document"] if re.fullmatch(r"document=[^&]+&table=[0-9]+", k)), 17)
         # 続きの1は、続きを付けない組と同じ
         for v in o.values():
