@@ -14,7 +14,7 @@ import ronten
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PATH = os.path.join(REPO, "teigi", "jiko.tsv")
-COLS = ["id", "theme", "name", "shurui", "taikei", "betsumei", "jotai", "chu"]
+COLS = ["id", "theme", "name", "shurui", "taikei", "matome", "betsumei", "jotai", "chu"]
 SHURUI = {"kadai": "課題", "torikumi": "取り組み", "atai": "対象の属性と値"}
 JOTAI = ("案", "決定")
 MOKUTEKI = "目的と手段"
@@ -41,11 +41,22 @@ def check(rows, taikei_ids):
             bad.append(f"{r['id']}：shurui が3つのどれでもない（{r['shurui']!r}）")
         if r["taikei"] != "nashi" and r["taikei"] not in taikei_ids:
             bad.append(f"{r['id']}：taikei が入力の章立ての表に無い（{r['taikei']!r}）")
+        if r["matome"] and r["taikei"] != "nashi":
+            bad.append(f"{r['id']}：matome は、taikei が nashi の行にだけ書ける（{r['matome']!r}）")
         if r["jotai"] not in JOTAI:
             bad.append(f"{r['id']}：jotai が違う（{r['jotai']!r}）")
         if not r["theme"]:
             bad.append(f"{r['id']}：theme が空")
     return bad
+
+
+def matome_jun(rows):
+    """matome の字 → その事項の行の並び。まとまりは、表で最初に出る順（SCHEMA.md 7.9）。"""
+    out = {}
+    for r in rows:
+        if r["matome"]:
+            out.setdefault(r["matome"], []).append(r)
+    return out
 
 
 def taikei_ids(inp):
@@ -76,8 +87,10 @@ def main():
     c = collections.Counter(r["shurui"] for r in rows)
     nashi = sum(r["taikei"] == "nashi" for r in rows)
     ari, zen = mokuteki(inp, rows)
+    mt = "、".join(f"{k} {len(v)}" for k, v in matome_jun(rows).items()) or "無い"
     print(f"問題は無い（事項 {len(rows)}：" + "、".join(f"{SHURUI[k]} {c[k]}" for k in SHURUI)
-          + f"。計画の章立てに入らない事項 {nashi}。入力の「目的と手段」の組 {zen} のうち、両端が事項の表にある組 {len(ari)}）")
+          + f"。計画の章立てに入らない事項 {nashi}（資料の外のまとまり：{mt}）。"
+          + f"入力の「目的と手段」の組 {zen} のうち、両端が事項の表にある組 {len(ari)}）")
     return 0
 
 

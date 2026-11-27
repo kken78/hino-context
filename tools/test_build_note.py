@@ -324,9 +324,9 @@ class TestReal(unittest.TestCase):
         self.assertRegex(page, "2017年9月14日　一般質問（[^）]*）「松尾公園テニスコート」「待機児童問題」</h3>")  # 答弁の段落だけ
 
     def test_counts_yomi(self):
-        """生成AIの2回の読み取りの行を入れると、37の論点の全部にページができ、質問は48（確定済み7と、読んだ41）。"""
+        """生成AIの2回の読み取りの行を入れると、48の論点の全部にページができ、質問は48（確定済み7と、読んだ41）。"""
         _, info = self.build(self.inp)
-        self.assertEqual(len(info["counts"]), 37)
+        self.assertEqual(len(info["counts"]), 48)
         self.assertEqual([(n, k) for _, n, k in info["counts"][:4]], [(13, 8), (9, 6), (8, 9), (6, 7)])
         self.assertEqual(info["questions"], 48)
         self.assertEqual(info["paras"].mismatched, [])
@@ -350,17 +350,26 @@ class TestReal(unittest.TestCase):
     def test_jiko(self):
         """事項の表から作る論点の一覧（SCHEMA.md 7.9）：記録のある13の論点にページを作り、記録の無い24は、一覧に名前と
         種類と、まだ入れていないことの文を出す。資料の3つ（提言、計画（案）、基本構想）は論点にしない。
-        生成AIの2回の読み取りの行を入れると、37の全部に記録がある（2026-11-28）。"""
-        self.assertEqual(sum(r["aru"] for r in self.teigi["jiko"]), 37)
+        生成AIの2回の読み取りの行を入れると、全部に記録がある（2026-11-28。候補から11を足して48）。"""
+        self.assertEqual(sum(r["aru"] for r in self.teigi["jiko"]), 48)
         T = self.teigi0
-        self.assertEqual(len(T["jiko"]), 37)
+        self.assertEqual(len(T["jiko"]), 48)
         self.assertEqual(sum(r["aru"] for r in T["jiko"]), 13)
         for P in ("子育て環境の未来に向けての提言", "日野町幼児教育保育施設再編整備計画（案）", "日野町認定こども園整備基本構想"):
             self.assertNotIn(P, [x[0] for x in T["topics"]])
         page, _ = self.build(self.inp, T)
         top = page[page.index("<section id='top'"):page.index("</section>")]
-        self.assertEqual(top.count("議会での質問と町の資料の記述は、まだ入れていません</td>"), 24)
+        self.assertEqual(top.count("議会での質問と町の資料の記述は、まだ入れていません</td>"), 35)
         self.assertIn("<th colspan='4'>日野町幼児教育保育施設再編整備計画の章立てに入らない論点</th>", top)
+        # 資料の外のまとまり（事項の表の matome）は、章立てに入らない論点の中で、matome の無い論点のあとに、
+        # まとまりの名前の見出しと、作成者が決めたことの文を付けてまとめる（2026-11-28）
+        D = bs_design()
+        m = top.index("<tr><th colspan='4'>園の安全</th></tr>"
+                      f"<tr><td colspan='4' class='m'>{D.bun('ronten-matome-setsumei')}</td></tr>")
+        self.assertLess(top.index("章立てに入らない論点</th>"), top.index("<td>幼稚園・保育所と小学校の連携</td>"))
+        self.assertLess(top.index("<td>幼稚園・保育所と小学校の連携</td>"), m)
+        for P in ("園の施設の修繕と安全対策", "園での感染症対策", "園児の安全対策"):
+            self.assertGreater(top.index(f"<td>{P}</td>"), m)
         self.assertLess(top.index("３ 計画の期間"), top.index("７ 日野町の幼児教育・保育をめぐる課題"))
         # 目的と手段（両端が事項の表にある、入力の確定済みの組）
         sec = page[page.index("<section id='hoiku10'"):]

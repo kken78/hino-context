@@ -25,11 +25,38 @@ class TestParts(unittest.TestCase):
         # 2回とも付けた段落は一致の行、片方だけの段落は、読み手ごとの1回だけの行。片方だけが付けた組は1回だけの行だけ
         rows = [gyo("a", "P", f"sp:{S}/1-3", "1"), gyo("b", "P", f"sp:{S}/2-4"), gyo("b", "R", f"sp:{S}/7")]
         out = ym.kumi_gyo(rows, "point", lambda x, q: x)
-        self.assertEqual(out, [(Q, "P", f"sp:{S}/2-3", "一致", "", "a"),
-                               (Q, "P", f"sp:{S}/1", "1回だけ", "a", "a"),
-                               (Q, "P", f"sp:{S}/4", "1回だけ", "b", "a"),
-                               (Q, "R", f"sp:{S}/7", "1回だけ", "b", "")])
+        self.assertEqual(out, [(Q, "P", f"sp:{S}/2-3", "一致", "", "a", ""),
+                               (Q, "P", f"sp:{S}/1", "1回だけ", "a", "a", ""),
+                               (Q, "P", f"sp:{S}/4", "1回だけ", "b", "a", ""),
+                               (Q, "R", f"sp:{S}/7", "1回だけ", "b", "", "")])
         self.assertEqual(ym.chu_of("a", "a、b"), "読み手 a だけが付けた。迷いの印：読み手 a、b")
+        self.assertEqual(ym.chu_of("", "", "b"), "候補の名前から入れた段落がある：読み手 b")
+
+    def test_kouho_ni_ireru(self):
+        # 事項に入れる候補の段落は、入れる先の事項に読み手が付けた段落と合わせる。もとから事項に付いていた段落とも合わせる。
+        # 資料を取り上げた部分にする候補は konkyo に、ほかのテーマで扱う候補と決めていない候補は、どちらにも入れない
+        kg = lambda y, n, h: dict(question=Q, hani=h, namae=n, yomite=y, taba=0)  # noqa: E731
+        yomi = {"shudai": [gyo("a", "P", f"sp:{S}/1-2")], "konkyo": [],
+                "kouho": [kg("b", "候補1", f"sp:{S}/2-3"), kg("a", "候補2", f"sp:{S}/5"), kg("b", "候補3", f"sp:{S}/6"),
+                          kg("a", "候補4", f"sp:{S}/7")]}
+        kr = [dict(namae="候補1", atsukai="事項に入れる", saki="x1", chu=""),
+              dict(namae="候補2", atsukai="資料を取り上げた部分にする", saki="提言", chu=""),
+              dict(namae="候補3", atsukai="ほかのテーマで扱う候補", saki="情報発信", chu=""),
+              dict(namae="候補4", atsukai="決めていない", saki="", chu="")]
+        jr = [dict(id="x1", name="P")]
+        namae = [dict(namae="提言", shu="資料", id="", setsumei="", kohyo="", chu="")]
+        self.assertEqual(ym.check_kouho(kr, yomi, {"x1"}, namae), [])
+        y2 = ym.kouho_ni_ireru(yomi, kr, jr)
+        self.assertEqual([r["aite"] for r in y2["konkyo"]], ["提言"])
+        out = ym.kumi_gyo(y2["shudai"], "point", lambda x, q: x)
+        self.assertEqual(out, [(Q, "P", f"sp:{S}/2", "一致", "", "", "b"),
+                               (Q, "P", f"sp:{S}/1", "1回だけ", "a", "", ""),
+                               (Q, "P", f"sp:{S}/3", "1回だけ", "b", "", "b")])
+        # 表に無い候補の名前、読み取りに無い名前の行、saki が合わない行、atsukai が違う行は止まる
+        bad = ym.check_kouho(kr[1:] + [dict(namae="候補5", atsukai="事項に入れる", saki="x9", chu=""),
+                                       dict(namae="候補6", atsukai="あとで", saki="", chu="")],
+                             yomi, {"x1"}, namae)
+        self.assertEqual(len(bad), 5)
 
     def test_shudai_rows_namae(self):
         yomi = {"shudai": [gyo("a", "無い名前", f"sp:{S}/1")]}
@@ -79,8 +106,8 @@ class TestRepo(unittest.TestCase):
             raise unittest.SkipTest("lock の版の入力が無い")
         self.assertEqual(ym.main(["--kensa"]), 0)
         rows = ym.read()
-        self.assertEqual(len(rows), 457)
-        self.assertEqual(sum(r["yomi"] == "一致" for r in rows), 239)
+        self.assertEqual(len(rows), 482)
+        self.assertEqual(sum(r["yomi"] == "一致" for r in rows), 247)
         self.assertEqual(len({r["question"] for r in rows}), 41)
         self.assertEqual(len(ym.shitsumon()), 41)
 

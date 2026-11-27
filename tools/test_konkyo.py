@@ -97,7 +97,7 @@ class TestRepo(unittest.TestCase):
                           ("iq:0000008397_20250310_0285", "doc:shingi-youho-teigen")])
         self.assertEqual([r["yomi"] for r in rows[:2]], ["入力の確定済み"] * 2)
         self.assertEqual({r["yomi"] for r in rows[2:]}, {"一致", "1回だけ"})
-        self.assertEqual(len(rows), 172)
+        self.assertEqual(len(rows), 173)
         # 資料の日付が質問の日より後の行は、ID を付けない（2026-11-28）
         u = {n: (ids, c) for n, ids, c in konkyo.uchiwake(rows, konkyo.ym.read_namae())}
         self.assertEqual(u["計画"], ({"pt:youho/honpen-202503": 3, "pt:youho/honpen": 0}, 1))

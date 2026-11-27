@@ -17,7 +17,11 @@
   事項は、事項の表（teigi/jiko.tsv）の name から ID を引く。資料と出来事の名前は、資料と出来事の名前の表
   （teigi/konkyo-namae.tsv）で、資料の ID がある名前だけを ID にし、ほかは名前のまま持つ。ID にするのは、その名前の
   資料のうち、資料の日付が質問の日より前か同じ日のもので、いちばん新しい資料だけ。当たる資料が無ければ名前のまま持つ。
-  手で行を書かない。候補（kouho）は表にせず、名前と段落の数の一覧を出すだけにする。
+  手で行を書かない。
+  候補（kouho。事項の表に無い話題）は、候補の名前と扱いの対応の表（teigi/kouho.tsv）で扱いを決める。「事項に入れる」の候補の
+  段落は、入れる先の事項に読み手が付けた段落として、「資料を取り上げた部分にする」の候補の段落は、入れる先の資料の名前に
+  読み手が付けた段落として、ほかの段落と合わせてから行を作る（kouho_ni_ireru）。「ほかのテーマで扱う候補」と「決めていない」
+  の候補は表にせず、名前と段落の数を出す。表に無い候補の名前があれば止まる。
 """
 import argparse
 import csv
@@ -37,6 +41,10 @@ YOMI_DIR = os.path.join(inputs.ROOT, "taio", "yomi")
 TABA = os.path.join(YOMI_DIR, "taba.json")
 PATH = os.path.join(inputs.ROOT, "taio", "shudai.tsv")
 NAMAE_PATH = os.path.join(inputs.ROOT, "teigi", "konkyo-namae.tsv")
+KOUHO_PATH = os.path.join(inputs.ROOT, "teigi", "kouho.tsv")
+KOUHO_COLS = ["namae", "atsukai", "saki", "chu"]
+JIKO_NI, SHIRYO_NI, HOKA, MITEI = "事項に入れる", "資料を取り上げた部分にする", "ほかのテーマで扱う候補", "決めていない"
+ATSUKAI = (JIKO_NI, SHIRYO_NI, HOKA, MITEI)
 COLS = ["question", "jiko", "hani", "yomi", "chu"]
 NAMAE_COLS = ["namae", "shu", "id", "setsumei", "kohyo", "chu"]
 YOMITE = ("a", "b")
@@ -104,32 +112,103 @@ def matomeru(paras):
 def kumi_gyo(rows, col, key_of):
     """読み手の行 → 組（質問, 相手）ごとの、一致の行と、読み手ごとの1回だけの行。col は相手の列、key_of は
     (相手, 質問) → 表の字。→ [(question, 相手の字, hani, yomi, 読み手の字, 迷いの読み手)]"""
-    paras, mayoi = {}, {}
+    paras, mayoi, kouho_ps = {}, {}, {}
     for r in rows:
         k = (r["question"], key_of(r[col], r["question"]))
-        paras.setdefault(k, {y: set() for y in YOMITE})[r["yomite"]] |= set(keys.paras_of(r["hani"]))
+        ps = set(keys.paras_of(r["hani"]))
+        paras.setdefault(k, {y: set() for y in YOMITE})[r["yomite"]] |= ps
         if r.get("mayoi", "").strip() == "1":
             mayoi.setdefault(k, set()).add(r["yomite"])
+        if r.get("kouho"):
+            kouho_ps.setdefault(k, {y: set() for y in YOMITE})[r["yomite"]] |= ps
     out = []
     for (q, a), ps in paras.items():
         m = "、".join(sorted(mayoi.get((q, a), ())))
+        ko = kouho_ps.get((q, a), {y: set() for y in YOMITE})
+
+        def kw(gyo):
+            return "、".join(y for y in YOMITE if ko[y] & gyo)
         both = ps["a"] & ps["b"]
         if both:
-            out.append((q, a, matomeru(both), ICCHI, "", m))
+            out.append((q, a, matomeru(both), ICCHI, "", m, kw(both)))
         for y in YOMITE:
             only = ps[y] - ps[[x for x in YOMITE if x != y][0]]
             if only:
-                out.append((q, a, matomeru(only), IKKAI, y, m))
+                out.append((q, a, matomeru(only), IKKAI, y, m, kw(only)))
     return out
 
 
-def chu_of(yomite, mayoi):
+def chu_of(yomite, mayoi, kouho=""):
     out = []
     if yomite:
         out.append(f"読み手 {yomite} だけが付けた")
     if mayoi:
         out.append(f"迷いの印：読み手 {mayoi}")
+    if kouho:
+        out.append(f"候補の名前から入れた段落がある：読み手 {kouho}")
     return "。".join(out)
+
+
+def read_kouho(path=KOUHO_PATH):
+    """候補の名前と扱いの対応の表 → 行の並び。"""
+    with open(path, encoding="utf-8") as f:
+        return inputs.read_tsv(f.read(), os.path.relpath(path, inputs.ROOT), KOUHO_COLS)
+
+
+def check_kouho(rows, yomi, jiko_ids, namae_rows):
+    """候補の名前と扱いの対応の表の検査（SCHEMA.md 7.10）→ 問題の並び。namae が重ならず、atsukai が4つのどれかで、
+    saki が atsukai に合い、読み取りの結果の候補の名前の全部に行があり、読み取りの結果に無い名前の行が無いこと。"""
+    bad = []
+    shiryo = {r["namae"] for r in namae_rows if r["shu"] == SHIRYO}
+    seen = set()
+    for i, r in enumerate(rows, 2):
+        if r["namae"] in seen or not r["namae"]:
+            bad.append(f"{i} 行目：namae が重なっているか空（{r['namae']}）")
+        seen.add(r["namae"])
+        a, s = r["atsukai"], r["saki"]
+        if a not in ATSUKAI:
+            bad.append(f"{i} 行目：atsukai が {ATSUKAI} のどれでもない（{a}）")
+        elif a == JIKO_NI and s not in jiko_ids:
+            bad.append(f"{i} 行目：saki が事項の表の id に無い（{s}）")
+        elif a == SHIRYO_NI and s not in shiryo:
+            bad.append(f"{i} 行目：saki が資料と出来事の名前の表の資料の名前に無い（{s}）")
+        elif a == HOKA and not s:
+            bad.append(f"{i} 行目：saki（ほかのテーマの観点の字）が空")
+        elif a == MITEI and s:
+            bad.append(f"{i} 行目：決めていない候補の saki が空でない（{s}）")
+    yn = {r["namae"] for r in yomi["kouho"]}
+    bad += [f"候補の名前「{n}」が、候補の名前と扱いの対応の表に無い" for n in sorted(yn - seen)]
+    bad += [f"候補の名前と扱いの対応の表の「{n}」が、読み取りの結果に無い" for n in sorted(seen - yn)]
+    return bad
+
+
+def kouho_ni_ireru(yomi, kouho_rows, jiko_rows):
+    """候補の段落を、扱いに従って、読み手の shudai と konkyo の行に足した読み取りの結果を返す（SCHEMA.md 7.10）。
+    足した行には kouho（候補の名前）を付ける。ほかのテーマで扱う候補と、決めていない候補は足さない。"""
+    jname = {r["id"]: r["name"] for r in jiko_rows}
+    at = {r["namae"]: r for r in kouho_rows}
+    out = {k: list(v) for k, v in yomi.items()}
+    for r in yomi["kouho"]:
+        x = at[r["namae"]]
+        base = dict(question=r["question"], hani=r["hani"], yomite=r["yomite"], taba=r["taba"], kouho=r["namae"])
+        if x["atsukai"] == JIKO_NI:
+            out["shudai"].append(dict(base, point=jname[x["saki"]], mayoi="", riyu=""))
+        elif x["atsukai"] == SHIRYO_NI:
+            out["konkyo"].append(dict(base, aite=x["saki"]))
+    return out
+
+
+def yomi_ireta(jiko_rows=None, namae_rows=None):
+    """読み取りの結果を読み、候補の名前と扱いの対応の表を検査してから、候補の段落を入れた結果を返す。
+    合わなければ YomiError。"""
+    yomi = read_yomi()
+    jiko_rows = jiko.read() if jiko_rows is None else jiko_rows
+    namae_rows = read_namae() if namae_rows is None else namae_rows
+    kr = read_kouho()
+    bad = check_kouho(kr, yomi, {r["id"] for r in jiko_rows}, namae_rows)
+    if bad:
+        raise YomiError(f"候補の名前と扱いの対応の表：{len(bad)} 件\n" + "\n".join("  - " + b for b in bad))
+    return kouho_ni_ireru(yomi, kr, jiko_rows), kr
 
 
 def read_namae(path=NAMAE_PATH):
@@ -223,16 +302,16 @@ def shudai_rows(yomi, jiko_rows):
                   for r in yomi["shudai"] if r["point"] not in by})
     if bad:
         return [], bad
-    rows = [dict(question=q, jiko=a, hani=h, yomi=y, chu=chu_of(w, m))
-            for q, a, h, y, w, m in kumi_gyo(yomi["shudai"], "point", lambda n, q: by.get(n))]
+    rows = [dict(question=q, jiko=a, hani=h, yomi=y, chu=chu_of(w, m, k))
+            for q, a, h, y, w, m, k in kumi_gyo(yomi["shudai"], "point", lambda n, q: by.get(n))]
     rows.sort(key=lambda r: (r["question"], jun[r["jiko"]], YOMI.index(r["yomi"]), r["chu"]))
     return rows, []
 
 
 def konkyo_rows(yomi, namae_rows, hiduke=None):
     """→ taio/konkyo.tsv の、読み取りの行（tools/konkyo.py が、入力の確定済みの行と合わせて表にする）。"""
-    rows = [dict(question=q, aite=a, hani=h, yomi=y, chu=chu_of(w, m))
-            for q, a, h, y, w, m in kumi_gyo(yomi["konkyo"], "aite", aite_of(namae_rows, hiduke))]
+    rows = [dict(question=q, aite=a, hani=h, yomi=y, chu=chu_of(w, m, k))
+            for q, a, h, y, w, m, k in kumi_gyo(yomi["konkyo"], "aite", aite_of(namae_rows, hiduke))]
     return rows
 
 
@@ -282,9 +361,9 @@ def main(argv=None):
     import konkyo
     try:
         inp = inputs.Inputs()
-        yomi = read_yomi()
         jiko_rows = jiko.read()
         namae = read_namae()
+        yomi, kouho_rows = yomi_ireta(jiko_rows, namae)
         hiduke = konkyo.bunsho_hiduke()
         bunsho = set(hiduke)
     except (inputs.InputError, YomiError, ValueError, OSError) as e:
@@ -317,7 +396,11 @@ def main(argv=None):
     for why, c in sorted(dasanai.items(), key=lambda x: -x[1]):
         print(f"  資料の ID でない行：{why} {c}")
     ko = kouho(yomi)
-    print(f"候補（事項の表に無い話題）{len(ko)}：" + "、".join(f"{k}（{c}段落。読み手 {y}）" for k, (c, y) in ko.items()))
+    at = {r["namae"]: r["atsukai"] for r in kouho_rows}
+    print(f"候補（事項の表に無い話題）{len(ko)}：" + "、".join(f"{x} {sum(at[k] == x for k in ko)}" for x in ATSUKAI))
+    for x in (HOKA, MITEI):
+        print(f"  表にしない候補（{x}）：" + ("、".join(f"{k}（{c}段落。読み手 {y}）" for k, (c, y) in ko.items() if at[k] == x)
+                                          or "無い"))
     if a.kensa:
         moto = open(PATH, encoding="utf-8").read() if os.path.exists(PATH) else None
         if moto != s:

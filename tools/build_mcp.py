@@ -325,18 +325,24 @@ class Tsukuru:
         keikaku, matome = bn.jiko_matome(self.inp, T)
         D.dasanai("事項の表 taikei")
         D.dasanai("事項の表 taikei が「nashi」")
+        D.dasanai("事項の表 matome")
+        D.dasanai("候補の名前と扱いの対応の表 atsukai が「ほかのテーマで扱う候補」か「決めていない」")   # 表に行を作らない（tools/yomi.py）
         out = []
-        for youso, rs in matome:
-            items = []
-            for r in rs:
-                shu = f"{E(D.kotoba('事項の表 shurui'))}：{E(self.shurui(r))}"
-                if r["aru"]:
-                    items.append(f"- {self.kagi_ji(E(r['name']), 'issue', r['id'])}　{shu}")
-                else:
-                    items.append(f"- {E(r['name'])}　{shu}　（{E(D.bun('ronten-mada'))}）")
+        for youso, rs0 in matome:
             mi = f"### {S(youso['name'])}" if youso else f"### {E(D.bun('ronten-nashi', keikaku=S(keikaku)))}"
-            head = [mi] if out else [midashi, E(D.bun("mcp-ronten-setsumei-jiko", keikaku=S(keikaku))), mi]
-            out.append((head, items))
+            for mt, rs in ([("", rs0)] if youso else bn.nashi_wake(rs0)):
+                items = []
+                for r in rs:
+                    shu = f"{E(D.kotoba('事項の表 shurui'))}：{E(self.shurui(r))}"
+                    if r["aru"]:
+                        items.append(f"- {self.kagi_ji(E(r['name']), 'issue', r['id'])}　{shu}")
+                    else:
+                        items.append(f"- {E(r['name'])}　{shu}　（{E(D.bun('ronten-mada'))}）")
+                if mt:
+                    head = [f"#### {E(mt)}", E(D.bun("ronten-matome-setsumei"))]
+                else:
+                    head = [mi] if out else [midashi, E(D.bun("mcp-ronten-setsumei-jiko", keikaku=S(keikaku))), mi]
+                out.append((head, items))
         return out
 
     def shisetsu_ichiran(self, theme, th):

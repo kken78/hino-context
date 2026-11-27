@@ -74,7 +74,7 @@ HYO_COLUMNS = (("項目の表", sj.SUJI_COLUMNS), ("数値と内容の表", sj.A
                ("施設の記録", inputs.SHISETSU_KIROKU_COLUMNS), ("過程の記録", KATEI_COLUMNS),
                ("事項の表", jiko.COLS), ("つながりの記録", ronten.TSUNAGARI_COLUMNS),
                ("質問が取り上げた資料と出来事の表", konkyo.COLS), ("質問と事項の対応の表", yomi.COLS),
-               ("資料と出来事の名前の表", yomi.NAMAE_COLS))
+               ("資料と出来事の名前の表", yomi.NAMAE_COLS), ("候補の名前と扱いの対応の表", yomi.KOUHO_COLS))
 # データの側の言葉（SCHEMA.md の表の名前と、入力の文字の呼び方）。ツールの説明の文に書いてよい（design_problems）
 DATA_GO = tuple(h for h, _ in HYO_COLUMNS) + ("もとの資料から取り出した文字",)
 # 表の名前と、そのあとの列（「、」で区切って2つ以上書ける）。長い名前から当てる（「資料の中の場所の表」を「資料の一覧の表」より先に）
