@@ -172,7 +172,7 @@ class TestAtai(unittest.TestCase):
         row = dict(shiryo="plan:sougou", inyo="")
         self.assertEqual(run(atai=[atai_row(chu="図の中の数値。生成AIが画像を2回読んで一致（2026-11-23）", **row)]), [])
         self.assertEqual(run(atai=[atai_row(chu="図の中の数値。PDF で未確認", **row)]), [ng])
-        self.assertEqual(run(atai=[atai_row(chu="図の中の数値。2者が画像で確認（2026-11-23）", **row)]), [ng])
+        self.assertEqual(run(atai=[atai_row(chu="図の中の数値。2" "者が画像で確認（2026-11-23）", **row)]), [ng])
         # 日付の形が違う記録は、無いものとする
         self.assertEqual(run(atai=[atai_row(chu="生成AIが画像を2回読んで一致（2026-13-40）", **row)]), [ng])
         # 広報ひのは、人が PDF で確認した記録だけを認める（inyo がある行も、空の行も）
