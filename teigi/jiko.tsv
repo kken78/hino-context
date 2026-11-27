@@ -1,0 +1,38 @@
+id	theme	name	shurui	taikei	betsumei	jotai	chu
+hiyo	hoiku	新こども園の整備費用と財源	atai	tk:youho/18		案	
+menseki	hoiku	新こども園の面積	atai	tk:youho/18		案	
+yochi	hoiku	新こども園の用地	atai	tk:youho/18		案	
+teiin	hoiku	新こども園の定員	atai	tk:youho/18		案	
+hoiku01	hoiku	再編整備計画の計画期間	atai	tk:youho/2		案	
+hoiku02	hoiku	待機児童数	atai	tk:youho/4		案	
+hoiku03	hoiku	新こども園の開園時期	atai	tk:youho/25		案	
+hoiku04	hoiku	認定こども園3園への再編整備の時期	atai	tk:youho/18		案	
+hoiku05	hoiku	地域が主導する小規模保育施設等	torikumi	nashi	地域が主導する小規模保育	案	懇話会の提言の提案。再編整備計画の章立てには無い
+hoiku06	hoiku	地域で育てる	torikumi	nashi		案	懇話会の提言の将来像の1つめ。種類は案
+hoiku08	hoiku	幼保連携型認定こども園の新設	torikumi	tk:youho/15	新こども園の整備の進め方	案	入力の対応の案は tk:youho/7
+hoiku10	hoiku	適正な集団規模の確保	torikumi	tk:youho/11	適正な集団規模	案	入力の対応の案は tk:youho/7
+hoiku11	hoiku	幼児教育保育施設の再編整備	torikumi	tk:youho/15	園の数と配置（3園への再編）	案	
+hoiku13	hoiku	人口減少による出生数の減少	kadai	tk:youho/4		案	再編整備計画 20ページの①
+hoiku14	hoiku	保育ニーズの変化	kadai	tk:youho/4		案	再編整備計画 20ページの②
+hoiku15	hoiku	保育所への入所者の増加、幼稚園への入園者の減少	kadai	tk:youho/4		案	再編整備計画 21ページの③
+hoiku16	hoiku	公立施設の老朽化による耐用年数の到来	kadai	tk:youho/4		案	再編整備計画の課題の④
+hoiku17	hoiku	保育士等の不足	kadai	tk:youho/4		案	再編整備計画の課題の⑤
+hoiku18	hoiku	民間事業者による地域型保育（小規模保育事業）施設の整備	torikumi	tk:youho/16	民間事業者による小規模保育施設の整備	案	入力の対応の案は tk:youho/8
+hoiku19	hoiku	幼児教育・保育の質の向上	torikumi	tk:youho/11		案	
+hoiku20	hoiku	既存の園の今後	torikumi	tk:youho/18		案	再編整備計画の施設①〜⑥
+hoiku21	hoiku	認定こども園の運営	torikumi	tk:youho/15		案	
+hoiku22	hoiku	公立と私立の園の役割	torikumi	tk:youho/16		案	
+hoiku23	hoiku	学童保育（放課後児童健全育成事業）	torikumi	tk:youho/17		案	名前は子ども・子育て支援事業計画から
+hoiku24	hoiku	入所の調整	torikumi	nashi		案	
+hoiku25	hoiku	預かり保育と通園区域	torikumi	nashi		案	
+hoiku26	hoiku	通園の手段	torikumi	nashi		案	
+hoiku27	hoiku	病児保育事業	torikumi	nashi		案	名前は子ども・子育て支援事業計画から
+hoiku28	hoiku	幼児教育・保育の無償化	torikumi	nashi		案	名前は子ども・子育て支援事業計画から
+hoiku29	hoiku	こども誰でも通園制度（乳児等通園支援事業）	torikumi	nashi		案	名前は子ども・子育て支援事業計画から
+hoiku30	hoiku	一時保育	torikumi	nashi		案	
+hoiku31	hoiku	保育料と副食費の軽減	torikumi	nashi		案	
+hoiku32	hoiku	幼稚園の3歳児保育	torikumi	nashi		案	
+hoiku33	hoiku	園の施設の修繕と安全対策	torikumi	nashi		案	
+hoiku34	hoiku	園での感染症対策	torikumi	nashi		案	
+hoiku35	hoiku	保育士の勤務体制	kadai	nashi		案	種類は案
+hoiku36	hoiku	園の運営についての保護者への説明	torikumi	nashi		案	

@@ -7,7 +7,7 @@
 - 5つの入力（hino-council-search・shiga-hino-plans・hino-town-docs・council-dashboard・hino-ronten）ごとに、コミットの SHA（40桁）と、読むファイルのパターン（files）を書く。`*` は1つの階層の中だけに当たる。
 - ツールは、読む前に、5つの入力の作業ツリーの HEAD が lock の SHA と同じかを確認する。違うとき、git のリポジトリでないとき、HEAD が取れないときは、読まずに止める。
 - 読むのは lock の SHA の、files に当たるファイルだけ（`git show <SHA>:<path>`）。入力の場所は、環境変数 `HINO_CONTEXT_INPUTS`（既定 `/tmp/inputs`。その下にリポジトリ名の4つ）と `HINO_CONTEXT_RONTEN`（既定 `/home/claude/hino-ronten`）で受ける。
-- hino-ronten から読むのは、題材の定義（ref/themes.tsv）、施設の参照表（ref/shisetsu.tsv）、系列の表（ref/lineage.tsv）、事柄の記録（records/kotogara.tsv）、過程の記録（records/katei.tsv）、問いと事項の対応（records/taio.tsv）、施設の記録（records/shisetsu.tsv）である。records の4つの表は、status が confirmed の行だけを使う。題材の定義と施設の参照表には status の列が無く、依頼者が決めた行だけが入っている（施設の参照表は 2026-10-27 と 2026-11-05 に依頼者が確定した。hino-ronten DESIGN.md ADR-23）。
+- hino-ronten から読むのは、題材の定義（ref/themes.tsv）、施設の参照表（ref/shisetsu.tsv）、系列の表（ref/lineage.tsv）、事柄の記録（records/kotogara.tsv）、過程の記録（records/katei.tsv）、問いと事項の対応（records/taio.tsv）、施設の記録（records/shisetsu.tsv）、計画の章立て（ref/taikei.tsv）、つながりの記録（records/tsunagari.tsv。2つは 2026-11-27 に追加。tools/jiko.py が読む）である。records の表は、status が confirmed の行だけを使う。題材の定義と施設の参照表には status の列が無く、依頼者が決めた行だけが入っている（施設の参照表は 2026-10-27 と 2026-11-05 に依頼者が確定した。hino-ronten DESIGN.md ADR-23）。
 - 過程の記録の確定済みの行のうち、ページと MCP の応答を作る検査で止まる10行（kaigo の step 2・4・5・6・9・12 と chiiki の step 8 は from が空、kaigo の step 8 と chiiki の step 6・10 は sources に議案の ID（gi:）がある）は、出さない（2026-11-27。4つのテーマを MCP に出すときの指示。入力は読むだけなので、行を直さない）。出さない行と理由は tools/ronten.py の1か所に書き、行がその理由に当たらなくなったら、ページと応答を作らずに止まる。出さずに済ませるか、行の出し方を決めるかは、依頼者が決める。
 - 系列の表（ref/lineage.tsv。hino-ronten LINK_SCHEMA.md §8）にも status の列は無い。このリポジトリでは、題材の定義の kind「系列」の value（series）から、計画の ID（plan の列。空の行は除く）を引くためだけに使う（7.7）。
 - 題材の定義は、画面では「テーマ」と書く（docs/design.md 2節）。この文書の 7.7 では、テーマの定義と書く。
