@@ -6,7 +6,7 @@ mono	資料と、資料の中の場所	teigi/bunsho.tsv;teigi/bubun.tsv
 mono	過程の出来事	入力:hino-ronten/records/katei.tsv	
 mono	施設・地区・組織	入力:hino-ronten/ref/shisetsu.tsv	地区と組織は読んでいない
 mono	問い・質疑・報告	入力:hino-ronten/ref/themes.tsv	テーマの定義にある問いと質疑だけ
-kankei	取り組みが、課題に対処する	無い	
+kankei	目的と手段（取り組みが、課題や目的に対処する）	無い	
 kankei	資料が、事項について記す	入力:hino-ronten/records/kotogara.tsv	確定済みの記録を読むだけ。数値は teigi/atai.tsv
 kankei	資料が、資料のもとになる	teigi/bunsho-kankei.tsv	
 kankei	出来事が、取り組み・資料の根拠になる	無い	
