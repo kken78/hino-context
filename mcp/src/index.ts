@@ -1,6 +1,6 @@
 // hino-context の MCP サーバー（Cloudflare Workers。docs/mcp.md）。
 // 行うことは3つだけ：ツールの一覧を返す、呼ばれたツールと引数に該当する応答を data/outou.json から引いて返す、
-// 該当するものが無いときに data/outou.json の決まった文を返す。
+// 該当するものが無いときに data/outou.json の定型文を返す。
 // 応答の文、言葉、決まりは、tools/build_mcp.py が作った JSON にあり、ここには書かない。
 // 要求ごとに新しいサーバーを作る（createMcpHandler）。セッションと Durable Objects は使わない。
 import { McpServer } from "@modelcontextprotocol/server";

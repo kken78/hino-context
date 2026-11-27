@@ -5,7 +5,7 @@
 記述は hino-ronten の確定した記録（SCHEMA.md §1）から取る。
 
 作る前の検査（1つでも当たれば、件数と該当行を示して、ページを作らずに止まる。終了コード 1）：
-  (a) 引用が原典に無い行（段落の ID が発言の段落を指していない行を含む）
+  (a) 引用がもとの資料に無い行（段落の ID が発言の段落を指していない行を含む）
   (b) 出典の無い記述
   (c) 画面に出る文に、docs/design.md 2節の「使わない」言葉が残っている（資料からの引用の中は除く）
   (d) lock と入力が合わない
@@ -59,7 +59,7 @@ def S_kagi(s):
     return re.sub(r"「[^」]*」", lambda m: A + m.group(0) + B, html.escape(s))
 
 
-# ---- 定義の表と言葉の表 ----
+# ---- 項目の表と言葉の表 ----
 
 def read_teigi(path, theme):
     with open(path, encoding="utf-8") as f:
@@ -198,7 +198,7 @@ def collect(inp, teigi, theme):
     pres = shogo.check_paras(inp, [dict(where=f"問いと事項の対応 {r['question']} / {r['point']}", hani=r["hani"])
                                    for r in ta])
     for m in res.mismatched + pres.mismatched:
-        problems.append(("(a) 引用が原典に無い", f"{m['where']}：{m['reason']}（{m['source']}）"
+        problems.append(("(a) 引用がもとの資料に無い", f"{m['where']}：{m['reason']}（{m['source']}）"
                          + (f"「{m['quote']}」" if m["quote"] else "")))
 
     # (b) 出典
@@ -233,7 +233,7 @@ def collect(inp, teigi, theme):
         frs = re.findall(r"「([^」]+)」", c["text"])
         cres = shogo.check_quotes(inp, [dict(where=where, source=c["moto"], quote=f) for f in frs])
         for m in cres.mismatched:
-            problems.append(("(a) 引用が原典に無い", f"{m['where']}：{m['reason']}（{m['source']}）「{m['quote']}」"))
+            problems.append(("(a) 引用がもとの資料に無い", f"{m['where']}：{m['reason']}（{m['source']}）「{m['quote']}」"))
     return dict(ko=ko, katei=katei, ta=ta, qsrc=qsrc), problems, (res, pres)
 
 
@@ -430,7 +430,7 @@ def main(argv=None):
         teigi = read_teigi(os.path.join(inputs.ROOT, "teigi", f"note-{theme}.tsv"), theme)
         page, info = build(inp, teigi, theme, read_kotoba(), datetime.date.today())
     except inputs.InputError as e:
-        print(f"止めた：(d) lock と入力、または定義の表\n{e}", file=sys.stderr)
+        print(f"止めた：(d) lock と入力、または項目の表\n{e}", file=sys.stderr)
         return 1
     except Stop as e:
         print(f"止めた：{len(e.problems)} 件。ページは作っていない。", file=sys.stderr)

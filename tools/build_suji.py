@@ -1,6 +1,6 @@
-"""数値の表から、定義1つのページを作る（SCHEMA.md §6・§7、docs/design.md 3節・4節）。
+"""数値と内容の表から、項目1つのページを作る（SCHEMA.md §6・§7、docs/design.md 3節・4節）。
 
-実行：python3 -B tools/build_suji.py <定義の id>   （例 taiki → build/suji/taiki.html）
+実行：python3 -B tools/build_suji.py <項目の id>   （例 taiki → build/suji/taiki.html）
 中身は teigi/suji.tsv・atai.tsv・bunsho.tsv・bubun.tsv と、lock の版の入力だけから作る。hino-ronten の記録は使わない。
 列は、tools/suji.py の jiten_kankei が返す印（ato・mae・tochu）で分ける。単語で数値の意味や種類を決めない。数値を計算しない。
 画面に出す言葉は、すべて docs/design.md の3節の2つの表から読む。このファイルには、画面の言葉を書かない
@@ -8,12 +8,12 @@
   D.kotoba(ID)          1つ目の表（データの構造との対応）の、画面の言葉
   D.retsu_setsumei(ID)  1つ目の表の、出し方の列にある列の説明「」の中の字
   D.dasanai(ID)         1つ目の表の、画面に出さないと決めた行（何も返さない）
-  D.bun(ID, 名前=字)     2つ目の表（見出しと決まった文）の文。{名前} に字を入れる
+  D.bun(ID, 名前=字)     2つ目の表（見出しと定型文）の文。{名前} に字を入れる
 
 作る前の検査（1つでも当たれば、件数と該当行を示して、ページを作らずに止まる。終了コード 1）：
-  (a) 表の検査（tools/suji.py の check_all。inyo の照合、文書の部分の検査を含む）で問題がある
+  (a) 表の検査（tools/suji.py の check_all。inyo の照合、資料の中の場所の検査を含む）で問題がある
   (b) 画面に出る文に、docs/design.md 2節の「使わない」言葉が残っている（資料からの文は除く。tools/build_note.py の印と検査）
-  (c) 定義の id が定義の表に無い
+  (c) 項目の id が項目の表に無い
   (d) lock と入力が合わない
   (e) docs/design.md 3節の表と、このツールが合わない（design_problems。次の6つ）
       - データの側が返す印（suji.KANKEI）に、1つ目の表の行が無い
@@ -63,23 +63,25 @@ NAGASA = 4                                                   # このツール�
 # hino-ronten の入力の表（SCHEMA.md §1）
 KATEI_COLUMNS = ["theme", "step", "cycle", "name", "from", "to", "sources", "quote", "status", "reviewer", "date", "note"]
 THEMES_COLUMNS = ["theme", "kind", "value", "source", "views", "reviewer", "date", "note"]
-HYO_COLUMNS = (("定義の表", sj.SUJI_COLUMNS), ("数値の表", sj.ATAI_COLUMNS),
-               ("文書の部分の表", sj.BUBUN_COLUMNS), ("文書の表", sj.BUNSHO_COLUMNS),
-               ("文書どうしの関係の表", sj.BUNSHO_KANKEI_COLUMNS), ("テーマの表", sj.THEME_COLUMNS),
+HYO_COLUMNS = (("項目の表", sj.SUJI_COLUMNS), ("数値と内容の表", sj.ATAI_COLUMNS),
+               ("資料の中の場所の表", sj.BUBUN_COLUMNS), ("資料の一覧の表", sj.BUNSHO_COLUMNS),
+               ("資料どうしの関係の表", sj.BUNSHO_KANKEI_COLUMNS), ("テーマの表", sj.THEME_COLUMNS),
                ("テーマの定義", THEMES_COLUMNS), ("施設の参照表", inputs.SHISETSU_COLUMNS),
                ("施設の記録", inputs.SHISETSU_KIROKU_COLUMNS), ("過程の記録", KATEI_COLUMNS))
-# 表の名前と、そのあとの列（「、」で区切って2つ以上書ける）。長い名前から当てる（「文書の部分の表」を「文書の表」より先に）
+# データの側の言葉（SCHEMA.md の表の名前と、入力の文字の呼び方）。ツールの説明の文に書いてよい（design_problems）
+DATA_GO = tuple(h for h, _ in HYO_COLUMNS) + ("もとの資料から取り出した文字",)
+# 表の名前と、そのあとの列（「、」で区切って2つ以上書ける）。長い名前から当てる（「資料の中の場所の表」を「資料の一覧の表」より先に）
 RE_HYO_RETSU = re.compile("(" + "|".join(sorted((re.escape(h) for h, _ in HYO_COLUMNS), key=len, reverse=True))
                           + r") ([a-z_]+(?:、[a-z_]+)*)")
 RE_KANKEI = re.compile(r"時点の関係 (\S+)")
 KANKEI_NASHI = "無し"
 # 上の形に当てはまらない左の列（決めた形の一覧）→ その字が指す、表の列の組（表の名前, 列）の並び。
 # 会議録の発言者の役職は、入力の会議録の索引の role で、SCHEMA.md の表の列ではないので、組を持たない
-KATACHI = {"shiryo が発言": (("数値の表", "shiryo"),),
-           "shiryo が計画・町の資料": (("数値の表", "shiryo"),),
-           "文書の部分（bubun・retsu から親をたどった並び）": (("数値の表", "bubun"), ("数値の表", "retsu")),
-           "bubun が空": (("数値の表", "bubun"),),
-           "同じ定義の数値がある、ほかの文書": (("数値の表", "suji"), ("数値の表", "shiryo")),
+KATACHI = {"shiryo が発言": (("数値と内容の表", "shiryo"),),
+           "shiryo が計画・町の資料": (("数値と内容の表", "shiryo"),),
+           "資料の中の場所（bubun・retsu から親をたどった並び）": (("数値と内容の表", "bubun"), ("数値と内容の表", "retsu")),
+           "bubun が空": (("数値と内容の表", "bubun"),),
+           "同じ項目の数値がある、ほかの資料": (("数値と内容の表", "suji"), ("数値と内容の表", "shiryo")),
            "会議録の発言者の役職が「数字＋番」": (),
            "会議録の発言者の役職が、議長でも「数字＋番」でもない": ()}
 # docs/design.md 3節の表を引く、ページを作るツール。表の行は、このどれかが引いていればよい
@@ -241,9 +243,10 @@ def design_problems(d, src=None, path=SRC_PATH, others=None):
         words += [w] + RE_KAGIKAKKO.findall(w) + RE_SETSUMEI.findall(how)
     for k, t in d.h2.items():
         words += _fragments(t) + RE_KAGIKAKKO.findall(t)
-    # 1つ目の表の左の列（データの側の名前）は ID なので、ツールに書いてよい。ID の字を除いてから探す
+    # 1つ目の表の左の列（データの側の名前）は ID なので、ツールに書いてよい。ID の字と、データの側の言葉（DATA_GO）を
+    # 除いてから探す（データの側の言葉には、画面の言葉を一部に含むものがあるため）
     rest = src
-    for k in sorted(d.h1, key=len, reverse=True):
+    for k in sorted(list(d.h1) + list(DATA_GO), key=len, reverse=True):
         rest = rest.replace(k, "")
     for w in sorted({w for w in words if len(w) >= NAGASA}):
         if w in rest:
@@ -317,7 +320,7 @@ def toki_of(D, r, teigi):
 
 
 def hiduke_of(D, shiryo, by):
-    """shiryo → (並べる順に使う値, 表に出す字)。発言は発言の日、ほかは文書の表の hiduke。無ければ None。"""
+    """shiryo → (並べる順に使う値, 表に出す字)。発言は発言の日、ほかは資料の一覧の表の hiduke。無ければ None。"""
     try:
         kind, g = keys.parse(shiryo)
     except keys.KeyFormError:
@@ -334,18 +337,18 @@ def hiduke_of(D, shiryo, by):
 
 
 def atai_go(D, t):
-    """定義の表の行 t → その項目の数値を指す言葉（表の列の見出しと、2つ目の表の文の {nakami} に入れる字）。
+    """項目の表の行 t → その項目の数値を指す言葉（表の列の見出しと、2つ目の表の文の {nakami} に入れる字）。
     単位の無い項目（tools/suji.py の tani_nashi）は「内容」の行の言葉（docs/design.md 3節）。"""
-    return D.kotoba("数値の表 atai（定義の表 tani が空）") if sj.tani_nashi(t) else D.kotoba("数値の表 atai")
+    return D.kotoba("数値と内容の表 atai（項目の表 tani が空）") if sj.tani_nashi(t) else D.kotoba("数値と内容の表 atai")
 
 
 def toki_go(D, t):
-    """定義の表の行 t → 定義の欄の toki の見出し。単位の無い項目は、その項目の行の言葉（docs/design.md 3節）。"""
-    return D.kotoba("定義の表 toki（定義の表 tani が空）") if sj.tani_nashi(t) else D.kotoba("定義の表 toki")
+    """項目の表の行 t → 項目の欄の toki の見出し。単位の無い項目は、その項目の行の言葉（docs/design.md 3節）。"""
+    return D.kotoba("項目の表 toki（項目の表 tani が空）") if sj.tani_nashi(t) else D.kotoba("項目の表 toki")
 
 
 def hiduke_bun(D, nendo, nashi):
-    """日付の順に並べた一覧の上に添える文。nendo：年度だけが分かる資料があるか。nashi：文書の表の hiduke が空の
+    """日付の順に並べた一覧の上に添える文。nendo：年度だけが分かる資料があるか。nashi：資料の一覧の表の hiduke が空の
     資料があるか（docs/design.md 3節。2026-11-27）。"""
     return (D.bun("hiduke-nendo-setsumei") if nendo else "") + (D.bun("hiduke-nashi-setsumei") if nashi else "")
 
@@ -373,20 +376,20 @@ def ichi_of(D, r, index):
     chain.reverse()
     if r["retsu"]:
         chain.append(index[(b, r["retsu"])])
-    D.dasanai("文書の部分の表 shu が「見出し」")
+    D.dasanai("資料の中の場所の表 shu が「見出し」")
     head = {sj.MIDASHI: "",
-            sj.HYO: D.kotoba("文書の部分の表 shu が「表」"),
-            sj.GYO: D.kotoba("文書の部分の表 shu が「行」"),
-            sj.RETSU: D.kotoba("文書の部分の表 shu が「列」")}
-    yonda = D.kotoba("文書の部分の表 torikata が「読んだ」で、chu に確認の記録が無い")
-    D.dasanai("文書の表 chu、文書の部分の表 chu")
+            sj.HYO: D.kotoba("資料の中の場所の表 shu が「表」"),
+            sj.GYO: D.kotoba("資料の中の場所の表 shu が「行」"),
+            sj.RETSU: D.kotoba("資料の中の場所の表 shu が「列」")}
+    yonda = D.kotoba("資料の中の場所の表 torikata が「読んだ」で、chu に確認の記録が無い")
+    D.dasanai("資料の一覧の表 chu、資料の中の場所の表 chu")
     parts = [f"{E(head[x['shu']])}「{S(x['name'])}」" + (E(yonda) if sj.mikakunin(x) else "")
              for x in chain]
     return " ＞ ".join(parts), any(sj.mikakunin(x) for x in chain)
 
 
 class Entry:
-    """数値の表の1行と、ページに出す中身。"""
+    """数値と内容の表の1行と、ページに出す中身。"""
 
     def __init__(self, D, r, teigi, inp, by, index):
         self.D = D
@@ -428,11 +431,11 @@ class Entry:
 
     @property
     def hiduke_ji(self):
-        return self.hiduke[1] if self.hiduke else E(self.D.kotoba("文書の表 hiduke が空"))
+        return self.hiduke[1] if self.hiduke else E(self.D.kotoba("資料の一覧の表 hiduke が空"))
 
     def chip(self):
         D = self.D
-        ji = (f"<span class=ji>{E(D.kotoba('数値の表 shurui'))}：{S(self.r['shurui'])}</span>"
+        ji = (f"<span class=ji>{E(D.kotoba('数値と内容の表 shurui'))}：{S(self.r['shurui'])}</span>"
               if self.r["shurui"] else "")
         if self.r["shiryo"].strip():
             moto = f"<span class=moto>{self.namae}（{self.hiduke_ji}）</span>"
@@ -460,7 +463,7 @@ dt{color:#555;font-size:.85rem} dd{margin:0}
 class Page:
     def __init__(self, D, teigi, entries, index=None):
         self.D, self.t, self.es = D, teigi, entries
-        self.index = index or {}            # (文書の ID, 番号) → 文書の部分の行。施設の判定に使う
+        self.index = index or {}            # (資料の ID, 番号) → 資料の中の場所の行。施設の判定に使う
         self.chigau = 0
         D.dasanai("時点の関係 無し")                          # 印が無い行は、表の列に入れない
         self.kotoba = {sj.KANKEI_ATO: D.kotoba("時点の関係 ato"),
@@ -468,18 +471,18 @@ class Page:
                        sj.KANKEI_TOCHU: D.kotoba("時点の関係 tochu")}
         self.setsumei = {sj.KANKEI_ATO: D.retsu_setsumei("時点の関係 ato"),
                          sj.KANKEI_MAE: D.retsu_setsumei("時点の関係 mae")}
-        self.riyu = {"nendo": D.kotoba("数値の表 nendo が空"),
-                     "hiduke": D.kotoba("文書の表 hiduke が空"),
-                     "shiryo": D.kotoba("数値の表 shiryo が空")}
+        self.riyu = {"nendo": D.kotoba("数値と内容の表 nendo が空"),
+                     "hiduke": D.kotoba("資料の一覧の表 hiduke が空"),
+                     "shiryo": D.kotoba("数値と内容の表 shiryo が空")}
 
     def head(self):
         D, t = self.D, self.t
-        an = E(D.kotoba("定義の表 kettei が「案」")) + "。" if t["kettei"] == "案" else ""
-        items = [(D.kotoba("定義の表 nani"), t["nani"])]
+        an = E(D.kotoba("項目の表 kettei が「案」")) + "。" if t["kettei"] == "案" else ""
+        items = [(D.kotoba("項目の表 nani"), t["nani"])]
         if t["tani"]:
-            items.append((D.kotoba("定義の表 tani"), t["tani"]))
-        items += [(toki_go(D, t), t["toki"]), (D.kotoba("定義の表 iikata"), t["iikata"]),
-                  (D.kotoba("定義の表 chui"), t["chui"])]
+            items.append((D.kotoba("項目の表 tani"), t["tani"]))
+        items += [(toki_go(D, t), t["toki"]), (D.kotoba("項目の表 iikata"), t["iikata"]),
+                  (D.kotoba("項目の表 chui"), t["chui"])]
         dl = "".join(f"<dt>{E(k)}</dt><dd>{E(v)}</dd>" for k, v in items)
         return (f"<h1>{D.bun('dai', name=E(t['name']))}</h1>\n"
                 f"<p class=note>{E(D.bun('atama', nakami=atai_go(D, t)))}{an}</p>\n<h2>{E(D.bun('midashi-teigi'))}</h2>\n<dl>{dl}</dl>\n")
@@ -515,7 +518,7 @@ class Page:
                     cells.append(self.cell_mae(xs) if k == sj.KANKEI_MAE else "".join(e.chip() for e in xs))
                 rows.append(f"<tr><th>{E(label)}</th>" + "".join(f"<td>{c}</td>" for c in cells) + "</tr>")
             head = "".join(self.th(k) for k in cols)
-            out.append((f"<h3>{E(D.kotoba('数値の表 kubun'))}：{E(kb)}</h3>" if kb else "")
+            out.append((f"<h3>{E(D.kotoba('数値と内容の表 kubun'))}：{E(kb)}</h3>" if kb else "")
                        + f"<table>\n<thead><tr><th>{E(D.bun('hyo-jiki'))}</th>{head}</tr></thead>\n"
                        f"<tbody>{''.join(rows)}</tbody>\n</table>")
         t = self.t["nendo_tsuki"]
@@ -538,7 +541,7 @@ class Page:
         if not es:
             return ""
         out = [f"<h3>{E(D.bun('midashi-nai'))}</h3>", f"<p>{E(D.bun('nai-setsumei'))}</p>"]
-        hani, kakunin = D.kotoba("数値の表 hani"), D.kotoba("数値の表 kakunin")
+        hani, kakunin = D.kotoba("数値と内容の表 hani"), D.kotoba("数値と内容の表 kakunin")
         for riyu in RIYU:
             xs = [e for e in es if e.riyu == riyu]
             if not xs:
@@ -552,7 +555,7 @@ class Page:
         return "\n".join(out)
 
     def hiduke_jun(self):
-        """どの行にも印が無い定義：hiduke の古い順に並べた表。hiduke の無い行は終わりに置く（docs/design.md 4節）。"""
+        """どの行にも印が無い項目：hiduke の古い順に並べた表。hiduke の無い行は終わりに置く（docs/design.md 4節）。"""
         D = self.D
         es = sorted(self.es, key=lambda e: (e.hiduke is None, e.hiduke[0] if e.hiduke else (), e.gyo))
         shurui = any(e.r["shurui"] for e in es)
@@ -561,9 +564,9 @@ class Page:
             f"<td><a href='#{e.id}'><b>{e.atai}</b></a></td>"
             + (f"<td>{S(e.r['shurui']) if e.r['shurui'] else ''}</td>" if shurui else "")
             + f"<td>{e.namae}{'　' + e.page if e.page else ''}</td></tr>" for e in es)
-        heads = [D.kotoba("文書の表 hiduke、発言の日"), atai_go(D, self.t)]
-        heads += [D.kotoba("数値の表 shurui")] if shurui else []
-        heads += [D.kotoba("文書の表 namae と、shiryo のページ")]
+        heads = [D.kotoba("資料の一覧の表 hiduke、発言の日"), atai_go(D, self.t)]
+        heads += [D.kotoba("数値と内容の表 shurui")] if shurui else []
+        heads += [D.kotoba("資料の一覧の表 namae と、shiryo のページ")]
         nashi = any(e.hiduke is None and e.r["shiryo"].strip() and not e.r["shiryo"].startswith("ext:") for e in es)
         nakami = atai_go(D, self.t)
         return (f"<h2>{E(D.bun('midashi-hiduke', nakami=nakami))}</h2>\n"
@@ -574,37 +577,37 @@ class Page:
 
     def detail(self, e):
         D, r = self.D, e.r
-        items = [(D.kotoba("数値の表 jiten"), E(r["jiten"]))]
+        items = [(D.kotoba("数値と内容の表 jiten"), E(r["jiten"]))]
         if r["kubun"]:
-            items.append((D.kotoba("数値の表 kubun"), E(r["kubun"])))
+            items.append((D.kotoba("数値と内容の表 kubun"), E(r["kubun"])))
         if r["shiryo"].strip():
             kubun = D.kotoba("shiryo が発言") if e.sp else D.kotoba("shiryo が計画・町の資料")
             m = RE_KAGIKAKKO.search(kubun)
             items.append((kubun[:m.start()], E(m.group(1))))
-            items.append((D.kotoba("文書の表 namae と、shiryo のページ"), e.namae + (f"　{e.page}" if e.page else "")))
-            items.append((D.kotoba("文書の表 hiduke、発言の日"), e.hiduke_ji))
-            tokoro = D.kotoba("文書の部分（bubun・retsu から親をたどった並び）")
+            items.append((D.kotoba("資料の一覧の表 namae と、shiryo のページ"), e.namae + (f"　{e.page}" if e.page else "")))
+            items.append((D.kotoba("資料の一覧の表 hiduke、発言の日"), e.hiduke_ji))
+            tokoro = D.kotoba("資料の中の場所（bubun・retsu から親をたどった並び）")
             if e.ichi:
                 items.append((tokoro, e.ichi))
             elif e.page:
                 items.append((tokoro, E(D.kotoba("bubun が空"))))
             if r["inyo"] and sj.inyo_kuzure(r):
-                D.dasanai("数値の表 chu に「抽出した文字の並びが崩れている」がある")
-                items.append((D.kotoba("数値の表 inyo"), E(D.bun("inyo-kuzure"))))
+                D.dasanai("数値と内容の表 chu に「抽出した文字の並びが崩れている」がある")
+                items.append((D.kotoba("数値と内容の表 inyo"), E(D.bun("inyo-kuzure"))))
             elif r["inyo"]:
-                items.append((D.kotoba("数値の表 inyo"), f"「{S(r['inyo'])}」"))
+                items.append((D.kotoba("数値と内容の表 inyo"), f"「{S(r['inyo'])}」"))
         if r["shurui"]:
-            items.append((D.kotoba("数値の表 shurui"), S(r["shurui"])))
+            items.append((D.kotoba("数値と内容の表 shurui"), S(r["shurui"])))
         if e.konkyo:
-            items.append((D.kotoba("文書の表 konkyo"), e.konkyo))
+            items.append((D.kotoba("資料の一覧の表 konkyo"), e.konkyo))
         if r["chu"]:
-            items.append((D.kotoba("数値の表 chu"), E(r["chu"])))
+            items.append((D.kotoba("数値と内容の表 chu"), E(r["chu"])))
         if r["jotai"] != sj.ARU:
-            items.append((D.kotoba("数値の表 jotai が「数値がある」でない"), E(r["jotai"])))
+            items.append((D.kotoba("数値と内容の表 jotai が「数値がある」でない"), E(r["jotai"])))
             if r["hani"]:
-                items.append((D.kotoba("数値の表 hani"), E(r["hani"])))
+                items.append((D.kotoba("数値と内容の表 hani"), E(r["hani"])))
                 if r["kakunin"]:
-                    items.append((D.kotoba("数値の表 kakunin"), hi_str(D, r["kakunin"])))
+                    items.append((D.kotoba("数値と内容の表 kakunin"), hi_str(D, r["kakunin"])))
         dl = "".join(f"<dt>{E(k)}</dt><dd>{v}</dd>" for k, v in items)
         if r["shiryo"].strip():
             link = (f"<p><a href='{E(e.url)}'>{E(D.bun('link'))}</a></p>" if e.url
@@ -615,7 +618,7 @@ class Page:
         return f"<section id='{e.id}'><h3>{kb}{E(e.label)}：{e.atai}</h3><dl>{dl}</dl>{link}</section>"
 
     def nosete_inai(self):
-        """このページで出していないもの。その定義の行に当てはまるものだけ。"""
+        """このページで出していないもの。その項目の行に当てはまるものだけ。"""
         D = self.D
         li = []
         if any(e.sp for e in self.es):
@@ -674,7 +677,7 @@ def build(inp, tables, sid, kotoba, today, read_problems=(), design=None):
     problems += [("(a) 表の検査", mondai_str(m)) for m in mondai]
     teigi = next((r for r in tables["suji"] if r["id"] == sid), None)
     if teigi is None:
-        problems.append(("(c) 定義の id", f"{sid} が {sj.SUJI_NAME} に無い"))
+        problems.append(("(c) 項目の id", f"{sid} が {sj.SUJI_NAME} に無い"))
     if problems:
         raise Stop(problems)
     by = {r["bunsho"]: r for r in tables["bunsho"]}
@@ -698,7 +701,7 @@ def build(inp, tables, sid, kotoba, today, read_problems=(), design=None):
 def main(argv=None, teigi_dir=None):
     argv = sys.argv[1:] if argv is None else argv
     if len(argv) != 1 or not re.fullmatch(r"[a-z0-9-]+", argv[0]):
-        print("使い方：python3 -B tools/build_suji.py <定義の id>", file=sys.stderr)
+        print("使い方：python3 -B tools/build_suji.py <項目の id>", file=sys.stderr)
         return 2
     sid = argv[0]
     try:

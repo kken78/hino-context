@@ -2,17 +2,17 @@
 
 実行：python3 -B tools/build_theme.py <テーマの ID>   （例 hoiku → build/theme/hoiku.html）
 テーマの名前、施設、資料は、hino-ronten のテーマの定義（ref/themes.tsv）から引く。資料のうち計画は、kind「系列」の
-value を系列の表（ref/lineage.tsv）の series で引いた plan の文書（pt:<plan>/…）とする。
+value を系列の表（ref/lineage.tsv）の series で引いた plan の資料（pt:<plan>/…）とする。
 経過は過程の記録（records/katei.tsv）、施設ごとの欄は施設の記録（records/shisetsu.tsv）の、確定済みの行から作る。
-施設ごとの欄には、テーマの資料である文書の表（テーマの表で施設の表として指定した表を除く）の、その施設の行か列の欄も、
+施設ごとの欄には、テーマの資料の表（テーマの表で施設の表として指定した表を除く）の、その施設の行か列の欄も、
 記録の表の下に出す。その欄は、施設の表には出さない（docs/design.md 4節。2026-11-25 の依頼者の了承）。
-説明の文と施設の表は、テーマの表（teigi/theme.tsv）から、施設の表の欄の数値は数値の表から、資料どうしの関係は
-文書どうしの関係の表から引く。経過の行の sources の文書が、hyogen が「一部改正」の関係の kara の文書なら、その行の下に、
-e の文書と、2つの文書の数値の対（tools/suji.py の kaisei_tsui）を出す（docs/design.md 4節）。数値を計算しない。外から何も読み込まない1つの HTML にする。
+説明の文と施設の表は、テーマの表（teigi/theme.tsv）から、施設の表の欄の数値は数値と内容の表から、資料どうしの関係は
+資料どうしの関係の表から引く。経過の行の sources の資料が、hyogen が「一部改正」の関係の kara の資料なら、その行の下に、
+e の資料と、2つの資料の数値の組み合わせ（tools/suji.py の kaisei_tsui）を出す（docs/design.md 4節）。数値を計算しない。外から何も読み込まない1つの HTML にする。
 画面に出す言葉は、docs/design.md 3節の2つの表から読む（tools/build_suji.py の read_design と同じ読み方）。
 
 作る前の検査（1つでも当たれば、件数と該当行を示して、ページを作らずに止まる。終了コード 1）：
-  (a) 表の検査（tools/suji.py の check_all。テーマの表と文書どうしの関係の表を含む）で問題がある
+  (a) 表の検査（tools/suji.py の check_all。テーマの表と資料どうしの関係の表を含む）で問題がある
   (b) 画面に出る文に、docs/design.md 2節の「使わない」言葉が残っている（資料からの文と、hino-ronten の記録の
       value・target・quote、過程の記録の name・quote、施設の参照表の name・aliases は除く。施設の記録の aspect と kind は対象）
   (c) テーマの定義に、そのテーマの kind「名前」の行が1行でない。テーマの施設が施設の参照表に無い
@@ -62,7 +62,7 @@ def design_problems(D, src=None):
 
 
 def read_tables(teigi_dir=None):
-    """数値・定義・文書・文書の部分の4つの表に、文書どうしの関係の表とテーマの表を加えて読む。
+    """項目の表、数値と内容の表、資料の一覧の表、資料の中の場所の表の4つに、資料どうしの関係の表とテーマの表を加えて読む。
     テーマの表が無ければ、行が無いものとする（説明の文と施設の表の無いテーマとして作る）。"""
     d = teigi_dir or sj.TEIGI_DIR
     tables, problems = bs.read_tables(d)
@@ -101,7 +101,7 @@ class Namae:
         return self.D.bun("koho", nen=int(m[1]), tsuki=int(m[2]), dai=S(dai))
 
     def nendo_dake(self, bkey):
-        """文書の ID が、文書の表に無い doc の ID で、入力の台帳（sources.tsv）の date が空、fiscal_year がある資料なら、
+        """資料の ID が、資料の一覧の表に無い doc の ID で、入力の台帳（sources.tsv）の date が空、fiscal_year がある資料なら、
         fiscal_year の字。ほかは空（docs/design.md 3節。2026-11-27）。広報（koho）は除く（号の年月で出すため）。"""
         if not bkey or bkey in self.by:
             return ""
@@ -113,16 +113,16 @@ class Namae:
         return fy if re.fullmatch(r"[0-9]{4}", fy or "") else ""
 
     def hiduke_nashi(self, bkey):
-        """文書の ID が文書の表にあり、hiduke が空か。"""
+        """資料の ID が資料の一覧の表にあり、hiduke が空か。"""
         b = self.by.get(bkey or "")
         return b is not None and not sj.RE_HIDUKE.fullmatch(b["hiduke"] or "")
 
     def kiroku_jun(self, r):
-        """施設の記録の並べ方：文書の表の hiduke が空の資料を最後に置き、ほかは source_date の順。"""
+        """施設の記録の並べ方：資料の一覧の表の hiduke が空の資料を最後に置き、ほかは source_date の順。"""
         return (self.hiduke_nashi(sj.bunsho_of(r["source"])), r["source_date"], r["source"], r["aspect"])
 
     def bunsho(self, bkey):
-        """文書の ID → 資料の名前（HTML）。文書の表にあれば namae と括弧（han と hiduke）。広報（koho）は koho の文。"""
+        """資料の ID → 資料の名前（HTML）。資料の一覧の表にあれば namae と括弧（han と hiduke）。広報（koho）は koho の文。"""
         b = self.by.get(bkey)
         if b:
             if b["shurui"] == sj.KOHO:
@@ -197,7 +197,7 @@ class Theme:
         self.plans = ronten.lineage_plans(inp, {r["value"] for r in rows if r["kind"] == KIND_KEIRETSU})
 
     def has(self, bkey):
-        """文書の ID が、テーマの資料か。kind「資料」の doc の ID か、系列の計画（pt:<plan>/… か plan:<plan>）。"""
+        """資料の ID が、テーマの資料か。kind「資料」の doc の ID か、系列の計画（pt:<plan>/… か plan:<plan>）。"""
         if bkey in self.docs:
             return True
         m = sj.RE_BUNSHO_PT.fullmatch(bkey) or keys.RE_PLAN.fullmatch(bkey)
@@ -205,15 +205,15 @@ class Theme:
 
 
 def shitei_hyo(trow):
-    """テーマの表の「施設の表」の行 → (文書の ID, 表の番号)。行が無ければ None。"""
+    """テーマの表の「施設の表」の行 → (資料の ID, 表の番号)。行が無ければ None。"""
     return (sj.bunsho_of(trow["tokoro"]), trow["hyo"]) if trow else None
 
 
 def kijutsu_no_hyo(part, by, th, shitei):
-    """文書の部分の行 part が、施設ごとの欄に出す資料の表の行か列か。→ 親の表の行か None。
+    """資料の中の場所の行 part が、施設ごとの欄に出す資料の表の行か列か。→ 親の表の行か None。
 
-    行か列で、shisetsu があり、親の表がテーマの資料である文書の表で、施設の表として指定した表（shitei）ではないもの。
-    by は (文書の ID, 番号) → 文書の部分の行。"""
+    行か列で、shisetsu があり、親の表がテーマの資料の表で、施設の表として指定した表（shitei）ではないもの。
+    by は (資料の ID, 番号) → 資料の中の場所の行。"""
     if part.get("shu") not in (sj.GYO, sj.RETSU) or not part.get("shisetsu", "").strip():
         return None
     if not th.has(part["bunsho"]) or (part["bunsho"], part["oya"]) == shitei:
@@ -244,8 +244,8 @@ def jun_shisetsu(hyo, th, ref):
 # ---- 一部改正の前後（docs/design.md 4節のテーマのページの3） ----
 
 class Kaisei:
-    """文書どうしの関係の表で hyogen が「一部改正」の行ごとの、数値の対（tools/suji.py の kaisei_tsui）。
-    kara（改正後の文書の ID）→ (e の文書の ID, KaiseiTsui) の並び。shinai は、対にしなかった行の数の合計。"""
+    """資料どうしの関係の表で hyogen が「一部改正」の行ごとの、数値の組み合わせ（tools/suji.py の kaisei_tsui）。
+    kara（改正後の資料の ID）→ (e の資料の ID, KaiseiTsui) の並び。shinai は、組み合わせなかった行の数の合計。"""
 
     def __init__(self, tables):
         by = {(r["bunsho"], r["n"]): r for r in tables["bubun"]}
@@ -259,7 +259,7 @@ class Kaisei:
         self.hoka = sum(len(x.hoka) for v in self.by_kara.values() for _, x in v)
 
     def of(self, srcs):
-        """過程の記録の sources の並び → その行に出す (e の文書の ID, KaiseiTsui) の並び。"""
+        """過程の記録の sources の並び → その行に出す (e の資料の ID, KaiseiTsui) の並び。"""
         out = []
         for s in srcs:
             for x in self.by_kara.get(sj.bunsho_of(s) or "", []):
@@ -268,7 +268,7 @@ class Kaisei:
         return out
 
     def suji_ids(self):
-        """対の項目に出る定義の id の集まり。"""
+        """組み合わせの項目に出る項目の id の集まり。"""
         out = set()
         for v in self.by_kara.values():
             for _, x in v:
@@ -277,13 +277,13 @@ class Kaisei:
         return out
 
     def items(self, D, x, teigi_namae):
-        """KaiseiTsui → 項目の文（HTML の断片）の並び。teigi_namae は定義の表の行 → 名前の HTML。
-        対の atai が違うもの、kara の文書にだけある数値、e の文書にだけある数値の順。"""
-        D.kotoba("文書どうしの関係の表 kara、e の文書の数値の対で、atai が違うもの")   # 見出しは呼ぶ側で出す
-        D.dasanai("数値の表 atai（一部改正の kara の文書にだけある数値）")            # 文は kaisei-kuwawaru
-        D.dasanai("数値の表 atai（一部改正の e の文書にだけある数値）")                # 文は kaisei-nai
-        mae_w = E(D.kotoba("数値の表 atai（一部改正の対の、e の文書の側）"))
-        ato_w = E(D.kotoba("数値の表 atai（一部改正の対の、kara の文書の側）"))
+        """KaiseiTsui → 項目の文（HTML の断片）の並び。teigi_namae は項目の表の行 → 名前の HTML。
+        組み合わせた2行の atai が違うもの、kara の資料にだけある数値、e の資料にだけある数値の順。"""
+        D.kotoba("資料どうしの関係の表 kara、e の資料の、同じ項目の、改正前と改正後の組み合わせで、atai が違うもの")   # 見出しは呼ぶ側で出す
+        D.dasanai("数値と内容の表 atai（一部改正の kara の資料にだけある数値）")            # 文は kaisei-kuwawaru
+        D.dasanai("数値と内容の表 atai（一部改正の e の資料にだけある数値）")                # 文は kaisei-nai
+        mae_w = E(D.kotoba("数値と内容の表 atai（一部改正の組み合わせの、e の資料の側）"))
+        ato_w = E(D.kotoba("数値と内容の表 atai（一部改正の組み合わせの、kara の資料の側）"))
 
         def page(r):
             return E(D.bun("page", n=sj.page_no(r["shiryo"])))
@@ -313,7 +313,7 @@ class Kaisei:
 
 
 def suji_page_aru(inp, tables, ids, kotoba, today, D):
-    """定義の id の集まり → 数値のページ（tools/build_suji.py）を作れる id の集まり。"""
+    """項目の id の集まり → 数値のページ（tools/build_suji.py）を作れる id の集まり。"""
     out = set()
     for sid in sorted(ids):
         try:
@@ -351,9 +351,9 @@ class ShisetsuHyo:
             if bad:
                 self.problems.append(("(g) 施設の表", f"{sj.BUBUN_NAME} の {g['_gyo']} 行目：施設が、テーマの施設に無い"
                                                      f"（{'・'.join(bad)}）"))
-        # 施設の ID の組が同じ数値（定義ごと）
-        self.suji = []            # 定義の表の行の並び（定義の表の順）
-        self.atai = {}            # (定義の id, 施設の ID の組) → 数値の表の行の並び
+        # 施設の ID の組が同じ数値（項目ごと）
+        self.suji = []            # 項目の表の行の並び（項目の表の順）
+        self.atai = {}            # (項目の id, 施設の ID の組) → 数値と内容の表の行の並び
         kumi = set(self.keys)
         shitei = shitei_hyo(trow)
         for r in tables["atai"]:
@@ -470,7 +470,7 @@ class Page:
                 f"<table>\n<thead><tr>{head}</tr></thead>\n<tbody>\n" + "\n".join(rows) + "\n</tbody>\n</table>")
 
     def kaisei_gyo(self, srcs):
-        """経過の行の下に足す行（一部改正の e の文書と、数値の対。docs/design.md 4節）。ID は出さない。"""
+        """経過の行の下に足す行（一部改正の e の資料と、数値の組み合わせ。docs/design.md 4節）。ID は出さない。"""
         D, out = self.D, []
         if self.kaisei is None:
             return out
@@ -484,10 +484,10 @@ class Page:
                 else ""
             nm = self.n.bunsho(e)
             nm = f"<a href='{E(url)}'>{nm}</a>" if url else nm
-            cell = [f"<p>{E(D.kotoba('文書どうしの関係の表 hyogen が「一部改正」の行の e'))}：{nm}</p>"]
+            cell = [f"<p>{E(D.kotoba('資料どうしの関係の表 hyogen が「一部改正」の行の e'))}：{nm}</p>"]
             items = self.kaisei.items(D, x, namae)
             if items:
-                cell.append(f"<p>{E(D.kotoba('文書どうしの関係の表 kara、e の文書の数値の対で、atai が違うもの'))}"
+                cell.append(f"<p>{E(D.kotoba('資料どうしの関係の表 kara、e の資料の、同じ項目の、改正前と改正後の組み合わせで、atai が違うもの'))}"
                             f"<span class=s>{E(D.bun('kaisei-hani'))}</span></p>")
                 cell.append("<ul>" + "".join(f"<li>{i}</li>" for i in items) + "</ul>")
             out.append(f"<tr><td></td><td colspan=3>{''.join(cell)}</td></tr>")
@@ -497,9 +497,9 @@ class Page:
         D, h = self.D, self.hyo
         if h is None:
             return ""
-        D.dasanai("文書の部分の表 shisetsu")
-        D.dasanai("文書の部分の表 matome")
-        D.dasanai("定義の表 name")
+        D.dasanai("資料の中の場所の表 shisetsu")
+        D.dasanai("資料の中の場所の表 matome")
+        D.dasanai("項目の表 name")
         D.dasanai("施設の参照表 name")
         tr = h.trow
         o = [f"<h2>{E(D.kotoba('テーマの表 shu が「施設の表」'))}</h2>"]
@@ -565,7 +565,7 @@ class Page:
         by = {r["bunsho"]: r for r in self.t["bunsho"]}
         docs = sorted({r["kara"] for r in kk} | {r["e"] for r in kk},
                       key=lambda k: ((by.get(k) or {}).get("hiduke") or "9999", k))
-        D.dasanai("文書どうしの関係の表 hyogen")
+        D.dasanai("資料どうしの関係の表 hyogen")
         rows = []
         for k in docs:
             groups = {}
@@ -580,8 +580,8 @@ class Page:
                              f"{D.bun('aite', hyogen=S(hyogen), aite=aite)}</span></p>")
             cell = "".join(cells) or f"<span class=s>{E(D.bun('shiryo-nashi'))}</span>"
             rows.append(f"<tr><td>{self.n.bunsho(k)}</td><td>{cell}</td></tr>")
-        head = (f"<th>{E(D.kotoba('文書どうしの関係の表 kara、e'))}</th>"
-                f"<th>{E(D.kotoba('文書どうしの関係の表 inyo'))}</th>")
+        head = (f"<th>{E(D.kotoba('資料どうしの関係の表 kara、e'))}</th>"
+                f"<th>{E(D.kotoba('資料どうしの関係の表 inyo'))}</th>")
         hb = bs.hiduke_bun(D, False, any(self.n.hiduke_nashi(k) for k in docs))
         return (f"<h2>{E(D.bun('midashi-shiryo'))}</h2>\n<p class=s>{E(D.bun('shiryo-setsumei'))}{E(hb)}</p>\n"
                 f"<table>\n<thead><tr>{head}</tr></thead>\n<tbody>\n" + "\n".join(rows) + "\n</tbody>\n</table>")
@@ -623,10 +623,10 @@ class Page:
         gyo = self.hk.gyo.get(k) if self.hk else None
         if not gyo:
             return ""
-        head = (f"<th>{E(D.kotoba('文書の表 namae、han、hiduke'))}</th>"
-                f"<th>{E(D.kotoba('文書の部分の表 name（shu が「表」）'))}</th>"
-                f"<th>{E(D.kotoba('文書の部分の表 name（shu が「行」か「列」）'))}</th>"
-                f"<th>{E(D.kotoba('数値の表 atai、retsu'))}</th>")
+        head = (f"<th>{E(D.kotoba('資料の一覧の表 namae、han、hiduke'))}</th>"
+                f"<th>{E(D.kotoba('資料の中の場所の表 name（shu が「表」）'))}</th>"
+                f"<th>{E(D.kotoba('資料の中の場所の表 name（shu が「行」か「列」）'))}</th>"
+                f"<th>{E(D.kotoba('数値と内容の表 atai、retsu'))}</th>")
         rows, mi = [], False
         for p, hyo, ran in gyo:
             cells = "<br>".join(D.bun("hyo-kijutsu-ran", midashi=bh.midashi_ji(D, x), atai=S(r["atai"]))
@@ -634,7 +634,7 @@ class Page:
             mi = mi or any(sj.mikakunin(x) for x in [p, hyo] + [x for x, _ in ran])
             rows.append(f"<tr><td>{self.n.link(hyo['tokoro'])}</td><td>{bh.midashi_ji(D, hyo)}</td>"
                         f"<td>{bh.midashi_ji(D, p)}</td><td>{cells}</td></tr>")
-        o = [f"<h4>{E(D.kotoba('文書の部分の表 shisetsu、oya'))}</h4>",
+        o = [f"<h4>{E(D.kotoba('資料の中の場所の表 shisetsu、oya'))}</h4>",
              f"<p class=s>{E(D.bun('hyo-kijutsu-setsumei'))}"
              f"{E(bs.hiduke_bun(D, False, any(self.n.hiduke_nashi(p['bunsho']) for p, _, _ in gyo)))}</p>",
              f"<table>\n<thead><tr>{head}</tr></thead>\n<tbody>\n" + "\n".join(rows) + "\n</tbody>\n</table>"]
@@ -761,8 +761,8 @@ def main(argv=None, teigi_dir=None):
     print(f"説明の文 {info['setsumei']}、経過 {info['katei']} 行、施設の表 {info['hyo']} 行、"
           f"施設 {info['shisetsu']}（記録 {info['kiroku']} 行）、照合した引用 {info['inyo']}、"
           f"施設ごとの欄に出した資料の表の行 {info['hyo_kijutsu']}")
-    print(f"一部改正の前後の数値で、対にしなかった行 {info['kaisei_shinai']}"
-          f"（ほかのページの行が対になっているので出さない行 {info['kaisei_hoka']}）")
+    print(f"一部改正の前後の数値で、組み合わせなかった行 {info['kaisei_shinai']}"
+          f"（ほかのページの行が組み合わされているので出さない行 {info['kaisei_hoka']}）")
     return 0
 
 

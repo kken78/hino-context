@@ -1,6 +1,6 @@
 """MCP の応答を作るツール（tools/build_mcp.py）。
 
-JSON の形（ツール4つ、引数の説明）、応答に資料の名前と URL が付くこと、定義が案であることの表示、上限と続き、
+JSON の形（ツール4つ、引数の説明）、応答に資料の名前と URL が付くこと、項目が案であることの表示、上限と続き、
 該当する組が無いときの文、使わない言葉で止まること、議員の名前が出ないこと。
 """
 import copy
@@ -48,7 +48,7 @@ class TestParts(unittest.TestCase):
     def test_pages(self):
         # 上限を超える組は、項目の途中で分けず、続きの文を付けて分ける
         items = [f"- 項目{i}：" + "あ" * 900 for i in range(20)]
-        o = bm.Outou("題", ["- 定義の欄"], [(["## 見出し"], items)])
+        o = bm.Outou("題", ["- 項目の欄"], [(["## 見出し"], items)])
         pages = o.pages(D)
         self.assertGreater(len(pages), 2)
         for i, p in enumerate(pages, 1):
@@ -62,8 +62,8 @@ class TestParts(unittest.TestCase):
                 self.assertNotIn("tsuzuki=", t)
         alltext = "".join(bm.owari(p) for p in pages)
         self.assertEqual([alltext.count(f"- 項目{i}：") for i in range(20)], [1] * 20)
-        self.assertIn("- 定義の欄", bm.owari(pages[0]))
-        self.assertNotIn("- 定義の欄", bm.owari(pages[1]))
+        self.assertIn("- 項目の欄", bm.owari(pages[0]))
+        self.assertNotIn("- 項目の欄", bm.owari(pages[1]))
         # 上限に収まる組は1つで、続きの文を付けない
         one = bm.Outou("題", [], [(["## 見出し"], ["- 1"])]).pages(D)
         self.assertEqual(len(one), 1)
@@ -115,7 +115,7 @@ class TestReal(unittest.TestCase):
         n = len(d["bun"])
         self.assertTrue(all(0 <= i < n for v in d["outou"].values() for i in v.values()))
         self.assertEqual(set(range(n)), {i for v in d["outou"].values() for i in v.values()})
-        # 組：テーマの一覧と幼保、定義26、施設13、文書22と表17
+        # 組：テーマの一覧と幼保、項目26、施設13、資料22と表17
         o = d["outou"]
         self.assertIn("", o["theme"])
         self.assertIn("theme=hoiku", o["theme"])
@@ -134,7 +134,7 @@ class TestReal(unittest.TestCase):
         # 数値と引用に、資料の名前、ページ、URL が付く
         t = self.bun("suji", "id=taiki&shiryo=pt:youho/honpen")
         self.assertIn("### 日野町幼児教育保育施設再編整備計画（令和８年６月一部改正、2026年6月）　11ページ", t)
-        self.assertIn(D.kotoba("文書の表 namae と、shiryo のページ") + "：https://www.town.shiga-hino.lg.jp/cmsfiles/"
+        self.assertIn(D.kotoba("資料の一覧の表 namae と、shiryo のページ") + "：https://www.town.shiga-hino.lg.jp/cmsfiles/"
                       "contents/0000008/8225/syuusei.pdf#page=11", t)
         self.assertIn("- 令和7年4月：3（" + D.kotoba("時点の関係 mae") + "）", t)
         t = self.bun("suji", "id=taiki&shiryo=doc:jigyo-shinkodomoen-kousou")
@@ -147,13 +147,13 @@ class TestReal(unittest.TestCase):
         self.assertIn("総務省自治財政局財務調査課「", t)
 
     def test_an(self):
-        # 定義が案なら、案であることを示す
+        # 項目が案なら、案であることを示す
         for t in self.tables["suji"]:
             text = self.bun("suji", f"id={t['id']}")
-            self.assertEqual(D.kotoba("定義の表 kettei が「案」") in text, t["kettei"] == "案", t["id"])
+            self.assertEqual(D.kotoba("項目の表 kettei が「案」") in text, t["kettei"] == "案", t["id"])
 
     def test_keika_kaisei(self):
-        """経過：文書の表にある資料には ID を付ける（13行のうち8行）。13行めの下に、改正前の資料と、違う数値を出す。"""
+        """経過：資料の一覧の表にある資料には ID を付ける（13行のうち8行）。13行めの下に、改正前の資料と、違う数値を出す。"""
         o = self.data["outou"]["theme"]
         t = "\n".join(self.data["bun"][o[k]] for k in sorted(o) if k.startswith("theme=hoiku&tsuzuki="))
         s = t.index(f"## {D.bun('midashi-keika')}")
@@ -161,13 +161,13 @@ class TestReal(unittest.TestCase):
         rows = re.split(r"\n(?=- )", keika)[1:]
         self.assertEqual(len(rows), 13)
         self.assertEqual(sum("（bunsho：" in r for r in rows), 8)
-        mae = D.kotoba("文書どうしの関係の表 hyogen が「一部改正」の行の e")
+        mae = D.kotoba("資料どうしの関係の表 hyogen が「一部改正」の行の e")
         self.assertEqual([i for i, r in enumerate(rows, 1) if f"  - {mae}：" in r], [13])
         want = "\n".join([
             "  - もとの資料：日野町幼児教育保育施設再編整備計画（令和８年６月一部改正、2026年6月）（bunsho：pt:youho/honpen）"
             "　1ページ　https://www.town.shiga-hino.lg.jp/cmsfiles/contents/0000008/8225/syuusei.pdf#page=1",
             f"  - {mae}：日野町幼児教育保育施設再編整備計画（2025年3月）（bunsho：pt:youho/honpen-202503）",
-            "  - " + D.kotoba("文書どうしの関係の表 kara、e の文書の数値の対で、atai が違うもの") + D.bun("mcp-kaisei-hani"),
+            "  - " + D.kotoba("資料どうしの関係の表 kara、e の資料の、同じ項目の、改正前と改正後の組み合わせで、atai が違うもの") + D.bun("mcp-kaisei-hani"),
             "    - 新こども園の開園の時期（id：kaien）：改正前「令和10年度」（34ページ）、改正後「令和11年度」（34ページ）",
             "    - 待機児童数（id：taiki）：改正後に、令和7年4月の数値が加わっている（11ページ）",
             "    - 待機児童数から除かれる者の小計（id：nozoku）：改正後に、令和7年4月の数値が加わっている（11ページ）"])
@@ -187,7 +187,7 @@ class TestReal(unittest.TestCase):
         self.assertNotIn(f"id=taiki&tsuzuki={n + 1}", o)
         # 年齢別の内訳は、資料の中で内訳ごとにまとめる
         t = "".join(self.data["bun"][o[k]] for k in o if k.startswith("id=fusoku&uchiwake=1&tsuzuki="))
-        midashi = f"- {D.kotoba('数値の表 kubun')}：2号認定（3〜5歳・保育）"
+        midashi = f"- {D.kotoba('数値と内容の表 kubun')}：2号認定（3〜5歳・保育）"
         self.assertEqual(t.count(midashi), 1)
 
     def test_nai(self):
@@ -196,7 +196,7 @@ class TestReal(unittest.TestCase):
             self.assertNotIn(k, o["suji"])
         self.assertNotIn("key=nishioji", o["shisetsu"])
         self.assertEqual(self.data["nai"]["suji"], D.bun("mcp-nai", tool="suji") + D.bun("mcp-hani-nai"))
-        # 表の形で出せない表は、決まった文
+        # 表の形で出せない表は、定型文
         self.assertIn(D.bun("mcp-hyo-dasenai"), self.bun("shiryo", "bunsho=doc:shingi-youho-teigen&hyo=16"))
 
     def test_giin(self):
@@ -229,14 +229,14 @@ class TestReal(unittest.TestCase):
         o = self.data["outou"]["suji"]
         base = "".join(self.data["bun"][o[k]] for k in o if re.fullmatch(r"id=taiki&tsuzuki=[0-9]+", k))
         uchi = "".join(self.data["bun"][o[k]] for k in o if re.fullmatch(r"id=taiki&uchiwake=1&tsuzuki=[0-9]+", k))
-        kubun = f"- {D.kotoba('数値の表 kubun')}："
+        kubun = f"- {D.kotoba('数値と内容の表 kubun')}："
         self.assertNotIn(kubun, base)
         self.assertIn(kubun + "うち0歳児", uchi)
         self.assertIn(D.bun("mcp-uchiwake"), base)
         self.assertNotIn(D.bun("mcp-uchiwake"), uchi)
         self.assertIn(D.bun("mcp-uchiwake-dake"), uchi)
         self.assertEqual(sum(1 for k in o if re.fullmatch(r"id=taiki&tsuzuki=[0-9]+", k)), 3)
-        # 内訳のある数値が無い定義には、uchiwake の組を作らない。どれも内訳の定義は、内訳の無い数値が無いことを示す
+        # 内訳のある数値が無い項目には、uchiwake の組を作らない。どれも内訳の項目は、内訳の無い数値が無いことを示す
         self.assertNotIn("id=kaien&uchiwake=1", o)
         self.assertNotIn(D.bun("mcp-uchiwake"), self.bun("suji", "id=kaien"))
         self.assertIn(D.bun("mcp-uchiwake-nomi"), self.bun("suji", "id=fusoku"))
@@ -245,8 +245,8 @@ class TestReal(unittest.TestCase):
 
     def test_naiyo(self):
         # 単位の無い項目（開園の時期）は「内容」、単位のある項目（待機児童数）は「数値」と出す（docs/design.md 3節）
-        for k, atai, toki in (("id=kaien", "数値の表 atai（定義の表 tani が空）", "定義の表 toki（定義の表 tani が空）"),
-                              ("id=taiki", "数値の表 atai", "定義の表 toki")):
+        for k, atai, toki in (("id=kaien", "数値と内容の表 atai（項目の表 tani が空）", "項目の表 toki（項目の表 tani が空）"),
+                              ("id=taiki", "数値と内容の表 atai", "項目の表 toki")):
             with self.subTest(k=k):
                 t = self.bun("suji", k)
                 self.assertIn(f"## {D.bun('mcp-midashi-suji', nakami=D.kotoba(atai))}", t)
@@ -263,7 +263,7 @@ class TestReal(unittest.TestCase):
         t = self.bun("suji", "id=taiki")
         midashi = f"## {D.bun('chigau')}"
         self.assertEqual(t.count(midashi), 1)
-        part = t[t.index(midashi):t.index(f"## {D.bun('mcp-midashi-suji', nakami=D.kotoba('数値の表 atai'))}")]
+        part = t[t.index(midashi):t.index(f"## {D.bun('mcp-midashi-suji', nakami=D.kotoba('数値と内容の表 atai'))}")]
         self.assertIn("- 2018年4月：1（", part)
         self.assertIn("なし（会議録 2019年6月14日（議会での答弁））", part)
         self.assertEqual(part.count("\n- "), 1)
@@ -285,24 +285,24 @@ class TestReal(unittest.TestCase):
     def test_irete_inai(self):
         nai = D.bun("mcp-irete-inai")
         t = self.bun("shiryo", "bunsho=plan:sogo6")
-        self.assertIn(f"- {D.kotoba('文書の表 konkyo')}：{nai}", t)
+        self.assertIn(f"- {D.kotoba('資料の一覧の表 konkyo')}：{nai}", t)
         self.assertIn(f"## {D.bun('mcp-midashi-hyo-ichiran')}\n{nai}", t)
         t = self.bun("shiryo", "bunsho=pt:youho/honpen-202503")
-        self.assertIn(f"## {D.kotoba('文書どうしの関係の表 e')}\n", t)
+        self.assertIn(f"## {D.kotoba('資料どうしの関係の表 e')}\n", t)
         t = self.bun("shiryo", "bunsho=doc:yosan-r7-hosei-12")
-        self.assertIn(D.bun("mcp-konkyo-nashi", hani=D.kotoba("文書の表 chu（「根拠：」の記述の「見つからない（…）」の括弧の中の字）")
+        self.assertIn(D.bun("mcp-konkyo-nashi", hani=D.kotoba("資料の一覧の表 chu（「根拠：」の記述の「見つからない（…）」の括弧の中の字）")
                                                 + "：全ページを「基づ」「法」の字で探し、1ページを読んだ"), t)
         self.assertEqual(bm.konkyo_hani("根拠：記載は見つからない（1ページ（表）を見た）。日付：…"), "1ページ（表）を見た")
-        self.assertEqual(bm.konkyo_hani("根拠：原典の文字が入力に無いので探していない"), "")
+        self.assertEqual(bm.konkyo_hani("根拠：もとの資料から取り出した文字が入力に無いので探していない"), "")
 
     def test_hani(self):
         self.assertIn(D.bun("mcp-shisetsu-teigi", theme="hoiku"), self.bun("shisetsu", "key=fa:shin-kodomoen"))
 
     def test_shurui(self):
         # 資料の種類は、内部の値ではなく、docs/design.md の言葉で出す
-        self.assertIn(f"- {D.kotoba('文書の表 shurui')}：{D.kotoba('文書の表 shurui が「keikaku」')}",
+        self.assertIn(f"- {D.kotoba('資料の一覧の表 shurui')}：{D.kotoba('資料の一覧の表 shurui が「keikaku」')}",
                       self.bun("shiryo", "bunsho=pt:youho/honpen"))
-        self.assertIn(f"- {D.kotoba('文書の表 shurui')}：{D.kotoba('文書の表 shurui が「koho」')}",
+        self.assertIn(f"- {D.kotoba('資料の一覧の表 shurui')}：{D.kotoba('資料の一覧の表 shurui が「koho」')}",
                       self.bun("shiryo", "bunsho=doc:koho-no771-08"))
         for k, i in self.data["outou"]["shiryo"].items():
             self.assertIsNone(re.search(r"資料の種類：[a-z]", self.data["bun"][i]), k)
@@ -313,7 +313,7 @@ class TestReal(unittest.TestCase):
         self.assertTrue(any("bosai" in m for _, m in c.exception.problems))
 
     def test_kuzure(self):
-        # 取り出した文字が崩れている数値は、資料の該当部分を出さず、決まった文と確認の記録を出す
+        # 取り出した文字が崩れている数値は、資料の該当部分を出さず、定型文と確認の記録を出す
         t = self.bun("suji", "id=taiki&shiryo=doc:hyoka-r4-senryaku-kensho")
         self.assertEqual(t.count(D.bun("inyo-kuzure")), 6)
         self.assertNotIn("「基準値【R1】", t)

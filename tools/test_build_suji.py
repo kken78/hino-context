@@ -1,4 +1,4 @@
-"""数値の表から、定義1つのページを作るツール（tools/build_suji.py）：列の分け方、並べ方、止まる条件、docs/design.md 3節との対応。"""
+"""数値と内容の表から、項目1つのページを作るツール（tools/build_suji.py）：列の分け方、並べ方、止まる条件、docs/design.md 3節との対応。"""
 import datetime
 import os
 import re
@@ -114,7 +114,7 @@ class TestFake(unittest.TestCase):
         self.assertEqual(info["gyo"], 7)
         self.assertNotIn(bn.A, page)
         self.assertNotIn(bn.B, page)
-        self.assertIn(D.kotoba("定義の表 kettei が「案」"), page)
+        self.assertIn(D.kotoba("項目の表 kettei が「案」"), page)
         # 列の説明は ato と mae にだけ付ける（docs/design.md 3節の出し方）
         self.assertIn(f"<span class=setsumei>{D.retsu_setsumei('時点の関係 ato')}</span>", page)
         self.assertIn(f"<span class=setsumei>{D.retsu_setsumei('時点の関係 mae')}</span>", page)
@@ -129,8 +129,8 @@ class TestFake(unittest.TestCase):
         self.assertEqual([chips(c) for c in cells(page, "2023年度", "：2号</h3>")], [[], [], ["40"]])
         self.assertEqual([chips(c) for c in cells(page, "2024年度", "：2号</h3>")], [[], ["41"], []])
         self.assertEqual([chips(c) for c in cells(page, "2025年度", "：2号</h3>")], [["42"], [], []])
-        # kubun ごとに表を分ける。列は、定義の中に1行でもある印の列（kubun ごとには減らさない）
-        self.assertIn(f"<h3>{D.kotoba('数値の表 kubun')}：2号</h3>", page)
+        # kubun ごとに表を分ける。列は、項目の中に1行でもある印の列（kubun ごとには減らさない）
+        self.assertIn(f"<h3>{D.kotoba('数値と内容の表 kubun')}：2号</h3>", page)
         self.assertEqual(heads(page, "：3号</h3>"), [JIKI, go("ato"), go("tochu"), go("mae")])
         self.assertEqual([chips(c) for c in cells(page, "2024年度", "：3号</h3>")], [[], ["40"], []])
         self.assertIn(D.bun("nendo-kikan"), page)
@@ -139,7 +139,7 @@ class TestFake(unittest.TestCase):
         page, info = self.build()
         self.assertEqual(info["kankei"][None], 3)
         i = page.index(f"<h3>{D.bun('midashi-nai')}</h3>")
-        riyu = [D.kotoba("数値の表 nendo が空"), D.kotoba("文書の表 hiduke が空"), D.kotoba("数値の表 shiryo が空")]
+        riyu = [D.kotoba("数値と内容の表 nendo が空"), D.kotoba("資料の一覧の表 hiduke が空"), D.kotoba("数値と内容の表 shiryo が空")]
         kensu = [D.bun("kensu", riyu=r, n=1) for r in riyu]
         order = [page.index(k, i) for k in kensu]
         self.assertEqual(order, sorted(order))                         # 理由ごとに、決めた順に並べる
@@ -167,19 +167,19 @@ class TestFake(unittest.TestCase):
         page, _ = self.build(tables([t], rows), "kaien")
         self.assertNotIn(f"<h2>{D.bun('midashi-hyo')}</h2>", page)
         self.assertNotIn("並べ方は、まだ決まっていません", page)        # docs/design.md 4節（2026-11-21 の依頼者の決定）
-        naiyo = D.kotoba("数値の表 atai（定義の表 tani が空）")                 # 単位の無い項目は「内容」
+        naiyo = D.kotoba("数値と内容の表 atai（項目の表 tani が空）")                 # 単位の無い項目は「内容」
         body = page[page.index(f"<h2>{D.bun('midashi-hiduke', nakami=naiyo)}</h2>"):
                     page.index(f"<h2>{D.bun('midashi-shosai', nakami=naiyo)}</h2>")]
         self.assertEqual(re.findall(r"<tr><td>(.*?)</td>", body),
-                         ["2024年12月13日", "2025年3月", D.kotoba("文書の表 hiduke が空")])
+                         ["2024年12月13日", "2025年3月", D.kotoba("資料の一覧の表 hiduke が空")])
         # shurui がどの行にも無ければ、その列を出さない
-        self.assertNotIn(D.kotoba("数値の表 shurui"), heads(page, f"<h2>{D.bun('midashi-hiduke', nakami=naiyo)}</h2>"))
+        self.assertNotIn(D.kotoba("数値と内容の表 shurui"), heads(page, f"<h2>{D.bun('midashi-hiduke', nakami=naiyo)}</h2>"))
 
     def test_naiyo(self):
         # 単位の無い項目は、数値を「内容」と出す。判定は tools/suji.py の tani_nashi（docs/design.md 3節。2026-11-27）
         rows = [atai_row(suji="kaien", jiten="資料A", nendo="", atai="9", shiryo="doc:jigyo-1/2", inyo="令和7年度 9 人")]
-        for tani, w, toki in (("", D.kotoba("数値の表 atai（定義の表 tani が空）"), D.kotoba("定義の表 toki（定義の表 tani が空）")),
-                              ("人", D.kotoba("数値の表 atai"), D.kotoba("定義の表 toki"))):
+        for tani, w, toki in (("", D.kotoba("数値と内容の表 atai（項目の表 tani が空）"), D.kotoba("項目の表 toki（項目の表 tani が空）")),
+                              ("人", D.kotoba("数値と内容の表 atai"), D.kotoba("項目の表 toki"))):
             with self.subTest(tani=tani):
                 page, _ = self.build(tables([teigi_row(id="kaien", name="開園の時期", nendo_tsuki="", tani=tani)], rows),
                                      "kaien")
@@ -194,18 +194,18 @@ class TestFake(unittest.TestCase):
         page, _ = self.build()
         self.assertIn("<dt>区分</dt><dd>議会での答弁</dd>", page)
         self.assertIn("<dt>区分</dt><dd>町の資料</dd>", page)
-        tokoro = D.kotoba("文書の部分（bubun・retsu から親をたどった並び）")
+        tokoro = D.kotoba("資料の中の場所（bubun・retsu から親をたどった並び）")
         self.assertIn(f"<dt>{tokoro}</dt><dd>{D.kotoba('bubun が空')}</dd>", page)
         self.assertIn("https://example.jp/p.pdf#page=2", page)
         self.assertIn(f"#sid={SID}", page)
-        self.assertIn(f"<dt>{D.kotoba('数値の表 jotai が「数値がある」でない')}</dt><dd>調べた範囲に見つからない</dd>", page)
-        self.assertIn(f"<dt>{D.kotoba('数値の表 kakunin')}</dt><dd>2026年11月19日</dd>", page)
-        self.assertNotIn("根拠：全ページを探した", page)            # 文書の表の chu は出さない
+        self.assertIn(f"<dt>{D.kotoba('数値と内容の表 jotai が「数値がある」でない')}</dt><dd>調べた範囲に見つからない</dd>", page)
+        self.assertIn(f"<dt>{D.kotoba('数値と内容の表 kakunin')}</dt><dd>2026年11月19日</dd>", page)
+        self.assertNotIn("根拠：全ページを探した", page)            # 資料の一覧の表の chu は出さない
         self.assertNotIn("日付：全ページを探した", page)
         # 出さない欄：時点の関係の欄。shurui が空の行の、shurui の欄
         self.assertNotIn("時点の関係", page)
         sec = page[page.index("<section id='g2'>"):page.index("</section>", page.index("<section id='g2'>"))]
-        self.assertNotIn(D.kotoba("数値の表 shurui"), sec)
+        self.assertNotIn(D.kotoba("数値と内容の表 shurui"), sec)
 
     def test_stop_word(self):
         with self.assertRaises(bs.Stop) as c:
@@ -231,7 +231,7 @@ class TestFake(unittest.TestCase):
     def test_stop_id_not_defined(self):
         with self.assertRaises(bs.Stop) as c:
             self.build(sid="nai")
-        self.assertEqual([k for k, _ in c.exception.problems], ["(c) 定義の id"])
+        self.assertEqual([k for k, _ in c.exception.problems], ["(c) 項目の id"])
 
     def test_main_stops_without_writing(self):
         out = os.path.join(bs.OUT_DIR, "nai-teigi.html")
@@ -274,7 +274,7 @@ class TestReal(unittest.TestCase):
                 self.assertNotIn("<script", page)
 
     def test_taiki_kuzure(self):
-        """chu に「抽出した文字の並びが崩れている」がある数値は、資料の該当部分に決まった文を出す（2026-11-27）。"""
+        """chu に「抽出した文字の並びが崩れている」がある数値は、資料の該当部分に定型文を出す（2026-11-27）。"""
         page, _ = self.page("taiki")
         n = sum(1 for r in self.tables["atai"] if r["suji"] == "taiki" and suji.inyo_kuzure(r) and r["inyo"])
         self.assertEqual(n, 10)
@@ -296,7 +296,7 @@ class TestReal(unittest.TestCase):
         # 年齢別の行（kubun が「うち0歳児」〜「うち5歳児」）は、内訳ごとに表を分ける。年齢別の数値は、資料の間で一致する
         page, info = self.page("taiki")
         for i in range(6):
-            self.assertIn(f"<h3>{D.kotoba('数値の表 kubun')}：うち{i}歳児</h3>", page)
+            self.assertIn(f"<h3>{D.kotoba('数値と内容の表 kubun')}：うち{i}歳児</h3>", page)
         self.assertEqual(info["chigau"], 1)
 
     def test_kaien(self):
@@ -305,7 +305,7 @@ class TestReal(unittest.TestCase):
         self.assertNotIn("並べ方は、まだ決まっていません", page)
 
     def test_no_chu_of_bunsho_and_bubun(self):
-        # 文書の表と文書の部分の表の chu は、どのページにも出さない。数値の表の chu（確認の状態として出す）と
+        # 資料の一覧の表と資料の中の場所の表の chu は、どのページにも出さない。数値と内容の表の chu（確認の状態として出す）と
         # 同じ字の chu（「生成AIが画像を2回読んで一致（2026-11-23）」だけの chu など）は除く
         chus = {r["chu"] for r in self.tables["bunsho"] + self.tables["bubun"] if len(r["chu"]) >= 6}
         chus -= {r["chu"] for r in self.tables["atai"]}

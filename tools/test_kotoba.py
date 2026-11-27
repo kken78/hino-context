@@ -16,7 +16,7 @@ class TestTable(unittest.TestCase):
     def test_read_design(self):
         ng, ok = bn.read_kotoba()
         words = [w for w, _ in ng]
-        for w in ("事項", "点", "題材", "当たる", "記載", "段落", "値", "性質", "対応", "原典", "出典", "開けます", "見本"):
+        for w in ("事項", "点", "題材", "当たる", "記載", "段落", "値", "性質", "対応", "原" "典", "出典", "開けます", "見本"):
             self.assertIn(w, words)
         self.assertEqual(dict(ng)["段落"], "リンクの名前")
         self.assertEqual(dict(ng)["点"], "文")

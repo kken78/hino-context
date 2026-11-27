@@ -76,7 +76,7 @@ def owari(h):
 
 
 def kakunin_kiroku(chu):
-    """数値の表の chu → 確認の記録の字（日付の形が合うもの）だけの並び（docs/design.md 3節）。"""
+    """数値と内容の表の chu → 確認の記録の字（日付の形が合うもの）だけの並び（docs/design.md 3節）。"""
     out = []
     for rx in (sj.RE_KAKUNIN, sj.RE_NISHA):
         out += [m.group(0) for m in rx.finditer(chu or "") if sj.is_ymd(m.group(1))]
@@ -162,7 +162,7 @@ class Tsukuru:
         D = self.D
         if not url:
             return f"{sita}{E(D.bun('link-nashi'))}"
-        return f"{sita}{E(D.kotoba('文書の表 namae と、shiryo のページ'))}：{E(url)}"
+        return f"{sita}{E(D.kotoba('資料の一覧の表 namae と、shiryo のページ'))}：{E(url)}"
 
     def kagi_ji(self, name, hikisu, key):
         """名前のあとの括弧に、ツールの引数の名前と、その引数に使う ID を付ける。"""
@@ -219,11 +219,11 @@ class Tsukuru:
                 lines.append(f"  - {E(D.kotoba('過程の記録 sources'))}：{nm}　{E(url)}" if url
                              else f"  - {E(D.kotoba('過程の記録 sources'))}：{nm}")
             for e, x in self.kaisei.of(srcs):
-                lines.append(f"  - {E(D.kotoba('文書どうしの関係の表 hyogen が「一部改正」の行の e'))}："
+                lines.append(f"  - {E(D.kotoba('資料どうしの関係の表 hyogen が「一部改正」の行の e'))}："
                              f"{self.bunsho_kagi(e)}")
                 ks = self.kaisei.items(D, x, self.teigi_kagi)
                 if ks:
-                    lines.append(f"  - {E(D.kotoba('文書どうしの関係の表 kara、e の文書の数値の対で、atai が違うもの'))}"
+                    lines.append(f"  - {E(D.kotoba('資料どうしの関係の表 kara、e の資料の、同じ項目の、改正前と改正後の組み合わせで、atai が違うもの'))}"
                                  f"{E(D.bun('mcp-kaisei-hani'))}")
                     lines += [f"    - {k}" for k in ks]
             items.append("\n".join(lines))
@@ -300,7 +300,7 @@ class Tsukuru:
 
     # suji
     def suji(self, t, bunsho=None, uchiwake=False):
-        """定義 t の数値。uchiwake が偽なら kubun の無い行だけ、真なら kubun のある行だけ（docs/mcp.md）。"""
+        """項目 t の数値。uchiwake が偽なら kubun の無い行だけ、真なら kubun のある行だけ（docs/mcp.md）。"""
         D = self.D
         zen = [r for r in self.t["atai"] if r["suji"] == t["id"]]
         if bunsho:
@@ -308,10 +308,10 @@ class Tsukuru:
         rows = [r for r in zen if bool(r["kubun"]) == uchiwake]
         intro = []
         if t["kettei"] == "案":
-            intro.append(E(D.kotoba("定義の表 kettei が「案」")))
-        for k, c in ((D.kotoba("定義の表 nani"), "nani"), (D.kotoba("定義の表 tani"), "tani"),
-                     (bs.toki_go(D, t), "toki"), (D.kotoba("定義の表 iikata"), "iikata"),
-                     (D.kotoba("定義の表 chui"), "chui")):
+            intro.append(E(D.kotoba("項目の表 kettei が「案」")))
+        for k, c in ((D.kotoba("項目の表 nani"), "nani"), (D.kotoba("項目の表 tani"), "tani"),
+                     (bs.toki_go(D, t), "toki"), (D.kotoba("項目の表 iikata"), "iikata"),
+                     (D.kotoba("項目の表 chui"), "chui")):
             if t[c]:
                 intro.append(f"- {E(k)}：{E(t[c])}")
         if uchiwake:
@@ -355,12 +355,12 @@ class Tsukuru:
                 b = self.by.get(sj.bunsho_of(k) or "")
                 if b and b["konkyo"]:
                     kp = D.bun("page", n=sj.page_no(b["konkyo_tokoro"]))
-                    head.append(f"{E(D.kotoba('文書の表 konkyo'))}：「{S(b['konkyo'])}」（{E(kp)}）")
+                    head.append(f"{E(D.kotoba('資料の一覧の表 konkyo'))}：「{S(b['konkyo'])}」（{E(kp)}）")
             else:
-                head = [f"### {E(D.kotoba('数値の表 shiryo が空'))}"]
+                head = [f"### {E(D.kotoba('数値と内容の表 shiryo が空'))}"]
             items = [self.atai_gyo(r, kankei[id(r)], kotoba) for r in rs if not r["kubun"]]
             for kb in dict.fromkeys(r["kubun"] for r in rs if r["kubun"]):
-                lines = [f"- {E(D.kotoba('数値の表 kubun'))}：{E(kb)}"]
+                lines = [f"- {E(D.kotoba('数値と内容の表 kubun'))}：{E(kb)}"]
                 lines += ["  " + x.replace("\n", "\n  ") for x in
                           (self.atai_gyo(r, kankei[id(r)], kotoba) for r in rs if r["kubun"] == kb)]
                 items.append("\n".join(lines))
@@ -394,26 +394,26 @@ class Tsukuru:
         for (kb, _, label), rs in sorted(kumi.items(), key=lambda x: (x[0][0], x[0][1])):
             if not sj.ichi_shinai(rs, self.index):
                 continue
-            jiki = E(label) + (f"（{E(D.kotoba('数値の表 kubun'))}：{E(kb)}）" if kb else "")
+            jiki = E(label) + (f"（{E(D.kotoba('数値と内容の表 kubun'))}：{E(kb)}）" if kb else "")
             atai = "、".join(f"{S(r['atai'])}（{self.moto(r['shiryo'], r['inyo'])[0]}）"
                             for r in rs if r["jotai"] == sj.ARU)
             out.append("- " + D.bun("mcp-chigau-gyo", jiki=jiki, atai=atai))
         return out
 
     def atai_gyo(self, r, kankei, kotoba):
-        """数値の表の1行 → 項目（改行を含む）。"""
+        """数値と内容の表の1行 → 項目（改行を含む）。"""
         D = self.D
         if r["jotai"] == sj.ARU:
             gyo = f"- {E(r['jiten'])}：{S(r['atai'])}"
         else:
-            gyo = f"- {E(r['jiten'])}：{E(D.kotoba('数値の表 jotai が「数値がある」でない'))}「{E(r['jotai'])}」"
+            gyo = f"- {E(r['jiten'])}：{E(D.kotoba('数値と内容の表 jotai が「数値がある」でない'))}「{E(r['jotai'])}」"
         if kankei:
             gyo += f"（{E(kotoba[kankei][0])}）"
         if r["shurui"]:
-            gyo += f"　{E(D.kotoba('数値の表 shurui'))}：{S(r['shurui'])}"
+            gyo += f"　{E(D.kotoba('数値と内容の表 shurui'))}：{S(r['shurui'])}"
         kk = kakunin_kiroku(r["chu"])
         if kk:
-            gyo += f"　{E(D.kotoba('数値の表 chu（確認の記録の字）'))}：{E('、'.join(kk))}"
+            gyo += f"　{E(D.kotoba('数値と内容の表 chu（確認の記録の字）'))}：{E('、'.join(kk))}"
         lines = [gyo]
         sh = r["shiryo"].strip()
         if sh:
@@ -421,15 +421,15 @@ class Tsukuru:
             if not ichi and not sh.startswith("sp:") and sj.page_no(sh):
                 ichi = E(D.kotoba("bubun が空"))
             if ichi:
-                lines.append(f"  - {E(D.kotoba('文書の部分（bubun・retsu から親をたどった並び）'))}：{ichi}")
+                lines.append(f"  - {E(D.kotoba('資料の中の場所（bubun・retsu から親をたどった並び）'))}：{ichi}")
             if r["inyo"] and sj.inyo_kuzure(r):
-                lines.append(f"  - {E(D.kotoba('数値の表 inyo'))}：{E(D.bun('inyo-kuzure'))}")
+                lines.append(f"  - {E(D.kotoba('数値と内容の表 inyo'))}：{E(D.bun('inyo-kuzure'))}")
             elif r["inyo"]:
-                lines.append(f"  - {E(D.kotoba('数値の表 inyo'))}：「{S(r['inyo'])}」")
+                lines.append(f"  - {E(D.kotoba('数値と内容の表 inyo'))}：「{S(r['inyo'])}」")
         if r["jotai"] != sj.ARU and r["hani"]:
-            lines.append(f"  - {E(D.kotoba('数値の表 hani'))}：{E(r['hani'])}")
+            lines.append(f"  - {E(D.kotoba('数値と内容の表 hani'))}：{E(r['hani'])}")
             if r["kakunin"]:
-                lines.append(f"  - {E(D.kotoba('数値の表 kakunin'))}：{E(bs.hi_str(D, r['kakunin']))}")
+                lines.append(f"  - {E(D.kotoba('数値と内容の表 kakunin'))}：{E(bs.hi_str(D, r['kakunin']))}")
         return "\n".join(lines)
 
     # shisetsu
@@ -464,11 +464,11 @@ class Tsukuru:
             hyo_parts.add((p["bunsho"], p["oya"]))
             nm, url = self.namae.shiryo(hyo["tokoro"])
             lines = [f"- {nm}",
-                     f"  - {E(D.kotoba('文書の部分の表 name（shu が「表」）'))}：{bh.midashi_ji(D, hyo)}"
-                     f"　{E(D.kotoba('文書の部分の表 name（shu が「行」か「列」）'))}：{bh.midashi_ji(D, p)}"]
+                     f"  - {E(D.kotoba('資料の中の場所の表 name（shu が「表」）'))}：{bh.midashi_ji(D, hyo)}"
+                     f"　{E(D.kotoba('資料の中の場所の表 name（shu が「行」か「列」）'))}：{bh.midashi_ji(D, p)}"]
             if p["shisetsu_kakunin"].strip():
-                lines.append(f"  - {E(D.kotoba('文書の部分の表 shisetsu_kakunin'))}：{E(p['shisetsu_kakunin'])}")
-            lines.append(f"  - {E(D.kotoba('数値の表 atai、retsu'))}：" + "、".join(
+                lines.append(f"  - {E(D.kotoba('資料の中の場所の表 shisetsu_kakunin'))}：{E(p['shisetsu_kakunin'])}")
+            lines.append(f"  - {E(D.kotoba('数値と内容の表 atai、retsu'))}：" + "、".join(
                 D.bun("hyo-kijutsu-ran", midashi=bh.midashi_ji(D, x), atai=S(r["atai"])) for x, r in ran))
             lines.append(self.url_gyo(url, "  - "))
             items.append("\n".join(lines))
@@ -476,8 +476,8 @@ class Tsukuru:
                  for x in [p, hyo] + [x for x, _ in ran])
         hb = bs.hiduke_bun(D, False, any(self.namae.hiduke_nashi(p["bunsho"]) for p, _, _ in
                                          (hk.gyo.get(k, []) if hk else [])))
-        head = [f"## {E(D.kotoba('文書の部分の表 shisetsu、oya'))}", E(D.bun("hyo-kijutsu-setsumei")) + E(hb)]
-        D.kotoba("文書の表 namae、han、hiduke")
+        head = [f"## {E(D.kotoba('資料の中の場所の表 shisetsu、oya'))}", E(D.bun("hyo-kijutsu-setsumei")) + E(hb)]
+        D.kotoba("資料の一覧の表 namae、han、hiduke")
         blocks.append((head, items + ([E(D.bun("mikakunin-hyo"))] if mi and items else [])))
         # 施設を指す数値の行（上の欄に出した表の数値は除く）
         items, mi_suji = [], False
@@ -491,19 +491,19 @@ class Tsukuru:
                     continue
                 nm, url = self.moto(r["shiryo"], r["inyo"])
                 gyo = f"- {self.teigi_kagi(x)}：{S(r['atai'])}"
-                gyo += f"　{E(D.kotoba('数値の表 jiten'))}：{E(r['jiten'])}"
+                gyo += f"　{E(D.kotoba('数値と内容の表 jiten'))}：{E(r['jiten'])}"
                 kk = kakunin_kiroku(r["chu"])
                 if kk:
-                    gyo += f"　{E(D.kotoba('数値の表 chu（確認の記録の字）'))}：{E('、'.join(kk))}"
-                lines = [gyo, f"  - {E(D.kotoba('文書の表 namae と、shiryo のページ'))}：{nm}" + (f"　{E(url)}" if url else "")]
+                    gyo += f"　{E(D.kotoba('数値と内容の表 chu（確認の記録の字）'))}：{E('、'.join(kk))}"
+                lines = [gyo, f"  - {E(D.kotoba('資料の一覧の表 namae と、shiryo のページ'))}：{nm}" + (f"　{E(url)}" if url else "")]
                 ichi, m = bs.ichi_of(D, r, self.index)
                 mi_suji = mi_suji or m
                 if ichi:
-                    lines.append(f"  - {E(D.kotoba('文書の部分（bubun・retsu から親をたどった並び）'))}：{ichi}")
+                    lines.append(f"  - {E(D.kotoba('資料の中の場所（bubun・retsu から親をたどった並び）'))}：{ichi}")
                 sk = [self.index[(b, n)]["shisetsu_kakunin"] for n in (r["bubun"], r["retsu"])
                       if n and (b, n) in self.index and self.index[(b, n)]["shisetsu_kakunin"].strip()]
                 if sk:
-                    lines.append(f"  - {E(D.kotoba('文書の部分の表 shisetsu_kakunin'))}：{E('、'.join(sk))}")
+                    lines.append(f"  - {E(D.kotoba('資料の中の場所の表 shisetsu_kakunin'))}：{E('、'.join(sk))}")
                 items.append("\n".join(lines))
         if mi_suji:
             items.append(E(D.bun("mikakunin-setsumei")))
@@ -516,12 +516,12 @@ class Tsukuru:
     def bunsho_intro(self, bkey):
         D = self.D
         b = self.by[bkey]
-        shurui = {"keikaku": D.kotoba("文書の表 shurui が「keikaku」"), "koho": D.kotoba("文書の表 shurui が「koho」"),
-                  "yosan": D.kotoba("文書の表 shurui が「yosan」"), "hyoka": D.kotoba("文書の表 shurui が「hyoka」"),
-                  "jigyo": D.kotoba("文書の表 shurui が「jigyo」"), "shingi": D.kotoba("文書の表 shurui が「shingi」")}
+        shurui = {"keikaku": D.kotoba("資料の一覧の表 shurui が「keikaku」"), "koho": D.kotoba("資料の一覧の表 shurui が「koho」"),
+                  "yosan": D.kotoba("資料の一覧の表 shurui が「yosan」"), "hyoka": D.kotoba("資料の一覧の表 shurui が「hyoka」"),
+                  "jigyo": D.kotoba("資料の一覧の表 shurui が「jigyo」"), "shingi": D.kotoba("資料の一覧の表 shurui が「shingi」")}
         if b["shurui"] not in shurui:
             self.problems.append(("(e) デザインシステムとの対応",
-                                  f"文書の表の shurui「{b['shurui']}」の行が、docs/design.md 3節に無い（{bkey}）"))
+                                  f"資料の一覧の表の shurui「{b['shurui']}」の行が、docs/design.md 3節に無い（{bkey}）"))
         kk = [r for r in self.t["kankei"] if r["kara"] == bkey]
         ke = [r for r in self.t["kankei"] if r["e"] == bkey]
         ar = [r for r in self.t["atai"] if r["shiryo"].strip() and sj.bunsho_of(r["shiryo"]) == bkey]
@@ -529,15 +529,15 @@ class Tsukuru:
         intro = [E(D.bun("mcp-shiryo-hani")),
                  E(D.bun("mcp-shiryo-kazu", hyo=len(hyo), atai=len(ar), teigi=len({r["suji"] for r in ar}),
                          kara=len(kk), e=len(ke))),
-                 f"- {E(D.kotoba('文書の表 shurui'))}：{E(shurui.get(b['shurui'], b['shurui']))}"]
+                 f"- {E(D.kotoba('資料の一覧の表 shurui'))}：{E(shurui.get(b['shurui'], b['shurui']))}"]
         if b["konkyo"]:
             kp = D.bun("page", n=sj.page_no(b["konkyo_tokoro"]))
-            intro.append(f"- {E(D.kotoba('文書の表 konkyo'))}：「{S(b['konkyo'])}」（{E(kp)}）")
+            intro.append(f"- {E(D.kotoba('資料の一覧の表 konkyo'))}：「{S(b['konkyo'])}」（{E(kp)}）")
         else:
             hani = konkyo_hani(b["chu"])
-            ji = (D.bun("mcp-konkyo-nashi", hani=E(f"{D.kotoba('文書の表 chu（「根拠：」の記述の「見つからない（…）」の括弧の中の字）')}：{hani}"))
+            ji = (D.bun("mcp-konkyo-nashi", hani=E(f"{D.kotoba('資料の一覧の表 chu（「根拠：」の記述の「見つからない（…）」の括弧の中の字）')}：{hani}"))
                   if hani else E(D.bun("mcp-irete-inai")))
-            intro.append(f"- {E(D.kotoba('文書の表 konkyo'))}：{ji}")
+            intro.append(f"- {E(D.kotoba('資料の一覧の表 konkyo'))}：{ji}")
         first = f"{bkey}/1" if not keys.RE_PLAN.fullmatch(bkey) else ""
         intro.append(self.url_gyo(keys.source_url(self.inp, first) if first else "", "- "))
         return intro
@@ -549,15 +549,15 @@ class Tsukuru:
         groups = {}
         for r in kk:
             groups.setdefault((r["inyo"], r["hyogen"]), []).append(r)
-        D.dasanai("文書どうしの関係の表 hyogen")
+        D.dasanai("資料どうしの関係の表 hyogen")
         items = []
         for (inyo, hyogen), rs in groups.items():
             aite = "、".join(dict.fromkeys(self.bunsho_kagi(r["e"]) for r in rs))
             page = E(D.bun("page", n=sj.page_no(rs[0]["tokoro"])))
             items.append(f"- 「{S(inyo)}」（{page}）\n  - {D.bun('aite', hyogen=S(hyogen), aite=aite)}")
-        blocks.append(([f"## {E(D.kotoba('文書どうしの関係の表 inyo'))}"],
+        blocks.append(([f"## {E(D.kotoba('資料どうしの関係の表 inyo'))}"],
                        items or [E(D.bun("shiryo-nashi"))]))
-        D.kotoba("文書どうしの関係の表 kara、e")
+        D.kotoba("資料どうしの関係の表 kara、e")
         items = []
         for r in self.t["kankei"]:
             if r["e"] == bkey:
@@ -565,7 +565,7 @@ class Tsukuru:
                 items.append(f"- {self.bunsho_kagi(r['kara'])}\n  - 「{S(r['inyo'])}」（{page}）\n"
                              f"  - {D.bun('aite', hyogen=S(r['hyogen']), aite=self.bunsho_kagi(bkey))}")
         nai = [E(D.bun("mcp-irete-inai"))]
-        blocks.append(([f"## {E(D.kotoba('文書どうしの関係の表 e'))}"], items or nai))
+        blocks.append(([f"## {E(D.kotoba('資料どうしの関係の表 e'))}"], items or nai))
         ids = {r["suji"] for r in self.t["atai"] if r["shiryo"].strip() and sj.bunsho_of(r["shiryo"]) == bkey}
         blocks.append(([f"## {E(D.bun('mcp-midashi-suji-ari'))}"],
                        ["- " + self.teigi_kagi(x) for x in self.t["suji"] if x["id"] in ids] or nai))
@@ -581,7 +581,7 @@ class Tsukuru:
         return Outou(self.bunsho_kagi(bkey), self.bunsho_intro(bkey), blocks)
 
     def hyo(self, bkey, n):
-        """表1つ（tools/build_hyo.py の Hyo）を、行ごとの箇条書きにする。表の形で出せない表は、決まった文を返す。"""
+        """表1つ（tools/build_hyo.py の Hyo）を、行ごとの箇条書きにする。表の形で出せない表は、定型文を返す。"""
         D = self.D
         h = bh.Hyo(self.inp, self.t, bkey, n)
         hyo = self.index[(bkey, n)]
@@ -611,7 +611,7 @@ class Tsukuru:
         b = self.by[bkey]
         if b["konkyo"]:
             kp = D.bun("page", n=sj.page_no(b["konkyo_tokoro"]))
-            intro.append(f"- {E(D.kotoba('文書の表 konkyo'))}：「{S(b['konkyo'])}」（{E(kp)}）")
+            intro.append(f"- {E(D.kotoba('資料の一覧の表 konkyo'))}：「{S(b['konkyo'])}」（{E(kp)}）")
         hoka = bh.hoka_bunsho(self.t, h, bkey)
         if hoka:
             li = []
@@ -666,7 +666,7 @@ class Tsukuru:
 
 
 def konkyo_hani(chu):
-    """文書の表の chu の「根拠：」の記述に「見つからない（…）」があれば、括弧の中の字。無ければ空。
+    """資料の一覧の表の chu の「根拠：」の記述に「見つからない（…）」があれば、括弧の中の字。無ければ空。
     括弧の中に括弧があっても、対になる閉じ括弧までを取る。chu のほかの字は使わない（docs/design.md 3節）。"""
     i = (chu or "").find("根拠：")
     if i < 0:
@@ -794,7 +794,7 @@ def build(inp, tables, kotoba, read_problems=(), design=None, skill=None):
     top = D.bun("mcp-top", name=NAME)
     setsumei = D.bun("mcp-setsumei")
     skill = (read_skill() if skill is None else skill) + "\n- " + D.bun("mcp-hani-nai")
-    # 使わない言葉の検査：応答の文、ツールと引数の説明、決まった文
+    # 使わない言葉の検査：応答の文、ツールと引数の説明、定型文
     zenbu = bun + [E(x) for x in list(nai.values()) + [top, setsumei, skill]]
     zenbu += [E(x["description"]) for x in tools] + [E(a["description"]) for x in tools for a in x["args"]]
     problems = []
@@ -840,8 +840,8 @@ def main(argv=None, teigi_dir=None):
         print(f"表の形で出せない表 {x}：{why[0][1]}")
     print(f"組 {info['kumi']}（{'、'.join(f'{k} {v}' for k, v in info['kazu'].items())}）、応答の文 {info['bun']}、"
           f"いちばん長い応答 {info['nagai']} 字")
-    print(f"一部改正の前後の数値で、対にしなかった行 {info['kaisei_shinai']}"
-          f"（ほかのページの行が対になっているので出さない行 {info['kaisei_hoka']}）")
+    print(f"一部改正の前後の数値で、組み合わせなかった行 {info['kaisei_shinai']}"
+          f"（ほかのページの行が組み合わされているので出さない行 {info['kaisei_hoka']}）")
     if a.hikaku:
         moto = None
         if os.path.exists(a.hikaku):
