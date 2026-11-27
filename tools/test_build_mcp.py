@@ -238,27 +238,21 @@ class TestReal(unittest.TestCase):
         self.assertNotIn("延床面積（id：", t)                               # 資料の表での記述に出した欄は除く
 
     def test_shisetsu_danraku(self):
-        """再編整備計画 34ページの段落（施設の名前を見出しにした段落。SCHEMA.md 7.2）の文を、9つの園と新こども園の
-        「この施設についての数値と内容」に、2つの版の2行ずつ出す。段落は表ではないので、資料の表での記述には出さない。"""
+        """再編整備計画 34ページの段落（施設の名前を見出しにした段落。SCHEMA.md 7.2）の文は、施設の記録に同じページの同じ文が
+        ある9つの園では、「この施設についての数値と内容」に重ねて出さない。施設の記録に無い新こども園には、2つの資料の2行ずつを出す。"""
         o = self.data["outou"]["shisetsu"]
         suji_midashi = f"## {D.bun('mcp-midashi-shisetsu-suji')}"
-        hyo_midashi = f"## {D.kotoba('資料の中の場所の表 shisetsu、oya')}"
         for k in ("fa:nishioji-yo", "fa:kobato", "fa:kaneka", "fa:minamihizusa-yo", "fa:aozora", "fa:hino-yo",
                   "fa:hisa-yo", "fa:sakuradani-1", "fa:sakuradani-2", "fa:shin-kodomoen"):
             with self.subTest(k=k):
                 t = "\n".join(self.data["bun"][o[x]] for x in sorted(o)
                               if re.fullmatch(rf"key={re.escape(k)}&tsuzuki=[0-9]+", x))
                 part = t[t.index(suji_midashi):]
-                self.assertEqual(part.count("- 再編整備スケジュール（id：seibi-sukejuru）："), 2)
-                self.assertEqual(part.count("＞ 「４ 再編整備スケジュール」 ＞ 「"), 2 + (2 if k in (
-                    "fa:aozora", "fa:hino-yo", "fa:hisa-yo", "fa:sakuradani-1", "fa:shin-kodomoen") else 0))
-                self.assertNotIn("再編整備スケジュール", t[:t.index(suji_midashi)])
-                if hyo_midashi in t:
-                    self.assertLess(t.index(hyo_midashi), t.index(suji_midashi))
-        t = self.bun("shisetsu", "key=fa:shin-kodomoen")
-        self.assertIn("令和６年度に地区説明会・保護者説明会を実施し、新設幼保連携型認定こども園としての整備を検討し、"
-                      "令和１１年度での開設を目指します。", t)
-        self.assertIn(f"  - {D.kotoba('資料の中の場所の表 shisetsu_kakunin')}：人が確認（2026-11-27）", t)
+                n = 2 if k == "fa:shin-kodomoen" else 0
+                self.assertEqual(part.count("- 再編整備スケジュール（id：seibi-sukejuru）："), n)
+                self.assertEqual(part.count("- 新こども園の開園の時期（id：kaien）："), n)
+                if n == 0:                                                  # 同じ文は、施設の記録の所に出ている
+                    self.assertIn("34ページ", t[:t.index(suji_midashi)])
 
     def test_kaien_danraku(self):
         # 開園の時期の、再編整備計画の2行は、34ページの段落の見出しを指す
