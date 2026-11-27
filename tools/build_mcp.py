@@ -51,7 +51,7 @@ A, B = bn.A, bn.B
 E, S = bn.E, bn.S
 Stop = bn.Stop
 
-# ツールと引数（名前、型、必須か）。引数の順は、応答を引く鍵の並びの順でもある（docs/mcp.md）
+# ツールと引数（名前、型、必須か）。引数の順は、応答を引く ID の並びの順でもある（docs/mcp.md）
 TSUZUKI = "tsuzuki"
 TOOLS = (("theme", (("theme", "string", False), (TSUZUKI, "integer", False))),
          ("suji", (("id", "string", True), ("shiryo", "string", False), ("uchiwake", "integer", False),
@@ -66,7 +66,7 @@ def design_problems(D, src=None):
 
 
 def kagi(args):
-    """引数の (名前, 値) の並び → 応答を引く鍵。値が空の引数は除き、「名前=値」を「&」でつなぐ（docs/mcp.md）。"""
+    """引数の (名前, 値) の並び → 応答を引く ID。値が空の引数は除き、「名前=値」を「&」でつなぐ（docs/mcp.md）。"""
     return "&".join(f"{k}={v}" for k, v in args if v not in (None, ""))
 
 
@@ -147,7 +147,7 @@ class Tsukuru:
 
     # 資料の名前と url
     def moto(self, key, quote=""):
-        """資料の鍵（ページか発言か外部の資料）→ (名前の HTML, url)。"""
+        """資料の ID（ページか発言か外部の資料）→ (名前の HTML, url)。"""
         kind, _ = keys.parse(key)
         if kind == "plan":
             return self.namae.bunsho(key), ""
@@ -165,7 +165,7 @@ class Tsukuru:
         return f"{sita}{E(D.kotoba('文書の表 namae と、shiryo のページ'))}：{E(url)}"
 
     def kagi_ji(self, name, hikisu, key):
-        """名前のあとの括弧に、ツールの引数の名前と、その引数に使う鍵を付ける。"""
+        """名前のあとの括弧に、ツールの引数の名前と、その引数に使う ID を付ける。"""
         return self.D.bun("mcp-kagi", name=name, hikisu=E(hikisu), ji=E(key))
 
     def teigi_kagi(self, t):

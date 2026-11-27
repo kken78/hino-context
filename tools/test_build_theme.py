@@ -171,7 +171,7 @@ class TestThemeCheck(unittest.TestCase):
         self.assertEqual(p, [f"inyo が、tokoro のページの原典の文字に無い（{KOHO}/1）"])
         self.assertEqual(theme_check(theme_rows(dict(ok, inyo=""))), ["「説明の文」の行で、inyo が空"])
         self.assertEqual(len(theme_check(theme_rows(dict(ok, hyo="1")))), 1)          # 説明の文に hyo がある
-        # tokoro の文書が文書の表に無い。ページの鍵でない
+        # tokoro の文書が文書の表に無い。ページの ID でない
         self.assertEqual(theme_check(theme_rows(dict(ok, tokoro="doc:gijiroku-1/1"))),
                          ["tokoro の文書が、文書の表に無い（doc:gijiroku-1）"])
         self.assertEqual(len(theme_check(theme_rows(dict(ok, tokoro=KOHO)))), 1)
@@ -462,7 +462,7 @@ class TestKaisei(unittest.TestCase):
         self.assertIn(D.bun("kaisei-nai", name="<a href='../suji/teiin.html'>定員</a>", jiki="令和7年4月1日現在", page=D.bun("page", n=2)), row)
         self.assertEqual(page.count("<td colspan=3>"), 1)
         self.assertEqual(info["kaisei_shinai"], 0)
-        # 画面には鍵を出さない
+        # 画面には ID を出さない
         self.assertNotIn(f"bunsho：{KK}", page)
 
     def test_chigau_nashi(self):

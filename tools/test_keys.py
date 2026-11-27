@@ -1,4 +1,4 @@
-"""鍵の読み書き（SCHEMA.md §2・§4）。"""
+"""ID の読み書き（SCHEMA.md §2・§4）。"""
 import os
 import sys
 import unittest
@@ -48,7 +48,7 @@ class TestWrite(unittest.TestCase):
         self.assertEqual(keys.paras_of(f"sp:{SID}/5-7,sp:{other}/2"),
                          [(SID, 5), (SID, 6), (SID, 7), (other, 2)])
         with self.assertRaises(keys.KeyFormError):
-            keys.paras_of(f"sp:{SID}")       # 段落の無い発言の鍵
+            keys.paras_of(f"sp:{SID}")       # 段落の無い発言の ID
         with self.assertRaises(keys.KeyFormError):
             keys.paras_of("")
 
