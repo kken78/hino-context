@@ -129,6 +129,26 @@ class TestFake(unittest.TestCase):
         page, _ = self.build(inp)
         self.assertIn("という値", page)
 
+    def test_topic_from_taio(self):
+        # テーマの定義の事柄に無くても、そのテーマの問いとの確定済みの対応の記録がある名前は、論点にできる（SCHEMA.md §8）
+        ron = fake_ronten()
+        ron[ronten.THEMES] = [r for r in ron[ronten.THEMES] if r["kind"] != "事柄"]
+        page, info = self.build(fake_inputs(ron))
+        self.assertEqual(info["counts"], [(P, 2, 1)])
+        # 対応の記録が案（candidate）だけなら、論点にできない
+        ron[ronten.TAIO] = [dict(r, status="candidate") for r in ron[ronten.TAIO]]
+        with self.assertRaises(bn.Stop) as c:
+            self.build(fake_inputs(ron))
+        self.assertEqual(kinds(c.exception), {"定義"})
+
+    def test_no_junbi(self):
+        # 準備中の行が無いテーマは、準備中の論点の文を出さない
+        t = teigi()
+        t["junbi"] = []
+        page, _ = self.build(fake_inputs(), t)
+        self.assertNotIn("準備中の論点", page)
+        self.assertIn("準備中の論点：待機児童数", self.build(fake_inputs())[0])
+
     def test_topic_not_defined(self):
         t = teigi()
         t["topics"] = [("無い論点", "nai", "無い", "無い論点の説明")]
@@ -160,7 +180,9 @@ class TestTeigi(unittest.TestCase):
 
     def test_real_table(self):
         t = bn.read_teigi(os.path.join(inputs.ROOT, "teigi", "note-hoiku.tsv"), "hoiku")
-        self.assertEqual([x[1] for x in t["topics"]], ["hiyo", "menseki", "yochi", "teiin"])
+        self.assertEqual([x[1] for x in t["topics"]],
+                         ["hiyo", "menseki", "yochi", "teiin"] + [f"hoiku{i:02d}" for i in range(1, 13)])
+        self.assertEqual(t["junbi"], ["小規模保育施設の整備", "幼児教育・保育の課題（保育士の不足、園舎の老朽化など）"])
 
 
 def git(cwd, *args):
@@ -270,8 +292,10 @@ class TestReal(unittest.TestCase):
 
     def test_counts(self):
         _, info = self.build(self.inp)
-        self.assertEqual([(n, k) for _, n, k in info["counts"]], [(13, 5), (9, 4), (8, 4), (6, 3)])
-        self.assertEqual(info["questions"], 6)
+        self.assertEqual([(n, k) for _, n, k in info["counts"]],
+                         [(13, 5), (9, 4), (8, 4), (6, 3), (2, 0), (3, 0), (12, 0), (2, 0),
+                          (0, 1), (0, 1), (0, 1), (0, 4), (0, 1), (0, 1), (0, 3), (0, 1)])
+        self.assertEqual(info["questions"], 7)
         self.assertEqual(info["quotes"].mismatched, [])
         self.assertEqual(info["paras"].mismatched, [])
 
