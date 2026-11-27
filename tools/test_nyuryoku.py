@@ -32,7 +32,7 @@ class TestNyuryoku(unittest.TestCase):
         # 計画の ID は、印刷のページ番号の形でも探す（その計画のファイルの中だけ）
         self.assertEqual(nyuryoku.sagasu_ji("pt:p/honpen/34", plans),
                          [("pt:p/honpen/34", None), ("p/honpen/34", None), ("honpen p.32", "/p.")])
-        # pdf_page_offset が無い計画と、前の版のファイルは、印刷のページ番号の形を作らない
+        # pdf_page_offset が無い計画と、改正前のファイルは、印刷のページ番号の形を作らない
         self.assertEqual(len(nyuryoku.sagasu_ji("pt:q/honpen/34", plans)), 2)
         self.assertEqual(len(nyuryoku.sagasu_ji("pt:p/honpen-202503/34", plans)), 2)
 

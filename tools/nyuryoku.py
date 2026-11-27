@@ -37,7 +37,7 @@ def sagasu_ji(term, plans_dir=None):
     out.append((f"{m.group(2)}/{m.group(3)}", None))
     if m.group(1) == "pt" and "/" in m.group(2):
         plan, file = m.group(2).split("/", 1)
-        base = re.sub(r"-[0-9]{6}$", "", file)            # honpen-202503 → honpen（前の版は、計画のデータに無い）
+        base = re.sub(r"-[0-9]{6}$", "", file)            # honpen-202503 → honpen（改正前のファイルは、計画のデータに無い）
         path = os.path.join(plans_dir or os.path.join(inputs.repo_dir(inputs.SP), "data", "plans"), f"{plan}.json")
         try:
             with open(path, encoding="utf-8") as f:
