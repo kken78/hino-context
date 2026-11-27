@@ -537,8 +537,14 @@ class TestReal(unittest.TestCase):
         self.assertEqual(page.count(midashi), 9)
         s = page.index(f"<h2>{D.kotoba('テーマの表 shu が「施設の表」')}</h2>")
         hyo = page[s:page.index("<h2>", s + 1)]
-        for w in ("延床面積", "整備方針", "再編整備計画"):
+        for w in ("延床面積", "整備方針", "再編整備計画", "再編整備スケジュール"):
             self.assertNotIn(w, hyo)
+        # 34ページの段落（見出しを指す数値）は、表ではないので、資料の表での記述にも出さない
+        # （施設ごとの記述の記録の表には、hino-ronten の施設の記録の行として、段落の文が前から出ている）
+        s = page.index(f"<h2>{D.bun('midashi-kijutsu')}</h2>")
+        kijutsu = page[s:page.index("<h2>", s + 1)]
+        self.assertNotIn("再編整備スケジュール", kijutsu)
+        self.assertNotIn("<td>西大路幼稚園</td><td>令和６年度", kijutsu)
         # 西大路幼稚園：2つの版の2行。資料の日付の古い順（2025年3月の版が先）
         i = page.index("<h3 id='fa-nishioji-yo'>")
         part = page[i:page.index("<h3 ", i + 1)]
@@ -568,12 +574,19 @@ class TestReal(unittest.TestCase):
                     page=D.bun("page", n=34))
         ato = D.bun("kaisei-atai", kaisei=D.kotoba("数値と内容の表 atai（一部改正の組み合わせの、kara の資料の側）"), atai="令和11年度",
                     page=D.bun("page", n=34))
-        self.assertIn(D.bun("kaisei-tsui", name="<a href='../suji/kaien.html'>新こども園の開園の時期</a>", mae=mae,
+        # 開園の時期の行は、34ページの段落の見出しを指すので、条件 (2) で組み合わせ、見出しを添える（SCHEMA.md 6.2・7.2）
+        self.assertIn(D.bun("kaisei-tsui", name="<a href='../suji/kaien.html'>新こども園の開園の時期</a>"
+                                                "　保育所あおぞら園・日野幼稚園・必佐幼稚園・桜谷こども園第１園舎", mae=mae,
                             ato=ato), row)
         self.assertIn(D.bun("kaisei-kuwawaru", name="<a href='../suji/taiki.html'>待機児童数</a>", jiki="令和7年4月",
                             nakami=D.kotoba("数値と内容の表 atai"), page=D.bun("page", n=11)), row)
         self.assertIn("待機児童数から除かれる者の小計：", row)
-        self.assertEqual(row.count("<li>"), 3)
+        # 再編整備スケジュールの、段落の文が違う5つ。桜谷こども園第２園舎は同じなので出ない
+        for n in ("西大路幼稚園", "保育所こばと園", "保育所あおぞら園鎌掛分園", "南比都佐幼稚園",
+                  "保育所あおぞら園・日野幼稚園・必佐幼稚園・桜谷こども園第１園舎"):
+            self.assertIn(f"<a href='../suji/seibi-sukejuru.html'>再編整備スケジュール</a>　{n}：", row)
+        self.assertNotIn("桜谷こども園第２園舎：", row)
+        self.assertEqual(row.count("<li>"), 8)
         self.assertEqual((info["kaisei_shinai"], info["kaisei_hoka"]), (0, 1))
         self.assertNotIn("（bunsho：", page)
 

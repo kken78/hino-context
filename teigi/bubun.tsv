@@ -170,6 +170,12 @@ pt:youho/honpen	31	21	列	延床面積（㎡）	pt:youho/honpen/27	1				読ん�
 pt:youho/honpen	32	21	列	整備方針	pt:youho/honpen/27	2				読んだ	生成AIが画像を2回読んで一致（2026-11-25）
 pt:youho/honpen	33	21	列	形態	pt:youho/honpen/27	3				読んだ	生成AIが画像を2回読んで一致（2026-11-25）
 pt:youho/honpen	34	21	列	整備後の施設（案）	pt:youho/honpen/27	4				読んだ	生成AIが画像を2回読んで一致（2026-11-25）
+pt:youho/honpen	35	16	見出し	西大路幼稚園	pt:youho/honpen/34			fa:nishioji-yo		機械	
+pt:youho/honpen	36	16	見出し	保育所こばと園	pt:youho/honpen/34			fa:kobato		機械	
+pt:youho/honpen	37	16	見出し	保育所あおぞら園鎌掛分園	pt:youho/honpen/34			fa:kaneka		機械	
+pt:youho/honpen	38	16	見出し	南比都佐幼稚園	pt:youho/honpen/34			fa:minamihizusa-yo		機械	
+pt:youho/honpen	39	16	見出し	保育所あおぞら園・日野幼稚園・必佐幼稚園・桜谷こども園第１園舎	pt:youho/honpen/34			fa:aozora;fa:hino-yo;fa:hisa-yo;fa:sakuradani-1;fa:shin-kodomoen	人が確認（2026-11-27）	機械	
+pt:youho/honpen	40	16	見出し	桜谷こども園第２園舎	pt:youho/honpen/34			fa:sakuradani-2		機械	
 pt:youho/honpen-202503	19	1	見出し	３ 幼児教育保育施設の再編整備計画について	pt:youho/honpen-202503/27					機械	
 pt:youho/honpen-202503	20	19	表	〇町立幼児教育保育施設の再編整備について	pt:youho/honpen-202503/27					読んだ	表の題はもとの資料から取り出した文字にあるが、表の行と列の見出しと欄は、もとの資料から取り出した文字（text と text_raw）に無い。行の見出しは、資料の表の「施設名」の列にある名前。行と列の見出しと欄は、生成AIが画像を2回読んで一致した（2026-11-25）。生成AIが画像を2回読んで一致（2026-11-25）
 pt:youho/honpen-202503	21	20	行	西大路幼稚園	pt:youho/honpen-202503/27			fa:nishioji-yo		読んだ	生成AIが画像を2回読んで一致（2026-11-25）
@@ -185,3 +191,9 @@ pt:youho/honpen-202503	30	20	列	延床面積（㎡）	pt:youho/honpen-202503/27
 pt:youho/honpen-202503	31	20	列	整備方針	pt:youho/honpen-202503/27	2				読んだ	生成AIが画像を2回読んで一致（2026-11-25）
 pt:youho/honpen-202503	32	20	列	形態	pt:youho/honpen-202503/27	3				読んだ	生成AIが画像を2回読んで一致（2026-11-25）
 pt:youho/honpen-202503	33	20	列	整備後の施設（案）	pt:youho/honpen-202503/27	4				読んだ	生成AIが画像を2回読んで一致（2026-11-25）
+pt:youho/honpen-202503	34	2	見出し	西大路幼稚園	pt:youho/honpen-202503/34			fa:nishioji-yo		機械	
+pt:youho/honpen-202503	35	2	見出し	保育所こばと園	pt:youho/honpen-202503/34			fa:kobato		機械	
+pt:youho/honpen-202503	36	2	見出し	保育所あおぞら園鎌掛分園	pt:youho/honpen-202503/34			fa:kaneka		機械	
+pt:youho/honpen-202503	37	2	見出し	南比都佐幼稚園	pt:youho/honpen-202503/34			fa:minamihizusa-yo		機械	
+pt:youho/honpen-202503	38	2	見出し	保育所あおぞら園・日野幼稚園・必佐幼稚園・桜谷こども園第１園舎	pt:youho/honpen-202503/34			fa:aozora;fa:hino-yo;fa:hisa-yo;fa:sakuradani-1;fa:shin-kodomoen	人が確認（2026-11-27）	機械	
+pt:youho/honpen-202503	39	2	見出し	桜谷こども園第２園舎	pt:youho/honpen-202503/34			fa:sakuradani-2		機械	

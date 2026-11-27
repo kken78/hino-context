@@ -222,6 +222,13 @@ def kijutsu_no_hyo(part, by, th, shitei):
     return hyo if hyo is not None and hyo["shu"] == sj.HYO else None
 
 
+def kijutsu_no_midashi(part, th):
+    """資料の中の場所の行 part が、テーマの資料の見出しで、shisetsu があるもの（再編整備計画 34ページの、施設の名前を
+    見出しにした段落。SCHEMA.md 7.2）か。その見出しを指す数値は、テーマの表の「施設の表」の欄に出さない（docs/design.md 4節）。"""
+    return (part.get("shu") == sj.MIDASHI and bool(part.get("shisetsu", "").strip())
+            and th.has(part["bunsho"]))
+
+
 def kikan(D, r):
     """過程の記録の from・to → 画面に出す時期（docs/design.md 3節）。"""
     a = bs.hi_str(D, r["from"])
@@ -362,6 +369,8 @@ class ShisetsuHyo:
             parts = [self.bubun_by.get((b, n)) for n in (r["bubun"], r["retsu"]) if b and n]
             if any(x is not None and kijutsu_no_hyo(x, self.bubun_by, th, shitei) is not None for x in parts):
                 continue        # 施設ごとの欄にだけ出す（同じ内容を2か所に出さない）
+            if any(x is not None and kijutsu_no_midashi(x, th) for x in parts):
+                continue        # テーマの資料の見出しを指す数値（段落の文）は、施設の表の欄に出さない
             if r["jotai"] == sj.ARU and ks in kumi:
                 self.atai.setdefault((r["suji"], ks), []).append(r)
         ids = {s for s, _ in self.atai}

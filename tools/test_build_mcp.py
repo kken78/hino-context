@@ -115,11 +115,11 @@ class TestReal(unittest.TestCase):
         n = len(d["bun"])
         self.assertTrue(all(0 <= i < n for v in d["outou"].values() for i in v.values()))
         self.assertEqual(set(range(n)), {i for v in d["outou"].values() for i in v.values()})
-        # 組：テーマの一覧と幼保、項目26、施設13、資料22と表17
+        # 組：テーマの一覧と幼保、項目27、施設13、資料22と表17
         o = d["outou"]
         self.assertIn("", o["theme"])
         self.assertIn("theme=hoiku", o["theme"])
-        self.assertEqual(sum(1 for k in o["suji"] if re.fullmatch(r"id=[a-z0-9-]+", k)), 26)
+        self.assertEqual(sum(1 for k in o["suji"] if re.fullmatch(r"id=[a-z0-9-]+", k)), 27)
         self.assertEqual(sum(1 for k in o["shisetsu"] if "tsuzuki" not in k), 13)
         self.assertEqual(sum(1 for k in o["shiryo"] if re.fullmatch(r"bunsho=[^&]+", k)), 22)
         self.assertEqual(sum(1 for k in o["shiryo"] if re.fullmatch(r"bunsho=[^&]+&hyo=[0-9]+", k)), 17)
@@ -168,7 +168,20 @@ class TestReal(unittest.TestCase):
             "　1ページ　https://www.town.shiga-hino.lg.jp/cmsfiles/contents/0000008/8225/syuusei.pdf#page=1",
             f"  - {mae}：日野町幼児教育保育施設再編整備計画（2025年3月）（bunsho：pt:youho/honpen-202503）",
             "  - " + D.kotoba("資料どうしの関係の表 kara、e の資料の、同じ項目の、改正前と改正後の組み合わせで、atai が違うもの") + D.bun("mcp-kaisei-hani"),
-            "    - 新こども園の開園の時期（id：kaien）：改正前「令和10年度」（34ページ）、改正後「令和11年度」（34ページ）",
+            "    - 新こども園の開園の時期（id：kaien）　保育所あおぞら園・日野幼稚園・必佐幼稚園・桜谷こども園第１園舎："
+            "改正前「令和10年度」（34ページ）、改正後「令和11年度」（34ページ）",
+            "    - 再編整備スケジュール（id：seibi-sukejuru）　西大路幼稚園：改正前「令和６年度に地区説明会・保護者説明会を実施し、"
+            "入園者数や地域事情等を考慮しながら令和９年度にかけて子育て支援施設・学童保育所の拠点としての整備を検討し、"
+            "令和1０年度での開設を目指します。」（34ページ）、改正後「令和６年度に地区説明会・保護者説明会を実施し、"
+            "入園者数や地域事情等を考慮しながら令和８年度に子育て支援施設・学童保育所の拠点として移行します。」（34ページ）"])
+        self.assertIn(want + "\n", rows[12] + "\n")
+        # 段落の文が違う5つ（34ページの段落の見出しを添える）。桜谷こども園第２園舎は同じなので出ない
+        for n in ("保育所こばと園", "保育所あおぞら園鎌掛分園", "南比都佐幼稚園",
+                  "保育所あおぞら園・日野幼稚園・必佐幼稚園・桜谷こども園第１園舎"):
+            self.assertIn(f"    - 再編整備スケジュール（id：seibi-sukejuru）　{n}：改正前「", rows[12])
+        self.assertEqual(rows[12].count("    - 再編整備スケジュール（id：seibi-sukejuru）"), 5)
+        self.assertNotIn("　桜谷こども園第２園舎：", rows[12])
+        want = "\n".join([
             "    - 待機児童数（id：taiki）：改正後に、令和7年4月の数値が加わっている（11ページ）",
             "    - 待機児童数から除かれる者の小計（id：nozoku）：改正後に、令和7年4月の数値が加わっている（11ページ）"])
         self.assertIn(want + "\n", rows[12] + "\n")
@@ -223,6 +236,30 @@ class TestReal(unittest.TestCase):
         self.assertEqual(t.count("〇町立幼児教育保育施設の再編整備について"), 2)
         self.assertIn("定員（id：teiin）：90", t)
         self.assertNotIn("延床面積（id：", t)                               # 資料の表での記述に出した欄は除く
+
+    def test_shisetsu_danraku(self):
+        """再編整備計画 34ページの段落（施設の名前を見出しにした段落。SCHEMA.md 7.2）の文は、施設の記録に同じページの同じ文が
+        ある9つの園では、「この施設についての数値と内容」に重ねて出さない。施設の記録に無い新こども園には、2つの資料の2行ずつを出す。"""
+        o = self.data["outou"]["shisetsu"]
+        suji_midashi = f"## {D.bun('mcp-midashi-shisetsu-suji')}"
+        for k in ("fa:nishioji-yo", "fa:kobato", "fa:kaneka", "fa:minamihizusa-yo", "fa:aozora", "fa:hino-yo",
+                  "fa:hisa-yo", "fa:sakuradani-1", "fa:sakuradani-2", "fa:shin-kodomoen"):
+            with self.subTest(k=k):
+                t = "\n".join(self.data["bun"][o[x]] for x in sorted(o)
+                              if re.fullmatch(rf"key={re.escape(k)}&tsuzuki=[0-9]+", x))
+                part = t[t.index(suji_midashi):]
+                n = 2 if k == "fa:shin-kodomoen" else 0
+                self.assertEqual(part.count("- 再編整備スケジュール（id：seibi-sukejuru）："), n)
+                self.assertEqual(part.count("- 新こども園の開園の時期（id：kaien）："), n)
+                if n == 0:                                                  # 同じ文は、施設の記録の所に出ている
+                    self.assertIn("34ページ", t[:t.index(suji_midashi)])
+
+    def test_kaien_danraku(self):
+        # 開園の時期の、再編整備計画の2行は、34ページの段落の見出しを指す
+        t = self.bun("suji", "id=kaien")
+        ichi = (f"  - {D.kotoba('資料の中の場所（bubun・retsu から親をたどった並び）')}：「第３章 日野町幼児教育保育施設の再編整備計画」"
+                " ＞ 「４ 再編整備スケジュール」 ＞ 「保育所あおぞら園・日野幼稚園・必佐幼稚園・桜谷こども園第１園舎」")
+        self.assertEqual(t.count(ichi + "\n"), 2)
 
     def test_uchiwake(self):
         # uchiwake を付けない組は内訳の無い数値だけ、uchiwake=1 は内訳のある数値だけ

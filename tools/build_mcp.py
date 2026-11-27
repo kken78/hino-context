@@ -489,6 +489,10 @@ class Tsukuru:
                 part = self.index.get((b, r["bubun"]))
                 if part is not None and (b, part["oya"]) in hyo_parts:
                     continue
+                # 同じページの同じ文が、上の施設の記録に出ている行は除く
+                if r["inyo"].strip() and any(q["source"] == r["shiryo"] and sj.shogo.norm(r["inyo"]) in sj.shogo.norm(q["quote"])
+                                             for q in rs):
+                    continue
                 nm, url = self.moto(r["shiryo"], r["inyo"])
                 gyo = f"- {self.teigi_kagi(x)}：{S(r['atai'])}"
                 gyo += f"　{E(D.kotoba('数値と内容の表 jiten'))}：{E(r['jiten'])}"
