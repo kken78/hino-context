@@ -451,10 +451,12 @@ class TestReal(unittest.TestCase):
         # 質問が取り上げた資料（taio/konkyo.tsv）：資料の応答に、issue と同じ形で質問の一覧と、続きで段落を出す
         o = self.data["outou"]["document"]
         t = self.bun("document", "document=doc:shingi-youho-teigen")
-        part = self.setsu(t, "## " + D.bun("mcp-midashi-konkyo", n=13))
+        # 提言（2024年2月）より前の質問は、提言に結び付けない（SCHEMA.md 7.10。2026-11-28）
+        part = self.setsu(t, "## " + D.bun("mcp-midashi-konkyo", n=10))
         self.assertIn("- 2025年3月10日　一般質問　「幼児教育保育施設再編整備計画（案）」\n  - "
                       + D.bun("shitsumon-kakutei") + "\n  - この資料に関する部分（8か所）（page：2）", part)
-        self.assertEqual(part.count("  - " + D.kotoba("質問と事項の対応の表 question") + "\n"), 12)   # 読み取りの質問
+        self.assertEqual(part.count("  - " + D.kotoba("質問と事項の対応の表 question") + "\n"), 9)    # 読み取りの質問
+        self.assertNotIn("2023年", part)
         self.assertIn(D.bun("keisai-yomi", short="この資料"), part)
         rest = self.data["bun"][o["document=doc:shingi-youho-teigen&page=2"]]
         self.assertEqual(rest.count("\n- 「"), 8)
@@ -463,7 +465,10 @@ class TestReal(unittest.TestCase):
         rest = self.data["bun"][o["document=doc:shingi-youho-teigen&page=3"]]
         self.assertEqual(rest.count("\n- 「"), rest.count(D.kotoba("質問と事項の対応の表 yomi が「一致」"))
                          + rest.count(D.kotoba("質問と事項の対応の表 yomi が「1回だけ」")))
-        self.assertIn("この資料を取り上げている、議会での質問 13 件", t)
+        self.assertIn("この資料を取り上げている、議会での質問 10 件", t)
+        # 計画は、質問の日より前か同じ日付の資料に結び付く。令和８年６月一部改正より前の質問しか無いので、改正後の資料には出ない
+        self.assertIn("document=pt:youho/honpen-202503&page=2", o)
+        self.assertNotIn("document=pt:youho/honpen&page=2", o)
         self.assertIn("document=doc:jigyo-shinkodomoen-kousou&page=2", o)
         self.assertNotIn("document=doc:koho-no771-08&page=2", o)
         self.assertNotIn(D.bun("mcp-midashi-konkyo", n=1), self.bun("document", "document=doc:koho-no771-08"))
@@ -664,7 +669,9 @@ class TestReal(unittest.TestCase):
         mi = D.kotoba("質問と事項の対応の表 question")
         self.assertIn(D.bun("yomi-setsumei", short="保育士等の不足"), first)
         self.assertEqual(first.count(f"  - {mi}\n"), 24)
-        self.assertIn("- 2017年9月14日　一般質問　「松尾公園テニスコート」「待機児童問題」\n  - " + mi, first)
+        # テーマの定義に無い質問の題は、論点に付いた段落の発言を含む問いの題名だけ（SCHEMA.md 7.10。2026-11-28）
+        self.assertIn("- 2017年9月14日　一般質問　「待機児童問題」\n  - " + mi, first)
+        self.assertNotIn("松尾公園テニスコート", first)
         rest = "\n".join(pages[1:])
         n = rest.count("\n- 「")
         ichi = rest.count("  - " + D.kotoba("質問と事項の対応の表 yomi が「一致」") + "\n")

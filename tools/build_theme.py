@@ -127,7 +127,7 @@ class Namae:
         if b:
             if b["shurui"] == sj.KOHO:
                 return self.koho(b["hiduke"], b["namae"], bkey)
-            return f"{S(b['namae'])}（{bh.kakko_ji(self.D, b)}）"
+            return bh.namae_ji(self.D, b)
         m = sj.RE_BUNSHO_DOC.fullmatch(bkey)
         if m:
             row = self.inp.docs().get(m[1])

@@ -62,6 +62,27 @@ class TestTsukuru(unittest.TestCase):
         self.assertEqual(len(konkyo.check(bad, BUNSHO)), 2)
 
 
+class TestHiduke(unittest.TestCase):
+    NAMAE = [dict(namae="計画", shu="資料", id="pt:youho/honpen", setsumei="", kohyo="", chu=""),
+             dict(namae="提言", shu="資料", id="doc:teigen", setsumei="", kohyo="2024-02-01", chu="")]
+    HIDUKE = {"pt:youho/honpen": "2026-06", "doc:teigen": "", "plan:youho": ""}
+
+    def test_check_hiduke(self):
+        # 読み取りの行で、資料の日付が質問の日より後なら止まる。入力の確定済みの行は確認しない（SCHEMA.md 7.10）
+        rows = [dict(question="iq:0000000001_20250310_0001", aite="pt:youho/honpen", hani="sp:1/1", yomi="一致", chu=""),
+                dict(question="iq:0000000001_20240201_0001", aite="doc:teigen", hani="sp:1/1", yomi="1回だけ", chu=""),
+                dict(question="iq:0000000001_20240131_0001", aite="doc:teigen", hani="sp:1/1", yomi="入力の確定済み", chu="")]
+        bad = konkyo.check(rows, BUNSHO, self.HIDUKE, self.NAMAE)
+        self.assertEqual(len(bad), 1)
+        self.assertIn("2026-06-01", bad[0])
+
+    def test_uchiwake(self):
+        rows = [dict(question="q", aite="pt:youho/honpen", yomi="一致"), dict(question="q", aite="計画", yomi="一致"),
+                dict(question="q", aite="計画", yomi="1回だけ"), dict(question="q", aite="doc:teigen", yomi="入力の確定済み")]
+        self.assertEqual(konkyo.uchiwake(rows, self.NAMAE),
+                         [("計画", {"pt:youho/honpen": 1}, 2), ("提言", {"doc:teigen": 0}, 0)])
+
+
 class TestRepo(unittest.TestCase):
     def test_repo(self):
         try:
@@ -77,6 +98,11 @@ class TestRepo(unittest.TestCase):
         self.assertEqual([r["yomi"] for r in rows[:2]], ["入力の確定済み"] * 2)
         self.assertEqual({r["yomi"] for r in rows[2:]}, {"一致", "1回だけ"})
         self.assertEqual(len(rows), 172)
+        # 資料の日付が質問の日より後の行は、ID を付けない（2026-11-28）
+        u = {n: (ids, c) for n, ids, c in konkyo.uchiwake(rows, konkyo.ym.read_namae())}
+        self.assertEqual(u["計画"], ({"pt:youho/honpen-202503": 3, "pt:youho/honpen": 0}, 1))
+        self.assertEqual(u["計画（案）"], ({"doc:jigyo-youhosaihen-keikakuan-202411": 8}, 7))
+        self.assertEqual(sum(c for _, c in u.values()), 33)
 
 
 if __name__ == "__main__":

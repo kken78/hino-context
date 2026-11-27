@@ -217,20 +217,32 @@ def hoka_bunsho(tables, h, bkey):
     return out
 
 
+def han_kakko(han):
+    """han の字の最初と最後が全角の括弧か（例「（案）」）。"""
+    return len(han) >= 2 and han[0] == "（" and han[-1] == "）"
+
+
 def kakko_ji(D, b):
-    """資料の一覧の表の行 → 資料の名前のあとの括弧の中。han があれば han と hiduke、無ければ hiduke だけ（docs/design.md 3節）。"""
+    """資料の一覧の表の行 → 資料の名前のあとの括弧の中。han があれば han と hiduke、無ければ hiduke だけ（docs/design.md 3節）。
+    han が全角の括弧で囲まれているときは、han を括弧の中に入れない（namae_ji が名前のすぐあとに続ける）。"""
     D.dasanai("資料の一覧の表 han")
     hi = hiduke_ji(D, b["hiduke"])
-    return f"{S(b['han'])}、{E(hi)}" if b["han"] else E(hi)
+    return f"{S(b['han'])}、{E(hi)}" if b["han"] and not han_kakko(b["han"]) else E(hi)
+
+
+def namae_ji(D, b):
+    """資料の一覧の表の行 → 資料の名前と、そのあとの括弧。han が全角の括弧で囲まれているときは、括弧を重ねないように、
+    han の字を名前のすぐあとに続け、そのあとの括弧には hiduke の字だけを出す（docs/design.md 3節。2026-11-28）。"""
+    han = S(b["han"]) if han_kakko(b["han"] or "") else ""
+    return f"{S(b['namae'])}{han}（{kakko_ji(D, b)}）"
 
 
 def render(D, inp, tables, h, bkey, today):
     b, hyo = h.bunsho, h.hyo
-    kakko = kakko_ji(D, b)
     page = D.bun("page", n=sj.page_no(hyo["tokoro"]))
     o = [f"<p class=s>{E(D.bun('atama-hyo'))}</p>",
          f"<h1>{midashi_ji(D, hyo)}</h1>",
-         f"<p>{S(b['namae'])}（{kakko}）　{E(page)}</p>"]
+         f"<p>{namae_ji(D, b)}　{E(page)}</p>"]
     mi = h.midashi()
     if mi:
         o.append("<p class=s>" + "　".join(midashi_ji(D, x) for x in mi) + "</p>")
@@ -253,7 +265,7 @@ def render(D, inp, tables, h, bkey, today):
         li = []
         for k in sorted(hoka, key=lambda k: (by[k]["hiduke"] or "9999", k)):
             pp = "、".join(str(p) for p in sorted(hoka[k]))
-            li.append(f"<li>{S(by[k]['namae'])}（{kakko_ji(D, by[k])}）"
+            li.append(f"<li>{namae_ji(D, by[k])}"
                       + (f"　{E(D.bun('page', n=pp))}" if pp else "") + "</li>")
         nashi = any(not sj.RE_HIDUKE.fullmatch(by[k]["hiduke"] or "") for k in hoka)
         hb = f"<p class=s>{E(bs.hiduke_bun(D, False, True))}</p>\n" if nashi else ""

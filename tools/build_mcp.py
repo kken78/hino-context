@@ -1016,10 +1016,11 @@ def konkyo_problems(inp, tk, tables, rows, namae=None, yomi_qs=None):
     資料の ID でも出来事の名前でもない aite（計画（案）と、資料と出来事の名前の表に無い名前）の行は、出さない。"""
     namae = ym.read_namae() if namae is None else namae
     yomi_qs = {} if yomi_qs is None else yomi_qs
-    bunsho = {r["bunsho"] for r in tables["bunsho"]}
-    problems = [("(i) 質問が取り上げた資料", m) for m in konkyo.check(rows, bunsho)]
-    problems += [("(i) 資料と出来事の名前の表", m) for m in ym.check_namae(namae, bunsho)]
-    qsrc, qtheme, src_of = {}, {}, {}
+    hiduke = {r["bunsho"]: r["hiduke"] for r in tables["bunsho"]}
+    bunsho = set(hiduke)
+    problems = [("(i) 質問が取り上げた資料", m) for m in konkyo.check(rows, bunsho, hiduke, namae)]
+    problems += [("(i) 資料と出来事の名前の表", m) for m in ym.check_namae(namae, bunsho, hiduke)]
+    qsrc, qtheme, src_of, ippan = {}, {}, {}, set()
     for r in inp.ronten_tsv(ronten.THEMES):
         if r["kind"] in ("問い", "質疑"):
             qsrc.setdefault(r["value"], r["source"])
@@ -1030,6 +1031,8 @@ def konkyo_problems(inp, tk, tables, rows, namae=None, yomi_qs=None):
     for q, th in yomi_qs.items():
         qsrc[q] = src_of.get((th, q)) or bn.ippan_src(inp, q)
         qtheme[q] = th
+        if not src_of.get((th, q)):
+            ippan.add(q)
     pres = shogo.check_paras(inp, [dict(where=f"質問が取り上げた資料 {r['question']} / {r['aite']}", hani=r["hani"])
                                    for r in rows])
     for m in pres.mismatched:
@@ -1055,7 +1058,9 @@ def konkyo_problems(inp, tk, tables, rows, namae=None, yomi_qs=None):
     for (shu, aite), qd in kumi.items():
         out = []
         for q, x in qd.items():
-            who, dai = bn.qhead_parts(qsrc[q])
+            who = bn.qhead_parts(qsrc[q])[0]
+            # 題は、aite に付いた段落の発言を含む問いの題名（SCHEMA.md 7.10。2026-11-28）
+            dai = bn.dai_of(inp, q, qsrc, ippan, {sid for sid, _ in x["yomi"]})
             ys = set(x["yomi"].values())
             if konkyo.NYURYOKU in ys and len(ys) > 1:
                 problems.append(("(i) 質問が取り上げた資料", f"{q} / {aite}：入力の確定済みの行と、読み取りの行がある"))
