@@ -263,8 +263,12 @@ class Tsukuru:
         hb = bs.hiduke_bun(D, False, any(self.namae.hiduke_nashi(b) for b in docs))
         blocks.append(([f"## {E(D.bun('mcp-midashi-shiryo'))}", E(D.bun("mcp-shiryo-setsumei")) + E(hb)],
                        ["- " + self.bunsho_kagi(b) for b in docs]))
-        blocks.append(([f"## {E(D.bun('mcp-midashi-teigi'))}", E(D.bun("mcp-teigi-setsumei"))],
-                       ["- " + self.teigi_kagi(x) for x in t["suji"]]))
+        # 項目は、まだテーマと結び付けていない。テーマの表に行があるテーマ（項目を作ったテーマ）にだけ並べ、
+        # ほかのテーマに、別のテーマの項目を並べない（docs/design.md 4節）
+        teigi = t["suji"] if any(r["theme"] == theme for r in t["theme"]) else []
+        if teigi:
+            blocks.append(([f"## {E(D.bun('mcp-midashi-teigi'))}", E(D.bun("mcp-teigi-setsumei"))],
+                           ["- " + self.teigi_kagi(x) for x in teigi]))
         return Outou(S(name), blocks=blocks)
 
     def shisetsu_ichiran(self, theme, th):
@@ -739,8 +743,6 @@ class Tsukuru:
         blocks = [([f"## {E(D.bun('mcp-midashi-issue-shiryo'))}"],
                    [self.kijutsu(pg, x, False) for x in R["docs"]] or [E(D.bun("mcp-issue-shiryo-nashi"))])]
         items = [self.kijutsu(pg, x) for x in R["ko"]]
-        if not R["jisseki"]:
-            items.append(E(D.bun("mcp-issue-jisseki-nashi")))
         blocks.append(([f"## {E(D.bun('mcp-midashi-issue-setsumei'))}"], items))
         if R["tome"]:
             blocks.append(([f"## {E(D.bun('mcp-midashi-issue-kongo'))}"],

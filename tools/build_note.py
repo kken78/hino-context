@@ -380,8 +380,7 @@ class Page:
                           f"{''.join(body)}</details><p class='m'><a href='{E(keys.source_url(inp, q))}' target='_blank'>"
                           f"会議録でこの質問の全体を見る</a></p></div>")
         sib = "／".join(f"<a href='#{s}'>{E(p)}</a>" for p, s, _, _ in T["topics"] if s != slug)
-        jis = "" if R["jisseki"] else \
-            "<p class='m'>実績（契約額、決算額、完成後の数値など）が分かる資料は、このページのもとにした資料の中にはありません。</p>"
+        jis = ""        # 実績が無いことの文は出さない（事柄の記録の kind に「実績」が無く、いつも出てしまうため。2026-11-27）
         sec3 = (f"<h2>今後検討・決定するとされていること</h2><table><tr><th>時期</th><th>内容</th><th>もとの資料</th></tr>{rows3}</table>"
                 "<p class='m'>上の表のうち、「まだ」「今後」などの語を含む記述を抜き出しています。その後の状況は、上の表で、より新しい時期の記述を確認してください。</p>") \
             if tome else ""
