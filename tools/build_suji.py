@@ -36,7 +36,10 @@ sys.path.insert(0, HERE)
 
 import build_note as bn  # noqa: E402
 import inputs  # noqa: E402
+import jiko  # noqa: E402
 import keys  # noqa: E402
+import konkyo  # noqa: E402
+import ronten  # noqa: E402
 import suji as sj  # noqa: E402
 
 OUT_DIR = os.path.join(inputs.ROOT, "build", "suji")
@@ -67,7 +70,9 @@ HYO_COLUMNS = (("項目の表", sj.SUJI_COLUMNS), ("数値と内容の表", sj.A
                ("資料の中の場所の表", sj.BUBUN_COLUMNS), ("資料の一覧の表", sj.BUNSHO_COLUMNS),
                ("資料どうしの関係の表", sj.BUNSHO_KANKEI_COLUMNS), ("テーマの表", sj.THEME_COLUMNS),
                ("テーマの定義", THEMES_COLUMNS), ("施設の参照表", inputs.SHISETSU_COLUMNS),
-               ("施設の記録", inputs.SHISETSU_KIROKU_COLUMNS), ("過程の記録", KATEI_COLUMNS))
+               ("施設の記録", inputs.SHISETSU_KIROKU_COLUMNS), ("過程の記録", KATEI_COLUMNS),
+               ("事項の表", jiko.COLS), ("つながりの記録", ronten.TSUNAGARI_COLUMNS),
+               ("質問が取り上げた資料と出来事の表", konkyo.COLS))
 # データの側の言葉（SCHEMA.md の表の名前と、入力の文字の呼び方）。ツールの説明の文に書いてよい（design_problems）
 DATA_GO = tuple(h for h, _ in HYO_COLUMNS) + ("もとの資料から取り出した文字",)
 # 表の名前と、そのあとの列（「、」で区切って2つ以上書ける）。長い名前から当てる（「資料の中の場所の表」を「資料の一覧の表」より先に）
@@ -85,7 +90,7 @@ KATACHI = {"shiryo が発言": (("数値と内容の表", "shiryo"),),
            "会議録の発言者の役職が「数字＋番」": (),
            "会議録の発言者の役職が、議長でも「数字＋番」でもない": ()}
 # docs/design.md 3節の表を引く、ページを作るツール。表の行は、このどれかが引いていればよい
-PAGE_TOOLS = ("build_suji.py", "build_hyo.py", "build_theme.py", "build_mcp.py")
+PAGE_TOOLS = ("build_suji.py", "build_hyo.py", "build_theme.py", "build_mcp.py", "build_note.py")
 
 
 class Design:

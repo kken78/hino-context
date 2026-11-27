@@ -82,3 +82,19 @@ def taio_points(inp, questions):
 def taio(inp, points, questions):
     """問いと事項の対応のうち、point が points のどれかで、question が questions のどれかの行。"""
     return [r for r in _confirmed(inp, TAIO) if r["point"] in points and r["question"] in questions]
+
+
+TAIKEI = "ref/taikei.tsv"
+TSUNAGARI = "records/tsunagari.tsv"
+TSUNAGARI_COLUMNS = ["link", "upper", "upper_ref", "lower", "lower_ref", "source", "source_date", "quote", "status",
+                     "reviewer", "date", "note"]
+
+
+def taikei(inp):
+    """計画の章立ての表（ref/taikei.tsv。status の列が無い）→ 要素の ID（tk:<体系>/<番号>）→ 行。"""
+    return {f"tk:{r['taikei']}/{r['n']}": r for r in inp.ronten_tsv(TAIKEI)}
+
+
+def tsunagari(inp, link):
+    """つながりの記録のうち、確定済みで、link が link の行。"""
+    return [r for r in _confirmed(inp, TSUNAGARI) if r["link"] == link]

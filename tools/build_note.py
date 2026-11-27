@@ -1,7 +1,8 @@
 """論点ノートの試作のページを作る。
 
 実行：python3 -B tools/build_note.py <テーマ>   （例 hoiku → build/note/hoiku.html）
-テーマの名前・論点・準備中の論点などは teigi/note-<テーマ>.tsv（試作のための仮の表。SCHEMA.md §5）から読む。
+テーマの名前・論点・準備中の論点などは teigi/note-<テーマ>.tsv（試作のための仮の表。SCHEMA.md §8）から読む。
+事項の表（teigi/jiko.tsv。SCHEMA.md 7.9）にそのテーマの行があるテーマは、論点の一覧を事項の表から作る（jiko_ni_suru）。
 記述は hino-ronten の確定した記録（SCHEMA.md §1）から取る。
 
 作る前の検査（1つでも当たれば、件数と該当行を示して、ページを作らずに止まる。終了コード 1）：
@@ -21,6 +22,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
 import inputs  # noqa: E402
+import jiko  # noqa: E402
 import keys  # noqa: E402
 import ronten  # noqa: E402
 import shogo  # noqa: E402
@@ -81,6 +83,54 @@ def read_teigi(path, theme):
                 units=[(r["key"], r["name"]) for r in rows if r["kind"] == "単位"],
                 chu=[dict(source=r["key"], part=r["name"], moto=r["short"], text=r["setsumei"])
                      for r in rows if r["kind"] == "注"])
+
+
+def jiko_ni_suru(inp, teigi, theme, rows=None):
+    """事項の表にそのテーマの行があれば、論点の一覧を事項の表から作る（SCHEMA.md 7.9。2026-11-27 の依頼者の決定）。
+
+    teigi["jiko"] に、事項の表の行（表の順）を入れ、行ごとに aru（確定済みの事柄の記録か、そのテーマの質問・質疑との
+    確定済みの対応の記録が、name にあるか）を付ける。teigi["topics"] は aru の行だけにする（論点のページと issue を作る行）。
+    short と setsumei は、仮の表の論点の行に同じ key があればその字、無ければ name。行が無いテーマは何もしない。
+    合わないもの（仮の表の論点の key が事項の表に無いか name が違う、準備中の行がある）は InputError。"""
+    rows = jiko.read() if rows is None else rows
+    rows = [r for r in rows if r["theme"] == theme]
+    teigi["jiko"] = None
+    if not rows:
+        return teigi
+    by = {r["id"]: r for r in rows}
+    errs = [f"論点の行 {k}（{P}）が、事項の表に無いか、name が違う"
+            for P, k, _, _ in teigi["topics"] if k not in by or by[k]["name"] != P]
+    if teigi["junbi"]:
+        errs.append("準備中の行がある（事項の表があるテーマでは、記録の無い事項を事項の表から出す）")
+    if errs:
+        raise inputs.InputError(f"teigi/note-{theme}.tsv：{len(errs)} 件\n" + "\n".join(f"  - {e}" for e in errs))
+    nagai = {k: (sh, se) for _, k, sh, se in teigi["topics"]}
+    trows = ronten.themes(inp, theme)
+    qs = {r["value"] for r in trows if r["kind"] in ("問い", "質疑")}
+    names = {r["name"] for r in rows}
+    aru = {r["point"] for r in ronten.kotogara(inp, names)} | (ronten.taio_points(inp, qs) & names)
+    teigi["jiko"] = [dict(r, aru=r["name"] in aru) for r in rows]
+    teigi["topics"] = [(r["name"], r["id"]) + nagai.get(r["id"], (r["name"], r["name"])) for r in rows if r["name"] in aru]
+    return teigi
+
+
+def jiko_matome(inp, teigi):
+    """事項の表の行を、計画の章立ての要素ごとにまとめる（SCHEMA.md 7.9、docs/design.md 4節）。
+    → (計画の名前（章立ての番号 0 の要素の name）, [(要素の行か None, 事項の行の並び)])。
+    要素は章立ての順（n の順）。taikei が nashi の行は、最後に None のまとまりにする。
+    章立てが2つ以上の体系にまたがるときは InputError（計画の名前を1つに決められないため）。"""
+    tk = ronten.taikei(inp)
+    rows = teigi["jiko"]
+    taikei = {tk[r["taikei"]]["taikei"] for r in rows if r["taikei"] != "nashi"}
+    if len(taikei) != 1 or f"tk:{next(iter(taikei))}/0" not in tk:
+        raise inputs.InputError(f"事項の表の {rows[0]['theme']} の行の章立てが、1つの体系でないか、番号 0 の要素が無い（{sorted(taikei)}）")
+    keikaku = tk[f"tk:{next(iter(taikei))}/0"]["name"]
+    youso = sorted({r["taikei"] for r in rows if r["taikei"] != "nashi"}, key=lambda k: int(tk[k]["n"]))
+    out = [(tk[k], [r for r in rows if r["taikei"] == k]) for k in youso]
+    nashi = [r for r in rows if r["taikei"] == "nashi"]
+    if nashi:
+        out.append((None, nashi))
+    return keikaku, out
 
 
 def _words(cell):
@@ -224,6 +274,16 @@ def collect(inp, teigi, theme):
     for r in ta:
         if not r["hani"] or not qhead_parts(qsrc.get(r["question"], ""))[1]:
             problems.append(("(b) 出典の無い記述", f"問いと事項の対応 {r['question']} / {r['point']}：範囲か問いの題が無い"))
+    # 目的と手段（SCHEMA.md 7.9）：入力のつながりの記録のうち、両端が事項の表にある行。引用と出典を、ほかと同じく検査する
+    moku = jiko.mokuteki_gyo(inp, jiko.read()) if teigi.get("jiko") else []
+    mres = shogo.check_quotes(inp, [dict(where=f"つながりの記録 {r['upper']} → {r['lower']} / {r['source']}",
+                                         source=r["source"], quote=r["quote"]) for r in moku])
+    for m in mres.mismatched:
+        problems.append(("(a) 引用がもとの資料に無い", f"{m['where']}：{m['reason']}（{m['source']}）「{m['quote']}」"))
+    for r in moku:
+        n, u = named(r["source"]) if r["source"] else ("", "")
+        if not (n and u):
+            problems.append(("(b) 出典の無い記述", f"つながりの記録 {r['upper']} → {r['lower']}：資料「{r['source']}」の名前か url が作れない"))
     # 注（SCHEMA.md §5）：付ける記述があるか、注のもとの資料があるか、「」の字が資料にあるか
     for c in teigi.get("chu", []):
         where = f"注 {c['source']}「{c['part']}」"
@@ -239,7 +299,7 @@ def collect(inp, teigi, theme):
         cres = shogo.check_quotes(inp, [dict(where=where, source=c["moto"], quote=f) for f in frs])
         for m in cres.mismatched:
             problems.append(("(a) 引用がもとの資料に無い", f"{m['where']}：{m['reason']}（{m['source']}）「{m['quote']}」"))
-    return dict(ko=ko, katei=katei, ta=ta, qsrc=qsrc), problems, (res, pres)
+    return dict(ko=ko, katei=katei, ta=ta, qsrc=qsrc, mokuteki=moku), problems, (res, pres)
 
 
 # ---- ページ ----
@@ -264,8 +324,11 @@ def qhead(q, qsrc):
 
 
 class Page:
-    def __init__(self, inp, teigi, model):
-        self.inp, self.t, self.m = inp, teigi, model
+    def __init__(self, inp, teigi, model, D=None):
+        if D is None:
+            import build_suji  # docs/design.md 3節の言葉（build_suji が、このファイルを読み込むので、ここで読む）
+            D = build_suji.read_design()
+        self.inp, self.t, self.m, self.D = inp, teigi, model, D
         self.pat = re.compile("|".join(re.escape(w) for w in teigi["words"])) if teigi["words"] else None
 
     def srcname(self, key):
@@ -339,7 +402,9 @@ class Page:
         """論点 P の記述と質問を集める（試作のページと MCP の応答の、共通の集め方）。
         → dict(ko：記述（新しい順）, docs：町の資料の記述（新しい順）, tome：今後検討・決定するとされていること,
                jisseki：実績の記述があるか, qs：質問（日付の新しい順）。質問ごとに question、date、sitsugi（議案への質疑か）、
-               who、dai、paras（(sid, 段落の番号, 段落の文) の並び）)"""
+               who、dai、paras（(sid, 段落の番号, 段落の文) の並び）,
+               mokuteki：目的と手段の相手ごとに、gawa（相手の側。"upper" は目的、"lower" は手段）、name（相手の名前）、
+               slug（相手の論点の ID。論点のページと issue が無い相手は空）、rows（つながりの記録の行。資料の日付の新しい順）)"""
         ko = sorted([x for x in self.m["ko"] if x["point"] == P], key=lambda x: x["source_date"], reverse=True)
         docs = sorted([x for x in ko if not x["source"].startswith("sp:")], key=lambda x: x["source_date"], reverse=True)
         tome = [x for x in ko if self.pat and self.pat.search(x["quote"])]
@@ -350,7 +415,16 @@ class Page:
             who, dai = qhead_parts(self.m["qsrc"].get(q, ""))
             paras = [(sid, i, inputs.paragraphs(self.inp.statement_text(sid))[i - 1]) for sid, i in keys.paras_of(r["hani"])]
             qs.append(dict(question=q, date=qdate(q), sitsugi=q.startswith("sq:"), who=who, dai=dai, paras=paras))
-        return dict(ko=ko, docs=docs, tome=tome, jisseki=any(x["kind"] == "実績" for x in ko), qs=qs)
+        slugs = {p: k for p, k, _, _ in self.t["topics"]}
+        aite = {}
+        for r in self.m.get("mokuteki", []):
+            for mine, other in (("upper", "lower"), ("lower", "upper")):
+                if r[mine] == P:
+                    aite.setdefault((other, r[other]), []).append(r)
+        moku = [dict(gawa=g, name=n, slug=slugs.get(n, ""),
+                     rows=sorted(rs, key=lambda r: (r["source_date"], r["source"]), reverse=True))
+                for (g, n), rs in aite.items()]
+        return dict(ko=ko, docs=docs, tome=tome, jisseki=any(x["kind"] == "実績" for x in ko), qs=qs, mokuteki=moku)
 
     def topic(self, P, slug, short, setsumei):
         inp, T, qsrc = self.inp, self.t, self.m["qsrc"]
@@ -385,6 +459,7 @@ class Page:
                 "<p class='m'>上の表のうち、「まだ」「今後」などの語を含む記述を抜き出しています。その後の状況は、上の表で、より新しい時期の記述を確認してください。</p>") \
             if tome else ""
         th = E(T["theme"])
+        sec_m = self.mokuteki_html(R["mokuteki"])
         h = f"""<section id='{slug}' class='page'>
 <p class='lead'><a href='#top'>{SITE}</a> ＞ <a href='#top'>{th}</a> ＞ {E(P)}</p>
 <h1>{E(P)}</h1>
@@ -393,33 +468,70 @@ class Page:
 <h2>町の資料の記述（新しい順）</h2>{sec1}
 <h2>これまでの説明と答弁（新しい順）</h2>
 <table><tr><th>時期</th><th>区分</th><th>内容</th><th>もとの資料</th></tr>{rows2}</table>{jis}
-{sec3}
+{sec3}{sec_m}
 <h2>議会での質問と答弁（{len(ta)}件）</h2>
 <p class='m'>一つの質問では、複数の話題が取り上げられます。ここでは、{E(short)}に関する部分だけを抜き出しています。質問の全体は、会議録で確認できます。</p>{''.join(blocks)}
 <p class='m'>掲載しているのは、内容を確認できた質問です。ほかの質問でも、{E(short)}が取り上げられている場合があります。</p>
 </section>"""
         return h, len(ko), len(ta), [r["question"] for r in ta]
 
+    def mokuteki_html(self, moku):
+        """目的と手段（docs/design.md 4節）。相手が無ければ空。言葉は docs/design.md 3節から引く。"""
+        if not moku:
+            return ""
+        D = self.D
+        rows = []
+        for a in moku:
+            yaku = D.kotoba("つながりの記録 upper") if a["gawa"] == "upper" else D.kotoba("つながりの記録 lower")
+            name = f"<a href='#{a['slug']}'>{E(a['name'])}</a>" if a["slug"] else E(a["name"])
+            for r in a["rows"]:
+                rows.append(f"<tr><td>{E(yaku)}：{name}</td><td>「{S(r['quote'])}」</td>"
+                            f"<td>{self.link(r)}</td></tr>")
+        return (f"<h2>{E(D.kotoba('つながりの記録 link が「目的と手段」'))}</h2>"
+                f"<p class='m'>{E(D.bun('mokuteki-setsumei'))}</p><table><tr><th>{E(D.bun('mokuteki-aite'))}</th><th>{E(D.kotoba('つながりの記録 quote'))}</th>"
+                f"<th>{E(D.kotoba('つながりの記録 source'))}</th></tr>{''.join(rows)}</table>")
+
+    def ichiran_html(self, rows):
+        """論点の一覧の表の行（HTML）。事項の表があるテーマは、計画の章立ての要素ごとにまとめ、種類を出す。"""
+        T, D = self.t, self.D
+        if not T.get("jiko"):
+            return "".join(rows[s] for _, s, _, _ in T["topics"]), ""
+        keikaku, matome = jiko_matome(self.inp, T)
+        out = []
+        for youso, rs in matome:
+            mi = S(youso["name"]) if youso else E(D.bun("ronten-nashi", keikaku=keikaku))
+            out.append(f"<tr><th colspan='4'>{mi}</th></tr>")
+            for r in rs:
+                shu = E({"kadai": D.kotoba("事項の表 shurui が「kadai」"), "torikumi": D.kotoba("事項の表 shurui が「torikumi」"),
+                         "atai": D.kotoba("事項の表 shurui が「atai」")}[r["shurui"]])
+                if r["aru"]:
+                    out.append(rows[r["id"]].replace("</td>", f"</td><td>{shu}</td>", 1))
+                else:
+                    out.append(f"<tr><td>{E(r['name'])}</td><td>{shu}</td><td colspan='2'>{E(D.bun('ronten-mada'))}</td></tr>")
+        return "".join(out), f"<p class='m'>{E(D.bun('ronten-jiko-setsumei', keikaku=keikaku))}</p>"
+
     def render(self, today):
         T, qsrc = self.t, self.m["qsrc"]
         th = E(T["theme"])
-        pages, rows, qmap, counts = [], [], {}, []
+        pages, rows, qmap, counts = [], {}, {}, []
         for P, slug, short, setsumei in T["topics"]:
             h, nk, nt, qs = self.topic(P, slug, short, setsumei)
             pages.append(h)
             counts.append((P, nk, nt))
-            rows.append(f"<tr><td><a href='#{slug}'>{E(P)}</a></td><td>{nk}件</td><td>{nt}件</td></tr>")
+            rows[slug] = f"<tr><td><a href='#{slug}'>{E(P)}</a></td><td>{nk}件</td><td>{nt}件</td></tr>"
             for q in qs:
                 qmap.setdefault(q, []).append((P, slug))
         qrows = "".join(f"<tr><td>{qhead(q, qsrc)}</td><td>{'、'.join(f'<a href=#{s}>{E(p)}</a>' for p, s in ps)}</td>"
                         f"<td><a href='{E(keys.source_url(self.inp, q))}' target='_blank'>会議録</a></td></tr>"
                         for q, ps in sorted(qmap.items(), key=lambda kv: qdate(kv[0]), reverse=True))
+        ichiran, ichiran_setsumei = self.ichiran_html(rows)
+        shu_th = f"<th>{E(self.D.kotoba('事項の表 shurui'))}</th>" if T.get("jiko") else ""
         top = f"""<section id='top' class='page'>
 <p class='lead'>{SITE} ＞ {th}</p>
 <h1>{th}</h1>
 <p class='lead'>{E(T['setsumei'])}について、町の資料と議会の会議録の記述を、論点ごとに整理しています。意見や評価は加えていません。</p>
-<h2>論点ごとのページ</h2>
-<table><tr><th>論点</th><th>町の資料・答弁の記述</th><th>議会での質問</th></tr>{''.join(rows)}</table>
+<h2>論点ごとのページ</h2>{ichiran_setsumei}
+<table><tr><th>論点</th>{shu_th}<th>町の資料・答弁の記述</th><th>議会での質問</th></tr>{ichiran}</table>
 {"<p class='m'>準備中の論点：" + E('／'.join(T['junbi'])) + "　ほか</p>" if T['junbi'] else ""}
 <h2>これまでの経過（新しい順）</h2>
 <table><tr><th>時期</th><th>内容</th><th>もとの資料</th></tr>{self.katei_rows()}</table>
@@ -467,6 +579,7 @@ def main(argv=None):
     try:
         inp = inputs.Inputs()                                   # (d) lock と入力
         teigi = read_teigi(os.path.join(inputs.ROOT, "teigi", f"note-{theme}.tsv"), theme)
+        jiko_ni_suru(inp, teigi, theme)
         page, info = build(inp, teigi, theme, read_kotoba(), datetime.date.today())
     except inputs.InputError as e:
         print(f"止めた：(d) lock と入力、または項目の表\n{e}", file=sys.stderr)

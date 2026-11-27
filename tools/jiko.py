@@ -17,12 +17,11 @@ PATH = os.path.join(REPO, "teigi", "jiko.tsv")
 COLS = ["id", "theme", "name", "shurui", "taikei", "betsumei", "jotai", "chu"]
 SHURUI = {"kadai": "課題", "torikumi": "取り組み", "atai": "対象の属性と値"}
 JOTAI = ("案", "決定")
-TAIKEI = "ref/taikei.tsv"
-TSUNAGARI = "records/tsunagari.tsv"
 MOKUTEKI = "目的と手段"
 
 
 def read(path=PATH):
+    """事項の表の全部の行（表の順）。"""
     with open(path, encoding="utf-8", newline="") as fh:
         rd = csv.DictReader(fh, delimiter="\t")
         if rd.fieldnames != COLS:
@@ -50,14 +49,20 @@ def check(rows, taikei_ids):
 
 
 def taikei_ids(inp):
-    return {f"tk:{r['taikei']}/{r['n']}" for r in inp.ronten_tsv(TAIKEI)}
+    return set(ronten.taikei(inp))
 
 
 def mokuteki(inp, rows):
     """入力のつながりの記録（確定済み）の「目的と手段」の組（目的, 手段）のうち、両端が事項の表にあるもの。"""
     names = {r["name"] for r in rows}
-    kumi = {(r["upper"], r["lower"]) for r in ronten._confirmed(inp, TSUNAGARI) if r["link"] == MOKUTEKI}
+    kumi = {(r["upper"], r["lower"]) for r in ronten.tsunagari(inp, MOKUTEKI)}
     return sorted(k for k in kumi if k[0] in names and k[1] in names), len(kumi)
+
+
+def mokuteki_gyo(inp, rows):
+    """入力のつながりの記録（確定済み）の「目的と手段」の行のうち、両端が事項の表にある行（SCHEMA.md 7.9）。"""
+    names = {r["name"] for r in rows}
+    return [r for r in ronten.tsunagari(inp, MOKUTEKI) if r["upper"] in names and r["lower"] in names]
 
 
 def main():

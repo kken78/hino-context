@@ -5,6 +5,8 @@
   2. build/ を消して、全部のテスト
   3. 数値と内容の表と、資料の一覧の表・資料の中の場所の表の検査（tools/suji.py）
   3.4 事項の表の検査（tools/jiko.py）
+  3.45 質問が取り上げた資料と出来事の表の検査（tools/konkyo.py --kensa。入力の確定済みの記録から作り直して、
+       taio/konkyo.tsv と同じであることを確認する）
   3.5 設計の物と関係に当たる表の検査（tools/sekkei.py。当たる表が無い物と関係の数と名前を出す）
   4. 試作のページの作成（tools/build_note.py hoiku、kaigo、kokyo、chiiki）
   5. 数値のページの作成（tools/build_suji.py taiki）
@@ -36,6 +38,7 @@ STEPS = [
     ("全部のテスト", PY + ["-m", "unittest", "discover", "-s", TOOLS, "-p", "test_*.py"]),
     ("表の検査", PY + [os.path.join(TOOLS, "suji.py")]),
     ("事項の表の検査", PY + [os.path.join(TOOLS, "jiko.py")]),
+    ("質問が取り上げた資料と出来事の表の検査", PY + [os.path.join(TOOLS, "konkyo.py"), "--kensa"]),
     ("設計の物と関係に当たる表の検査", PY + [os.path.join(TOOLS, "sekkei.py")]),
     ("試作のページの作成（幼保）", PY + [os.path.join(TOOLS, "build_note.py"), "hoiku"]),
     ("試作のページの作成（高齢者福祉・介護）", PY + [os.path.join(TOOLS, "build_note.py"), "kaigo"]),
