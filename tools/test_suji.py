@@ -154,9 +154,11 @@ class TestAtai(unittest.TestCase):
                                "archive_url": ""}
         inp._doc_texts[("koho-1", "text")] = "開園時期：令和11年４月（予定）"
         row = dict(atai="令和11年4月", shiryo="doc:koho-1/1", inyo="開園時期：令和11年４月（予定）")
-        ng = "広報ひのを出典にした「数値がある」の行で、chu に「依頼者が PDF で確認（YYYY-MM-DD）」が無い"
+        ng = "広報ひのを出典にした「数値がある」の行で、chu に「人が PDF で確認（YYYY-MM-DD）」が無い"
         self.assertEqual(run(atai=[atai_row(**row)], inp=inp), [ng])
-        self.assertEqual(run(atai=[atai_row(chu="依頼者が PDF で確認（2026-11-20）", **row)], inp=inp), [])
+        self.assertEqual(run(atai=[atai_row(chu="人が PDF で確認（2026-11-20）", **row)], inp=inp), [])
+        # 2026-11-27 より前の記録の字は、記録として認めない（SCHEMA.md §6.3）
+        self.assertEqual(run(atai=[atai_row(chu="依頼者が PDF で確認（2026-11-20）", **row)], inp=inp), [ng])
         # 広報ひのでない町の資料は、確認の記録が無くてもよい
         self.assertEqual(run(atai=[atai_row(atai="3,000,000", shiryo="doc:yosan-1/2", inyo="3,000,000")]), [])
         # 「数値がある」でない行には、求めない
@@ -164,21 +166,22 @@ class TestAtai(unittest.TestCase):
                                             inyo="開園時期")], inp=inp), [])
 
     def test_nisha(self):
-        # inyo が空の行は、2者が画像で確認した記録でも通る（SCHEMA.md §6.3・§6.4）
-        ng = ("「数値がある」の行で、inyo が空なのに、chu に「依頼者が PDF で確認（YYYY-MM-DD）」と"
-              "「2者が画像で確認（YYYY-MM-DD）」のどちらも無い")
+        # inyo が空の行は、生成AIが画像を2回読んで一致した記録でも通る（SCHEMA.md §6.3・§6.4）
+        ng = ("「数値がある」の行で、inyo が空なのに、chu に「人が PDF で確認（YYYY-MM-DD）」と"
+              "「生成AIが画像を2回読んで一致（YYYY-MM-DD）」のどちらも無い")
         row = dict(shiryo="plan:sougou", inyo="")
-        self.assertEqual(run(atai=[atai_row(chu="図の中の数値。2者が画像で確認（2026-11-23）", **row)]), [])
+        self.assertEqual(run(atai=[atai_row(chu="図の中の数値。生成AIが画像を2回読んで一致（2026-11-23）", **row)]), [])
         self.assertEqual(run(atai=[atai_row(chu="図の中の数値。PDF で未確認", **row)]), [ng])
+        self.assertEqual(run(atai=[atai_row(chu="図の中の数値。2者が画像で確認（2026-11-23）", **row)]), [ng])
         # 日付の形が違う記録は、無いものとする
-        self.assertEqual(run(atai=[atai_row(chu="2者が画像で確認（2026-13-40）", **row)]), [ng])
-        # 広報ひのは、依頼者の確認だけを認める（inyo がある行も、空の行も）
+        self.assertEqual(run(atai=[atai_row(chu="生成AIが画像を2回読んで一致（2026-13-40）", **row)]), [ng])
+        # 広報ひのは、人が PDF で確認した記録だけを認める（inyo がある行も、空の行も）
         inp = fake()
         inp._docs["koho-1"] = {"id": "koho-1", "category": "koho", "title": "広報", "url": "https://example.jp/k.pdf",
                                "archive_url": ""}
         inp._doc_texts[("koho-1", "text")] = "開園時期：令和11年４月（予定）"
-        ng_koho = "広報ひのを出典にした「数値がある」の行で、chu に「依頼者が PDF で確認（YYYY-MM-DD）」が無い"
-        koho = dict(atai="令和11年4月", shiryo="doc:koho-1/1", chu="2者が画像で確認（2026-11-23）")
+        ng_koho = "広報ひのを出典にした「数値がある」の行で、chu に「人が PDF で確認（YYYY-MM-DD）」が無い"
+        koho = dict(atai="令和11年4月", shiryo="doc:koho-1/1", chu="生成AIが画像を2回読んで一致（2026-11-23）")
         self.assertEqual(run(atai=[atai_row(inyo="開園時期：令和11年４月（予定）", **koho)], inp=inp), [ng_koho])
         self.assertEqual(run(atai=[atai_row(inyo="", **koho)], inp=inp), [ng_koho])
 
@@ -210,18 +213,31 @@ class TestAtai(unittest.TestCase):
 
     def test_no_text_in_inputs(self):
         # 資料の本文が入力に無い行（plan:）は、inyo を空にでき、その場合は chu が必須
-        ok = "総合計画の原文の文字が入力に無い。依頼者が PDF で確認（2026-11-20）"
+        ok = "総合計画の原文の文字が入力に無い。人が PDF で確認（2026-11-20）"
         self.assertEqual(run(atai=[atai_row(shiryo="plan:sougou", inyo="", chu=ok)]), [])
-        ng = ("「数値がある」の行で、inyo が空なのに、chu に「依頼者が PDF で確認（YYYY-MM-DD）」と"
-              "「2者が画像で確認（YYYY-MM-DD）」のどちらも無い")
+        ng = ("「数値がある」の行で、inyo が空なのに、chu に「人が PDF で確認（YYYY-MM-DD）」と"
+              "「生成AIが画像を2回読んで一致（YYYY-MM-DD）」のどちらも無い")
         self.assertEqual(run(atai=[atai_row(shiryo="plan:sougou", inyo="", chu="総合計画の原文の文字が入力に無い")]), [ng])
         # 日付の形が違う記録は、無いものとする
-        self.assertEqual(run(atai=[atai_row(shiryo="plan:sougou", inyo="", chu="依頼者が PDF で確認（2026-13-40）")]), [ng])
+        self.assertEqual(run(atai=[atai_row(shiryo="plan:sougou", inyo="", chu="人が PDF で確認（2026-13-40）")]), [ng])
         self.assertEqual(run(atai=[atai_row(shiryo="plan:sougou", inyo="")]),
                          ["「数値がある」の行で、inyo が空で、chu に理由が無い"])
         p = run(atai=[atai_row(shiryo="plan:sougou", chu="入力に無い")])     # inyo を書くと照合できずに止まる
         self.assertEqual(len(p), 1)
         self.assertIn("inyo が shiryo の資料の本文に無い", p[0])
+
+
+class TestTaniNashi(unittest.TestCase):
+    def test_tani_nashi(self):
+        # 単位の無い項目の判定は tani だけで行う（docs/design.md 3節。2026-11-27）
+        self.assertTrue(suji.tani_nashi(dict(id="kaien", tani="")))
+        self.assertTrue(suji.tani_nashi(dict(id="kaien", tani=" ")))
+        self.assertFalse(suji.tani_nashi(dict(id="taiki", tani="人")))
+
+    def test_real(self):
+        rows, _ = suji.read_suji(open(os.path.join(suji.TEIGI_DIR, "suji.tsv"), encoding="utf-8").read())
+        self.assertEqual([r["id"] for r in rows if suji.tani_nashi(r)],
+                         ["kikan", "kaien", "shozaichi", "seibi-hoshin", "keitai", "seibigo-shisetsu"])
 
 
 class TestAtaiInInyo(unittest.TestCase):
@@ -438,13 +454,13 @@ class TestBubun(unittest.TestCase):
     def test_kikai_kakunin(self):
         """torikata が「機械」の行の chu に確認の記録があると止まる（SCHEMA.md §7.4）。日付の形が違う記録は、無いものとする。"""
         rows = bubun_rows()
-        for chu in ("2者が画像で確認（2026-11-23）", "依頼者が PDF で確認（2026-11-23）", "注。2者が画像で確認（2026-11-23）"):
+        for chu in ("生成AIが画像を2回読んで一致（2026-11-23）", "人が PDF で確認（2026-11-23）", "注。生成AIが画像を2回読んで一致（2026-11-23）"):
             with self.subTest(chu=chu):
                 p, _ = run7(bubun=change(rows, "6", chu=chu))
                 self.assertEqual(p, ["torikata が「機械」の行の chu に、確認の記録がある"])
-        self.assertEqual(run7(bubun=change(rows, "6", chu="2者が画像で確認（2026-13-40）"))[0], [])
+        self.assertEqual(run7(bubun=change(rows, "6", chu="生成AIが画像を2回読んで一致（2026-13-40）"))[0], [])
         # 「読んだ」の行には書ける
-        self.assertEqual(run7(bubun=change(rows, "6", torikata="読んだ", chu="2者が画像で確認（2026-11-23）"))[0], [])
+        self.assertEqual(run7(bubun=change(rows, "6", torikata="読んだ", chu="生成AIが画像を2回読んで一致（2026-11-23）"))[0], [])
 
     def test_name_and_jun(self):
         rows = bubun_rows()
@@ -463,13 +479,13 @@ class TestBubun(unittest.TestCase):
         """torikata が「読んだ」で chu に確認の記録がある行は、name の検査から外し、数を出す（SCHEMA.md §7.4）。"""
         rows = bubun_rows()
         nai = "name の字が、tokoro のページの原典の文字に無い（第６章 量の見込み）"
-        for chu in ("2者が画像で確認（2026-11-25）", "依頼者が PDF で確認（2026-11-25）"):
+        for chu in ("生成AIが画像を2回読んで一致（2026-11-25）", "人が PDF で確認（2026-11-25）"):
             with self.subTest(chu=chu):
                 p, kazoe = run7(bubun=change(rows, "1", name="第６章 量の見込み", torikata="読んだ", chu=chu))
                 self.assertEqual(p, [])
                 self.assertEqual(kazoe["name_nozoita"], 1)
         # 確認の記録が無い「読んだ」の行と、日付の形が違う記録の行は、これまでどおり検査する
-        for chu in ("", "2者が画像で確認（2026-13-01）", "依頼者が PDF で確認（2026/11/25）"):
+        for chu in ("", "生成AIが画像を2回読んで一致（2026-13-01）", "人が PDF で確認（2026/11/25）"):
             with self.subTest(chu=chu):
                 p, kazoe = run7(bubun=change(rows, "1", name="第６章 量の見込み", torikata="読んだ", chu=chu))
                 self.assertEqual(p, [nai])
@@ -898,10 +914,10 @@ class TestShisetsuKakunin(unittest.TestCase):
         return suji.shisetsu_mikakunin(dict(name=name, shisetsu=shisetsu, shisetsu_kakunin=kakunin), self.REF)
 
     def test_kiroku_no_katachi(self):
-        self.assertTrue(suji.shisetsu_kakunin_ari("依頼者が確認（2026-11-24）"))
-        self.assertTrue(suji.shisetsu_kakunin_ari("2者の読みが一致（2026-11-24）"))
-        for k in ("", "依頼者が確認（2026-11-31）", "依頼者が確認（2026/11/24）", "依頼者が PDF で確認（2026-11-24）",
-                  "2者が画像で確認（2026-11-24）", "確認済み", "依頼者が確認（2026-11-24）。第１園舎と第２園舎"):
+        self.assertTrue(suji.shisetsu_kakunin_ari("人が確認（2026-11-24）"))
+        self.assertTrue(suji.shisetsu_kakunin_ari("生成AIが2回読んで一致（2026-11-24）"))
+        for k in ("", "人が確認（2026-11-31）", "人が確認（2026/11/24）", "人が PDF で確認（2026-11-24）",
+                  "生成AIが画像を2回読んで一致（2026-11-24）", "確認済み", "人が確認（2026-11-24）。第１園舎と第２園舎"):
             self.assertFalse(suji.shisetsu_kakunin_ari(k), k)
 
     def test_mikakunin(self):
@@ -909,12 +925,12 @@ class TestShisetsuKakunin(unittest.TestCase):
         self.assertFalse(self.mikakunin("南比都佐幼稚園", "fa:minamihizusa-yo"))
         # name が一致しない行：記録が無ければ印を付ける。記録があれば付けない
         self.assertTrue(self.mikakunin("桜谷こども園", "fa:sakuradani-1;fa:sakuradani-2"))
-        self.assertFalse(self.mikakunin("桜谷こども園", "fa:sakuradani-1;fa:sakuradani-2", "依頼者が確認（2026-11-24）"))
-        self.assertFalse(self.mikakunin("桜谷こども園", "fa:sakuradani-1;fa:sakuradani-2", "2者の読みが一致（2026-11-24）"))
+        self.assertFalse(self.mikakunin("桜谷こども園", "fa:sakuradani-1;fa:sakuradani-2", "人が確認（2026-11-24）"))
+        self.assertFalse(self.mikakunin("桜谷こども園", "fa:sakuradani-1;fa:sakuradani-2", "生成AIが2回読んで一致（2026-11-24）"))
         # 日付の形が違う記録は、無いものとする
-        self.assertTrue(self.mikakunin("桜谷こども園", "fa:sakuradani-1;fa:sakuradani-2", "依頼者が確認（2026-13-01）"))
+        self.assertTrue(self.mikakunin("桜谷こども園", "fa:sakuradani-1;fa:sakuradani-2", "人が確認（2026-13-01）"))
         # 見出しの確認の記録（chu の字）は、施設の確認の記録にならない
-        self.assertTrue(self.mikakunin("桜谷こども園", "fa:sakuradani-1;fa:sakuradani-2", "2者が画像で確認（2026-11-24）"))
+        self.assertTrue(self.mikakunin("桜谷こども園", "fa:sakuradani-1;fa:sakuradani-2", "生成AIが画像を2回読んで一致（2026-11-24）"))
         # shisetsu が空の行と、参照表に無い ID の行は、印を付けない
         self.assertFalse(self.mikakunin("桜谷こども園", ""))
         self.assertFalse(self.mikakunin("桜谷こども園", "fa:nai"))
@@ -925,22 +941,22 @@ class TestShisetsuKakunin(unittest.TestCase):
     def test_kensa(self):
         sakura = dict(shisetsu="fa:sakuradani-1;fa:sakuradani-2")            # 行6の name「①量の見込み」は一致しない
         # 一致しない行に、形の合う記録：止めない
-        p, kazoe = self.run_k("6", shisetsu_kakunin="依頼者が確認（2026-11-24）", **sakura)
+        p, kazoe = self.run_k("6", shisetsu_kakunin="人が確認（2026-11-24）", **sakura)
         self.assertEqual(p, [])
         self.assertEqual((kazoe["shisetsu_fuicchi"], kazoe["shisetsu_mikakunin"]), (1, 0))
         # 一致しない行で、記録が空：止めない。未確認の行として数える
         p, kazoe = self.run_k("6", **sakura)
         self.assertEqual((p, kazoe["shisetsu_mikakunin"]), ([], 1))
         # 形が違う記録：止める
-        p, _ = self.run_k("6", shisetsu_kakunin="依頼者が確認（2026-11-31）", **sakura)
-        self.assertEqual(p, ["shisetsu_kakunin の形が違う（「依頼者が確認（YYYY-MM-DD）」か"
-                             "「2者の読みが一致（YYYY-MM-DD）」のはず：依頼者が確認（2026-11-31））"])
+        p, _ = self.run_k("6", shisetsu_kakunin="人が確認（2026-11-31）", **sakura)
+        self.assertEqual(p, ["shisetsu_kakunin の形が違う（「人が確認（YYYY-MM-DD）」か"
+                             "「生成AIが2回読んで一致（YYYY-MM-DD）」のはず：人が確認（2026-11-31））"])
         # shisetsu が空の行に、記録：止める
-        p, _ = self.run_k("6", shisetsu_kakunin="依頼者が確認（2026-11-24）")
-        self.assertEqual(p, ["shisetsu が空の行に、shisetsu_kakunin がある（依頼者が確認（2026-11-24））"])
+        p, _ = self.run_k("6", shisetsu_kakunin="人が確認（2026-11-24）")
+        self.assertEqual(p, ["shisetsu が空の行に、shisetsu_kakunin がある（人が確認（2026-11-24））"])
         # name が一致する行に、記録：止める（name の字は原典の文字に無いので、施設の検査だけを行う）
         rows = change(bubun_rows(), "2", name="南比都佐幼稚園", shisetsu="fa:minamihizusa-yo",
-                      shisetsu_kakunin="依頼者が確認（2026-11-24）")
+                      shisetsu_kakunin="人が確認（2026-11-24）")
         out, kazoe = suji.check_shisetsu(fake_shisetsu(), [dict({"shisetsu": "", "shisetsu_kakunin": ""}, **r, _gyo=i)
                                                            for i, r in enumerate(rows, 2)])
         self.assertEqual([m.naiyo for m in out],

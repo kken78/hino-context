@@ -310,7 +310,7 @@ class Tsukuru:
         if t["kettei"] == "案":
             intro.append(E(D.kotoba("定義の表 kettei が「案」")))
         for k, c in ((D.kotoba("定義の表 nani"), "nani"), (D.kotoba("定義の表 tani"), "tani"),
-                     (D.kotoba("定義の表 toki"), "toki"), (D.kotoba("定義の表 iikata"), "iikata"),
+                     (bs.toki_go(D, t), "toki"), (D.kotoba("定義の表 iikata"), "iikata"),
                      (D.kotoba("定義の表 chui"), "chui")):
             if t[c]:
                 intro.append(f"- {E(k)}：{E(t[c])}")
@@ -368,7 +368,7 @@ class Tsukuru:
         srcs = [k for k in groups if k]
         hb = bs.hiduke_bun(D, any(jun(k)[0] == 0 and not bs.hiduke_of(D, k, self.by) for k in srcs),
                            any(jun(k)[0] == 2 for k in srcs))
-        midashi = [f"## {E(D.bun('mcp-midashi-suji'))}", E(D.bun("hiduke-setsumei")) + E(hb)]
+        midashi = [f"## {E(D.bun('mcp-midashi-suji', nakami=bs.atai_go(D, t)))}", E(D.bun("hiduke-setsumei")) + E(hb)]
         if items_all:
             # 見出しは、最初の資料のブロックと一緒に出す
             blocks += [(midashi + [""] + items_all[0][0], items_all[0][1])] + items_all[1:]

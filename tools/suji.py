@@ -59,10 +59,10 @@ SUJI_HISSU = ("id", "name", "nani", "kettei")
 # atai の中の数字の部分。符号（▲・△・マイナス）は数字の部分に含める。桁区切りの「,」と小数点も含める。
 RE_SUJI = re.compile(r"[▲△\-−]?[0-9](?:[0-9,.]*[0-9])?")
 
-# 依頼者が PDF で数値を確認した記録（SCHEMA.md §6.3）。chu にこの字が要る行がある。
-RE_KAKUNIN = re.compile(r"依頼者が PDF で確認（([0-9]{4}-[0-9]{2}-[0-9]{2})）")
-# 生成AIの2者が、画像から別々に読んで一致した記録（SCHEMA.md §6.3）。inyo が空の行は、どちらかの記録が要る。
-RE_NISHA = re.compile(r"2者が画像で確認（([0-9]{4}-[0-9]{2}-[0-9]{2})）")
+# 人が PDF で数値を確認した記録（SCHEMA.md §6.3）。chu にこの字が要る行がある。
+RE_KAKUNIN = re.compile(r"人が PDF で確認（([0-9]{4}-[0-9]{2}-[0-9]{2})）")
+# 生成AIが、画像を2回、別々に読んで一致した記録（SCHEMA.md §6.3）。inyo が空の行は、どちらかの記録が要る。
+RE_NISHA = re.compile(r"生成AIが画像を2回読んで一致（([0-9]{4}-[0-9]{2}-[0-9]{2})）")
 KOHO = "koho"   # hino-town-docs の sources.tsv の category。広報ひの
 KEIKAKU = "keikaku"   # 計画ライブラリの文書（pt・plan の ID）の shurui（SCHEMA.md §7.1）
 
@@ -161,7 +161,7 @@ def atai_in_inyo(atai, inyo):
 
 
 def has_kakunin(chu):
-    """chu に「依頼者が PDF で確認（YYYY-MM-DD）」があり、日付の形が合っているか。"""
+    """chu に「人が PDF で確認（YYYY-MM-DD）」があり、日付の形が合っているか。"""
     return any(is_ymd(d) for d in RE_KAKUNIN.findall(chu or ""))
 
 
@@ -174,8 +174,14 @@ def inyo_kuzure(r):
     return KUZURE in (r.get("chu") or "")
 
 
+def tani_nashi(t):
+    """定義の表の行が、単位（tani）の無い項目か。画面と MCP の応答で、その項目の数値を「内容」と書く
+    （docs/design.md 3節。2026-11-27）。判定は tani だけで行い、この関数だけで行う。"""
+    return not (t.get("tani") or "").strip()
+
+
 def has_nisha(chu):
-    """chu に「2者が画像で確認（YYYY-MM-DD）」があり、日付の形が合っているか。"""
+    """chu に「生成AIが画像を2回読んで一致（YYYY-MM-DD）」があり、日付の形が合っているか。"""
     return any(is_ymd(d) for d in RE_NISHA.findall(chu or ""))
 
 
@@ -193,7 +199,8 @@ def is_koho(inp, shiryo):
 def check_kakunin(inp, rows):
     """「数値がある」の行で、広報ひのを出典にした行と、inyo が空の行に、確認の記録があるか（SCHEMA.md §6.4）。
 
-    広報ひのは、依頼者の確認だけを認める。inyo が空の行は、依頼者の確認か、2者が画像で確認した記録のどちらかを認める。
+    広報ひのは、人が PDF で確認した記録だけを認める。inyo が空の行は、人が PDF で確認した記録か、生成AIが画像を2回読んで
+    一致した記録のどちらかを認める。
     """
     out = []
     for r in rows:
@@ -203,16 +210,16 @@ def check_kakunin(inp, rows):
         if not r["inyo"].strip():
             if not r["chu"].strip():      # chu が空の行は、check_atai が「理由が無い」として出す
                 continue
-            if koho:                      # 広報ひのは、依頼者の確認だけを認める
+            if koho:                      # 広報ひのは、人が PDF で確認した記録だけを認める
                 out.append(Mondai(ATAI_NAME, r["_gyo"],
-                                  "広報ひのを出典にした「数値がある」の行で、chu に「依頼者が PDF で確認（YYYY-MM-DD）」が無い"))
+                                  "広報ひのを出典にした「数値がある」の行で、chu に「人が PDF で確認（YYYY-MM-DD）」が無い"))
             elif not has_nisha(r["chu"]):
                 out.append(Mondai(ATAI_NAME, r["_gyo"],
-                                  "「数値がある」の行で、inyo が空なのに、chu に「依頼者が PDF で確認（YYYY-MM-DD）」と"
-                                  "「2者が画像で確認（YYYY-MM-DD）」のどちらも無い"))
+                                  "「数値がある」の行で、inyo が空なのに、chu に「人が PDF で確認（YYYY-MM-DD）」と"
+                                  "「生成AIが画像を2回読んで一致（YYYY-MM-DD）」のどちらも無い"))
         elif koho:
             out.append(Mondai(ATAI_NAME, r["_gyo"],
-                              "広報ひのを出典にした「数値がある」の行で、chu に「依頼者が PDF で確認（YYYY-MM-DD）」が無い"))
+                              "広報ひのを出典にした「数値がある」の行で、chu に「人が PDF で確認（YYYY-MM-DD）」が無い"))
     return out
 
 
@@ -412,7 +419,7 @@ TORIKATA = (KIKAI, YONDA)
 
 
 def kakunin_ari(chu):
-    """chu に確認の記録（「依頼者が PDF で確認（YYYY-MM-DD）」か「2者が画像で確認（YYYY-MM-DD）」）があり、
+    """chu に確認の記録（「人が PDF で確認（YYYY-MM-DD）」か「生成AIが画像を2回読んで一致（YYYY-MM-DD）」）があり、
     日付の形が合っているか。日付の形が違う記録は、無いものとする（SCHEMA.md §7.2・§7.4）。"""
     return has_kakunin(chu) or has_nisha(chu)
 
@@ -730,11 +737,11 @@ def shisetsu_icchi(r, ref_by_key):
 
 
 # 施設の確認の記録（SCHEMA.md §7.2 の shisetsu_kakunin）。どちらかの形で、日付が正しいものだけを記録とする
-RE_SHISETSU_KAKUNIN = re.compile(r"(?:依頼者が確認|2者の読みが一致)（([0-9]{4}-[0-9]{2}-[0-9]{2})）")
+RE_SHISETSU_KAKUNIN = re.compile(r"(?:人が確認|生成AIが2回読んで一致)（([0-9]{4}-[0-9]{2}-[0-9]{2})）")
 
 
 def shisetsu_kakunin_ari(kakunin):
-    """shisetsu_kakunin の字が、「依頼者が確認（YYYY-MM-DD）」か「2者の読みが一致（YYYY-MM-DD）」で、日付が正しいか。"""
+    """shisetsu_kakunin の字が、「人が確認（YYYY-MM-DD）」か「生成AIが2回読んで一致（YYYY-MM-DD）」で、日付が正しいか。"""
     m = RE_SHISETSU_KAKUNIN.fullmatch((kakunin or "").strip())
     return bool(m) and is_ymd(m.group(1))
 
@@ -761,8 +768,8 @@ def check_shisetsu(inp, rows):
             out.append(Mondai(BUBUN_NAME, r["_gyo"], f"shisetsu が空の行に、shisetsu_kakunin がある（{k}）"))
         elif not shisetsu_kakunin_ari(k):
             out.append(Mondai(BUBUN_NAME, r["_gyo"],
-                              "shisetsu_kakunin の形が違う（「依頼者が確認（YYYY-MM-DD）」か"
-                              f"「2者の読みが一致（YYYY-MM-DD）」のはず：{k}）"))
+                              "shisetsu_kakunin の形が違う（「人が確認（YYYY-MM-DD）」か"
+                              f"「生成AIが2回読んで一致（YYYY-MM-DD）」のはず：{k}）"))
     rows = [r for r in rows if r["shisetsu"].strip()]
     if not rows:
         return out, kazoe
@@ -982,7 +989,7 @@ def check_theme(inp, rows, bunsho_names, bubun_rows, index):
                 out.append(Mondai(THEME_NAME, g, f"inyo が、tokoro のページの原典の文字に無い（{t}）"))
             if is_koho(inp, t) and not has_kakunin(r["chu"]):
                 out.append(Mondai(THEME_NAME, g,
-                                  "広報ひのの「説明の文」の行で、chu に「依頼者が PDF で確認（YYYY-MM-DD）」が無い"))
+                                  "広報ひのの「説明の文」の行で、chu に「人が PDF で確認（YYYY-MM-DD）」が無い"))
             continue
         # 施設の表
         if r["inyo"].strip():

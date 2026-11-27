@@ -231,7 +231,7 @@ class TestFake(unittest.TestCase):
         rows = [dict(r, torikata="読んだ") if r["oya"] == "2" or r["n"] == "2" else r
                 for r in bubun_rows() if r["n"] != "9"]
         vals = {"4": ["2", "11", "13", "3"], "5": ["0", "4", "4", "1"]}
-        at = [dict(atai_rows()[0], jiten=g, atai=v, inyo="", chu="2者が画像で確認（2026-11-23）", bubun=g_n, retsu=r_n)
+        at = [dict(atai_rows()[0], jiten=g, atai=v, inyo="", chu="生成AIが画像を2回読んで一致（2026-11-23）", bubun=g_n, retsu=r_n)
               for g_n, g in (("4", "令和7年4月"), ("5", "平成30年4月"))
               for r_n, v in zip(("6", "7", "8", "3"), vals[g_n])]
         page, info = self.build(tables(bubun=rows, atai=at), inp=inp)
@@ -250,14 +250,14 @@ class TestFake(unittest.TestCase):
         self.assertIn(D.bun("mikakunin-hyo"), page)
 
     def test_kakunin_ari(self):
-        # torikata が「読んだ」で、chu に「2者が画像で確認（2026-11-23）」がある行は、印が付かない（SCHEMA.md §7.2）
-        rows = change(bubun_rows(), "6", torikata="読んだ", chu="2者が画像で確認（2026-11-23）")
+        # torikata が「読んだ」で、chu に「生成AIが画像を2回読んで一致（2026-11-23）」がある行は、印が付かない（SCHEMA.md §7.2）
+        rows = change(bubun_rows(), "6", torikata="読んだ", chu="生成AIが画像を2回読んで一致（2026-11-23）")
         page, _ = self.build(tables(bubun=rows))
         self.assertIn("<th>①求職</th><th>②特定</th>", page)
         self.assertEqual(marks(page), 0)
         self.assertNotIn(D.bun("mikakunin-hyo"), page)
         # 注のあとに記録を足した行も、印が付かない
-        rows = change(bubun_rows(), "6", torikata="読んだ", chu="原典の文字では2行に分かれている。2者が画像で確認（2026-11-23）")
+        rows = change(bubun_rows(), "6", torikata="読んだ", chu="原典の文字では2行に分かれている。生成AIが画像を2回読んで一致（2026-11-23）")
         page, _ = self.build(tables(bubun=rows))
         self.assertEqual(marks(page), 0)
 
@@ -272,7 +272,7 @@ class TestFake(unittest.TestCase):
 
     def test_kakunin_hiduke(self):
         # 日付の形が違う記録は、記録が無いものとして、印が付く
-        rows = change(bubun_rows(), "6", torikata="読んだ", chu="2者が画像で確認（2026-13-40）")
+        rows = change(bubun_rows(), "6", torikata="読んだ", chu="生成AIが画像を2回読んで一致（2026-13-40）")
         page, _ = self.build(tables(bubun=rows))
         self.assertIn(f"<th>①求職{YONDA}</th>", page)
         self.assertEqual(marks(page), 1)
@@ -331,7 +331,7 @@ class TestReal(unittest.TestCase):
         self.assertEqual(rows[0][1], ["0", "0", "4", "4", "1"])
         self.assertEqual(rows[-1], ("令和7年4月", ["2", "2", "11", "15", "3"]))
         self.assertIn("<th class=m colspan=4>待機児童数から除かれる者</th><th rowspan=2>待機児童数</th>", page)
-        # 「読んだ」の列は5つ（①、②、③、小計、待機児童数）。どれも2者が画像で確認したので、印は無く、印の文も出さない
+        # 「読んだ」の列は5つ（①、②、③、小計、待機児童数）。どれも生成AIが画像を2回読んで一致したので、印は無く、印の文も出さない
         self.assertEqual(marks(page), 0)
         self.assertIn("<th>③育児休業中の方</th><th>小計①+②+③</th>", page)
         self.assertNotIn(D.bun("mikakunin-hyo"), page)
@@ -360,7 +360,7 @@ class TestReal(unittest.TestCase):
                 page, info = self.build(bkey, n)
                 self.assertEqual((info["gyo"], info["retsu"], info["ran"], info["moji"], info["atai"]), (7, 5, 35, 0, 35))
                 rows = body_rows(page)
-                # 表、行、列の13か所は、どれも2者が画像で確認したので、印は無く、印の文も出さない
+                # 表、行、列の13か所は、どれも生成AIが画像を2回読んで一致したので、印は無く、印の文も出さない
                 self.assertEqual(rows[0][0], "待機児童数（人）")
                 self.assertEqual(len(rows), 7)
                 self.assertIn(f"<th>{hajime}</th>", page)

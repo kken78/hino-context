@@ -16,6 +16,8 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SKILL_PATH = os.path.join(ROOT, "SKILL.md")
 HEAD = "| 使わない書き方 | 使う書き方 |"
+# 行そのものを調べない表の見出し。SKILL.md §3 のこの表と、docs/design.md 2節の言葉の表（使わない言葉を挙げる表）
+SKIP_HEADS = (HEAD, "| 使わない | 使う | 確認する所 |")
 TARGETS = ("*.md", "docs/*.md", "teigi/*.tsv", "tools/*.py", "mcp/*.md", "mcp/src/*.ts")
 SKIP = ("tools/test_bunsho.py",)   # 検査のテストは、使わない書き方を例として含む
 
@@ -56,11 +58,12 @@ def _mask(line):
 
 
 def check_text(text, table, name=""):
-    """文 → [(場所, 見つかった書き方, 使う書き方, その行)]。SKILL.md §3 の表の行そのものは調べない。"""
+    """文 → [(場所, 見つかった書き方, 使う書き方, その行)]。SKILL.md §3 の表と、docs/design.md 2節の言葉の表の、
+    行そのものは調べない（SKIP_HEADS）。"""
     out = []
     in_table = False
     for n, line in enumerate(text.splitlines(), 1):
-        if line == HEAD:
+        if line in SKIP_HEADS:
             in_table = True
             continue
         if in_table:

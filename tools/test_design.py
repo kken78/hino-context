@@ -86,7 +86,7 @@ class TestDesign(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = os.path.join(tmp, "design.md")
             with open(path, "w", encoding="utf-8") as f:
-                f.write("## 3. 対応\n\n| データの側 | 画面の言葉 | 出し方 |\n| --- | --- | --- |\n| 定義の表 nani | 数えているもの | 欄 |\n")
+                f.write("## 3. 対応\n\n| データの側 | 画面の言葉 | 出し方 |\n| --- | --- | --- |\n| 定義の表 nani | 説明 | 欄 |\n")
             with self.assertRaises(inputs.InputError):                             # 2つ目の表が無い
                 bs.read_design(path)
             with open(path, "a", encoding="utf-8") as f:

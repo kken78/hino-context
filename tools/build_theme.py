@@ -302,11 +302,13 @@ class Kaisei:
                              mae=D.bun("kaisei-atai", kaisei=mae_w, atai=S(a["atai"]), page=page(a)),
                              ato=D.bun("kaisei-atai", kaisei=ato_w, atai=S(b["atai"]), page=page(b))))
         for r, jo in x.kuwawaru:
-            out.append(D.bun("kaisei-kuwawaru", name=teigi_namae(self.teigi[r["suji"]]),
-                             jiki=S(r["jiten"]) if jo == 1 else gyo(r), page=page(r)))
+            t = self.teigi[r["suji"]]
+            out.append(D.bun("kaisei-kuwawaru", name=teigi_namae(t), jiki=S(r["jiten"]) if jo == 1 else gyo(r),
+                             nakami=E(bs.atai_go(D, t)), page=page(r)))
         for r, jo in x.nai:
-            out.append(D.bun("kaisei-nai", name=teigi_namae(self.teigi[r["suji"]]),
-                             jiki=S(r["jiten"]) if jo == 1 else gyo(r), page=page(r)))
+            t = self.teigi[r["suji"]]
+            out.append(D.bun("kaisei-nai", name=teigi_namae(t), jiki=S(r["jiten"]) if jo == 1 else gyo(r),
+                             nakami=E(bs.atai_go(D, t)), page=page(r)))
         return out
 
 
