@@ -53,6 +53,14 @@ class TestTsukuru(unittest.TestCase):
         rows = [dict(question="iq:1", aite="doc:nai", hani="", yomi="確定", chu="")]
         self.assertEqual(len(konkyo.check(rows, BUNSHO)), 3)
 
+    def test_check_namae(self):
+        # 読み取りの行は、資料の ID の形でない名前（懇話会など）を持てる。入力の確定済みの行と、ID の形の字は、資料の一覧の表に要る
+        ok = [dict(question="iq:1", aite="懇話会", hani="sp:1/1", yomi="一致", chu="")]
+        self.assertEqual(konkyo.check(ok, BUNSHO), [])
+        bad = [dict(question="iq:1", aite="懇話会", hani="sp:1/1", yomi="入力の確定済み", chu=""),
+               dict(question="iq:1", aite="doc:nai", hani="sp:1/1", yomi="一致", chu="")]
+        self.assertEqual(len(konkyo.check(bad, BUNSHO)), 2)
+
 
 class TestRepo(unittest.TestCase):
     def test_repo(self):
@@ -61,9 +69,14 @@ class TestRepo(unittest.TestCase):
         except inputs.InputError:
             raise unittest.SkipTest("lock の版の入力が無い")
         self.assertEqual(konkyo.main(["--kensa"]), 0)
-        self.assertEqual([(r["question"], r["aite"]) for r in konkyo.read()],
+        rows = konkyo.read()
+        # はじめの2行は、入力の確定済みの記録から作った行。そのあとは、生成AIの2回の読み取りの行（2026-11-28）
+        self.assertEqual([(r["question"], r["aite"]) for r in rows[:2]],
                          [("iq:0000008582_20250912_0350", "doc:jigyo-shinkodomoen-kousou"),
                           ("iq:0000008397_20250310_0285", "doc:shingi-youho-teigen")])
+        self.assertEqual([r["yomi"] for r in rows[:2]], ["入力の確定済み"] * 2)
+        self.assertEqual({r["yomi"] for r in rows[2:]}, {"一致", "1回だけ"})
+        self.assertEqual(len(rows), 172)
 
 
 if __name__ == "__main__":

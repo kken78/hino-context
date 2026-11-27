@@ -256,6 +256,11 @@ class TestLock(unittest.TestCase):
         self.assertEqual(os.path.getmtime(out) if os.path.exists(out) else None, before)
 
 
+def bs_design():
+    import build_suji
+    return build_suji.read_design()
+
+
 def real_inputs():
     try:
         return inputs.Inputs()
@@ -287,13 +292,16 @@ class TestReal(unittest.TestCase):
             raise unittest.SkipTest("lock の版の入力が無い")
         cls.teigi = bn.jiko_ni_suru(cls.inp, bn.read_teigi(os.path.join(inputs.ROOT, "teigi", "note-hoiku.tsv"), "hoiku"),
                                     "hoiku")
+        # 生成AIの2回の読み取りの行（taio/shudai.tsv）を入れない形（確定済みの記録だけ。2026-11-27 までの形）
+        cls.teigi0 = bn.jiko_ni_suru(cls.inp, bn.read_teigi(os.path.join(inputs.ROOT, "teigi", "note-hoiku.tsv"), "hoiku"),
+                                     "hoiku", shudai=[])
         cls.kotoba = bn.read_kotoba()
 
     def build(self, inp, t=None):
         return bn.build(inp, t or self.teigi, "hoiku", self.kotoba, TODAY)
 
     def test_counts(self):
-        _, info = self.build(self.inp)
+        _, info = self.build(self.inp, self.teigi0)
         self.assertEqual([(n, k) for _, n, k in info["counts"]],
                          [(13, 5), (9, 4), (8, 4), (6, 3), (2, 0), (3, 0), (12, 0), (2, 0),
                           (0, 1), (0, 1), (0, 4), (0, 1), (0, 3)])
@@ -301,15 +309,41 @@ class TestReal(unittest.TestCase):
         self.assertEqual(info["quotes"].mismatched, [])
         self.assertEqual(info["paras"].mismatched, [])
 
+    def test_counts_yomi(self):
+        """生成AIの2回の読み取りの行を入れると、37の論点の全部にページができ、質問は48（確定済み7と、読んだ41）。"""
+        _, info = self.build(self.inp)
+        self.assertEqual(len(info["counts"]), 37)
+        self.assertEqual([(n, k) for _, n, k in info["counts"][:4]], [(13, 8), (9, 6), (8, 9), (6, 7)])
+        self.assertEqual(info["questions"], 48)
+        self.assertEqual(info["paras"].mismatched, [])
+
+    def test_yomi_shirushi(self):
+        """読み取りの質問には、未確認の印と、段落ごとに一致か1回だけかを出す。確定済みの質問には、人が確認した印。"""
+        D = bs_design()
+        page, _ = self.build(self.inp)
+        sec = page[page.index("<section id='teiin'"):]
+        sec = sec[:sec.index("</section>")]
+        self.assertEqual(sec.count(f"<p class='m'>{D.kotoba('質問と事項の対応の表 question')}</p>"), 4)
+        self.assertEqual(sec.count(f"<p class='m'>{D.bun('shitsumon-kakutei')}</p>"), 3)
+        n1 = sec.count(f"（{D.kotoba('質問と事項の対応の表 yomi が「一致」')}）")
+        n2 = sec.count(f"（{D.kotoba('質問と事項の対応の表 yomi が「1回だけ」')}）")
+        self.assertEqual(n1 + n2, 3 + 10 + 7 + 2)
+        self.assertIn(D.bun("keisai-yomi", short="定員"), sec)
+        self.assertIn(D.bun("yomi-setsumei", short="定員"), sec)
+        # テーマの定義に無い質問の題は、一般質問の台帳の題名の全部
+        self.assertIn("「松尾公園テニスコート」「待機児童問題」", page)
+
     def test_jiko(self):
         """事項の表から作る論点の一覧（SCHEMA.md 7.9）：記録のある13の論点にページを作り、記録の無い24は、一覧に名前と
-        種類と、まだ入れていないことの文を出す。資料の3つ（提言、計画（案）、基本構想）は論点にしない。"""
-        T = self.teigi
+        種類と、まだ入れていないことの文を出す。資料の3つ（提言、計画（案）、基本構想）は論点にしない。
+        生成AIの2回の読み取りの行を入れると、37の全部に記録がある（2026-11-28）。"""
+        self.assertEqual(sum(r["aru"] for r in self.teigi["jiko"]), 37)
+        T = self.teigi0
         self.assertEqual(len(T["jiko"]), 37)
         self.assertEqual(sum(r["aru"] for r in T["jiko"]), 13)
         for P in ("子育て環境の未来に向けての提言", "日野町幼児教育保育施設再編整備計画（案）", "日野町認定こども園整備基本構想"):
             self.assertNotIn(P, [x[0] for x in T["topics"]])
-        page, _ = self.build(self.inp)
+        page, _ = self.build(self.inp, T)
         top = page[page.index("<section id='top'"):page.index("</section>")]
         self.assertEqual(top.count("議会での質問と町の資料の記述は、まだ入れていません</td>"), 24)
         self.assertIn("<th colspan='4'>日野町幼児教育保育施設再編整備計画の章立てに入らない論点</th>", top)
@@ -363,12 +397,12 @@ class TestReal(unittest.TestCase):
         self.assertIn("(b) 出典の無い記述", kinds(c.exception))
 
     def test_chu(self):
-        page, _ = self.build(self.inp)
+        page, _ = self.build(self.inp, self.teigi0)
         self.assertEqual(page.count("<div class='chu'>作成者の注："), 9)   # 注6行。説明の移り変わりの表と、質問の該当の部分に出る
         self.assertIn("作成者が補った説明", page)
 
     def test_chu_gaibu(self):
-        page, _ = self.build(self.inp)
+        page, _ = self.build(self.inp, self.teigi0)
         self.assertEqual(page.count("総務省自治財政局財務調査課「地方公共団体における公共施設等の適正な管理の推進について」"), 1)
         self.assertIn("2026年11月18日に確認", page)
 

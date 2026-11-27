@@ -1,4 +1,5 @@
-"""質問が取り上げた資料と出来事の表（taio/konkyo.tsv。SCHEMA.md 7.10）のうち、入力の確定済みの記録から作れる行を作る。
+"""質問が取り上げた資料と出来事の表（taio/konkyo.tsv。SCHEMA.md 7.10）を作る。行は、入力の確定済みの記録から作れる行と、
+生成AIの2回の読み取りの結果（taio/yomi/。tools/yomi.py の konkyo_rows）から作る行の2つ。
 
 使い方：
   python3 -B tools/konkyo.py            taio/konkyo.tsv を作る
@@ -9,6 +10,8 @@
 （records/tsunagari.tsv。確定済み）の upper_ref か lower_ref があり、その ID がどれも、資料の一覧の表にある1つの資料の
 1ページめ（pt と doc）か、資料そのもの（plan）を指すもの。aite はその資料の ID、hani は対応の記録の hani のまま。
 作れない point は、理由とともに出す（止めない）。手で行を書かない。
+読み取りの行は、入力の確定済みの行のあとに、tools/yomi.py の順のまま置く。aite は、資料の ID か、資料と出来事の名前の表
+（teigi/konkyo-namae.tsv）の名前か、その表に無い名前（読み手が発言の言葉で書いた名前）。
 """
 import argparse
 import os
@@ -23,6 +26,7 @@ import jiko  # noqa: E402
 import keys  # noqa: E402
 import ronten  # noqa: E402
 import suji as sj  # noqa: E402
+import yomi as ym  # noqa: E402
 
 PATH = os.path.join(inputs.ROOT, "taio", "konkyo.tsv")
 COLS = ["question", "aite", "hani", "yomi", "chu"]
@@ -95,10 +99,11 @@ def read(path=PATH):
 
 
 def check(rows, bunsho):
-    """行の検査（SCHEMA.md 7.10）→ 問題の並び。aite が資料の一覧の表にあること、yomi が決めた字であること、hani があること。"""
+    """行の検査（SCHEMA.md 7.10）→ 問題の並び。aite が資料の一覧の表にあるか、資料の ID の形でない名前であること
+    （入力の確定済みの行は、資料の一覧の表にあること）、yomi が決めた字であること、hani があること。"""
     bad = []
     for i, r in enumerate(rows, 2):
-        if r["aite"] not in bunsho:
+        if r["aite"] not in bunsho and (r["yomi"] == NYURYOKU or not r["aite"] or ":" in r["aite"]):
             bad.append(f"{i} 行目：aite が資料の一覧の表に無い（{r['aite']}）")
         if r["yomi"] not in YOMI:
             bad.append(f"{i} 行目：yomi が {YOMI} のどれでもない（{r['yomi']}）")
@@ -107,17 +112,23 @@ def check(rows, bunsho):
     return bad
 
 
+def bunsho_ids():
+    """資料の一覧の表の ID の集まり。"""
+    with open(os.path.join(sj.TEIGI_DIR, "bunsho.tsv"), encoding="utf-8") as f:
+        return {r["bunsho"] for r in sj.read_bunsho(f.read())[0]}
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description="質問が取り上げた資料と出来事の表を、入力の確定済みの記録から作る")
     p.add_argument("--kensa", action="store_true")
     a = p.parse_args(sys.argv[1:] if argv is None else argv)
     try:
         inp = inputs.Inputs()
-        with open(os.path.join(sj.TEIGI_DIR, "bunsho.tsv"), encoding="utf-8") as f:
-            bunsho = {r["bunsho"] for r in sj.read_bunsho(f.read())[0]}
+        bunsho = bunsho_ids()
         theme_jun = list(dict.fromkeys(r["theme"] for r in inp.ronten_tsv(ronten.THEMES)))
         rows, dekinai = tsukuru(inp, bunsho, ronten_names(theme_jun))
-    except inputs.InputError as e:
+        rows += ym.konkyo_rows(ym.read_yomi(), ym.read_namae())
+    except (inputs.InputError, ym.YomiError) as e:
         print(f"止めた：lock と入力、または表を読めない\n{e}", file=sys.stderr)
         return 1
     bad = check(rows, bunsho)

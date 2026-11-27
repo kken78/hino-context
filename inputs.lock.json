@@ -5,7 +5,7 @@
   },
   "hino-council-search": {
     "sha": "3f794e7c93be7a8a5844a01c89b817b196ad1bef",
-    "files": ["public/data/index-manifest.json", "public/data/index/*.json"]
+    "files": ["public/data/index-manifest.json", "public/data/index/*.json", "data/ippan.tsv"]
   },
   "shiga-hino-plans": {
     "sha": "ae24c58d6b0d1cf1bf994d072b232652a5ae6451",
