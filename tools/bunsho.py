@@ -92,13 +92,37 @@ def check_repo(table):
     return out
 
 
+def setsu_kimari(path=SKILL_PATH):
+    """SKILL.md 3.1 の、節の見出しと、対象の言葉。→ (見出しの並び, 言葉の並び)"""
+    with open(path, encoding="utf-8") as fh:
+        text = fh.read()
+    midashi = re.findall(r"^- 節の見出し：`(.+?)`", text, re.M)
+    kotoba = re.findall(r"^- 対象の言葉：`(.+?)`", text, re.M)
+    if not midashi or not kotoba:
+        raise TableError("SKILL.md 3.1 に、節の見出しか、対象の言葉が無い")
+    return midashi, kotoba
+
+
+def check_setsu(text, midashi, kotoba):
+    """文案と、判断を伺う報告に、3つの節があるか。→ 無い節の見出しの並び（対象でなければ空）。"""
+    if not any(k in text for k in kotoba):
+        return []
+    heads = [l.lstrip("#").strip() for l in text.split("\n") if l.startswith("#")]
+    return [m for m in midashi if not any(m in h for h in heads)]
+
+
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
     try:
         table = read_table()
         if argv[:1] == ["--text"] and len(argv) == 2:
             with open(argv[1], encoding="utf-8") as fh:
-                hits = check_text(fh.read(), table, os.path.basename(argv[1]))
+                body = fh.read()
+            hits = check_text(body, table, os.path.basename(argv[1]))
+            nai = check_setsu(body, *setsu_kimari())
+            if nai:
+                print(f"止めた：文案と、判断を伺う報告に書く節が無い（SKILL.md 3.1）：{'、'.join(nai)}")
+                return 1
         elif not argv:
             hits = check_repo(table)
         else:
