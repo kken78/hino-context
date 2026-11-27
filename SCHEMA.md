@@ -7,6 +7,7 @@
 - 5つの入力（hino-council-search・shiga-hino-plans・hino-town-docs・council-dashboard・hino-ronten）ごとに、コミットの SHA（40桁）と、読むファイルのパターン（files）を書く。`*` は1つの階層の中だけに当たる。
 - ツールは、読む前に、5つの入力の作業ツリーの HEAD が lock の SHA と同じかを確認する。違うとき、git のリポジトリでないとき、HEAD が取れないときは、読まずに止める。
 - 読むのは lock の SHA の、files に当たるファイルだけ（`git show <SHA>:<path>`）。入力の場所は、環境変数 `HINO_CONTEXT_INPUTS`（既定 `/tmp/inputs`。その下にリポジトリ名の4つ）と `HINO_CONTEXT_RONTEN`（既定 `/home/claude/hino-ronten`）で受ける。
+- hino-council-search から読むのは、会議録の索引（public/data/index-manifest.json と public/data/index/*.json）と、一般質問の台帳（data/ippan.tsv。2026-11-28 に追加。テーマの定義に無い質問の題を、台帳の題名から取るため。7.10）である。
 - hino-ronten から読むのは、題材の定義（ref/themes.tsv）、施設の参照表（ref/shisetsu.tsv）、系列の表（ref/lineage.tsv）、事柄の記録（records/kotogara.tsv）、過程の記録（records/katei.tsv）、問いと事項の対応（records/taio.tsv）、施設の記録（records/shisetsu.tsv）、計画の章立て（ref/taikei.tsv）、つながりの記録（records/tsunagari.tsv。2つは 2026-11-27 に追加。tools/jiko.py が読む）である。records の表は、status が confirmed の行だけを使う。題材の定義と施設の参照表には status の列が無く、依頼者が決めた行だけが入っている（施設の参照表は 2026-10-27 と 2026-11-05 に依頼者が確定した。hino-ronten DESIGN.md ADR-23）。
 - 過程の記録の確定済みの行のうち、ページと MCP の応答を作る検査で止まる10行（kaigo の step 2・4・5・6・9・12 と chiiki の step 8 は from が空、kaigo の step 8 と chiiki の step 6・10 は sources に議案の ID（gi:）がある）は、出さない（2026-11-27。4つのテーマを MCP に出すときの指示。入力は読むだけなので、行を直さない）。出さない行と理由は tools/ronten.py の1か所に書き、行がその理由に当たらなくなったら、ページと応答を作らずに止まる。出さずに済ませるか、行の出し方を決めるかは、依頼者が決める。
 - 系列の表（ref/lineage.tsv。hino-ronten LINK_SCHEMA.md §8）にも status の列は無い。このリポジトリでは、題材の定義の kind「系列」の value（series）から、計画の ID（plan の列。空の行は除く）を引くためだけに使う（7.7）。
@@ -520,24 +521,53 @@ docs/hoshin.md 4.2 の3つの表（物の種類、物どうしの関係、問い
 
 - 事項の表にそのテーマの行があるテーマ（いまは hoiku）は、論点の一覧（試作のページと、MCP の応答の theme）を、この表から作る（tools/build_note.py の jiko_ni_suru と jiko_matome）。行が無いテーマ（kaigo、kokyo、chiiki）は、これまでどおり §8 の仮の表から作る。
 - 論点の ID は id。hino-ronten の記録とは、name が記録の名前（事柄の記録の point、質問との対応の記録の point、つながりの記録の upper と lower）と同じかで結び付ける。betsumei は、まだ使わない。
-- 確定済みの記録（name に事柄の記録があるか、そのテーマの質問・質疑との対応の記録がある）がある行だけに、論点のページと issue の応答を作る。記録が無い行も、一覧には載せる（docs/design.md 4節）。
+- 確定済みの記録（name に事柄の記録があるか、そのテーマの質問・質疑との対応の記録がある）か、質問と事項の対応の表（7.10。生成AIの2回の読み取り。2026-11-28）の行がある行だけに、論点のページと issue の応答を作る。どれも無い行も、一覧には載せる（docs/design.md 4節）。2026-11-28 の読み取りのあとは、幼保の37行のうち、どれも無い行は無い。
 - 一覧は、taikei の要素ごとにまとめ、要素の順は入力の章立ての表の n の順にする。taikei が nashi の行は、最後に1つにまとめる。テーマの行の taikei は、1つの体系の要素でなければならない（まとまりの見出しに、その体系の番号 0 の要素の name を使うため）。違えば止まる。
 - 目的と手段：入力のつながりの記録のうち、link が「目的と手段」の確定済みの行で、upper と lower の両方が事項の表の name にあるもの（tools/jiko.py の mokuteki_gyo）を、両端の論点のページと issue に出す。quote は、source の資料の本文と照合し（§3）、合わない行があれば止まる。
 - 仮の表（§8）の論点の行は、short と setsumei のためだけに残す。論点の行の key が事項の表に無いか、name が事項の表と違うと止まる。準備中の行は置かない（置くと止まる）。
 
 ### 7.10 質問と事項の対応 `taio/shudai.tsv`、質問が取り上げた資料と出来事 `taio/konkyo.tsv`
 
-docs/hoshin.md 4.2 の「主題にする」と「根拠・出典にする」。生成AIの2回の読み取りで作る。`taio/shudai.tsv` は形だけで、行はまだ無い。
+docs/hoshin.md 4.2 の「主題にする」と「根拠・出典にする」。生成AIの2回の読み取りで作る（CLAUDE.md 守ることの7）。
 
 - `taio/shudai.tsv`：question（質問の ID）、jiko（事項の ID）、hani（段落の ID）、yomi（`一致`、`1回だけ`）、chu
-- `taio/konkyo.tsv`：question、aite（資料の ID か、過程の記録の行）、hani、yomi（`一致`、`1回だけ`、`入力の確定済み`）、chu
+- `taio/konkyo.tsv`：question、aite（資料の ID か、資料と出来事の名前）、hani、yomi（`一致`、`1回だけ`、`入力の確定済み`）、chu
+
+生成AIの2回の読み取りの行（2026-11-28 の依頼者の決定）：
+
+- 読み取りの結果は `taio/yomi/` に、読み手（a と b）と束ごとのファイルのまま置く。`taio/yomi/taba.json` は束の並びで、束ごとに、読んだ一般質問の sid を持つ。読んだのは幼保の41問（テーマの定義にある未読の12問と、hino-council-search の一般質問の台帳 data/ippan.tsv の題名に語がある29問）。読み手のファイルの列は、shudai（question、point、hani、mayoi、riyu）、konkyo（question、aite、hani）、kouho（question、hani、namae）。読み方の決まりは SKILL.md 4節。
+- 2つの表の読み取りの行は、tools/yomi.py が作る（konkyo.tsv は tools/konkyo.py が、入力の確定済みの行のあとに置く）。手で書かない。作る決まり：質問と事項（資料と出来事は名前）の組ごとに、段落を1つずつに分け、2回とも付けた段落を yomi `一致` の行に、片方だけが付けた段落を、読み手ごとに yomi `1回だけ` の行にする。段落は発言の順に並べ、続いた段落は範囲にまとめる。chu には、1回だけの行の読み手と、迷いの印を付けた読み手を書く（読み手が書いた迷いの理由は、表に入れない）。
+- jiko は、読み手が書いた事項の name から、事項の表（7.9）の id を引く。無い name があれば止まる。
+- aite は、資料と出来事の名前の表 `teigi/konkyo-namae.tsv`（下）で、資料の ID がある名前だけを ID にし、ほかは名前のまま持つ。名前の表に無い名前（読み手が発言の言葉で書いた名前）も、名前のまま持つ。
+- 候補（kouho。事項の表に無い話題）は表にしない。tools/yomi.py が、名前と段落の数の一覧を出す。
+- 検査：tools/yomi.py --kensa と tools/konkyo.py --kensa が、作り直した行と表が同じかを確認する（tools/kensa.py に入っている）。tools/yomi.py は、question が読んだ質問にあり、会議録に発言があること、jiko が事項の表にあること、yomi が決めた字であること、hani の段落がもとの発言にあることを確認する。
+
+資料と出来事の名前の表 `teigi/konkyo-namae.tsv`（2026-11-28）：
+
+| 列 | 中身 |
+| --- | --- |
+| namae | SKILL.md 4.3 の名前（読み手が konkyo の aite に書く字） |
+| shu | `資料` か `出来事` |
+| id | 資料は、資料の一覧の表（7.1）の ID（資料の一覧の表に無い資料は空）。出来事は、MCP の応答（event）で使う ID（英小文字・数字・ハイフン） |
+| setsumei | SKILL.md 4.3 の括弧の中の字。無ければ空 |
+| chu | 注 |
+
+- 資料の ID は、提言 → doc:shingi-youho-teigen、計画 → pt:youho/honpen、基本構想 → doc:jigyo-shinkodomoen-kousou、子ども・子育て支援事業計画 → pt:kodomo/honpen（2026-11-28 の指示）。計画（案）は、資料の一覧の表に資料が無いので空。
+- 出来事は、懇話会（konwakai）、パブリックコメント（pabukome）、説明会（setsumeikai）。出来事は konkyo.tsv では名前のまま持ち、ID は、この表から引く。
+- 検査（tools/yomi.py の check_namae。tools/build_mcp.py も行う）：namae と id が重ならないこと、shu が2つのどちらかであること、資料の id が資料の一覧の表にあること、出来事の id が ID の形であること。
+
+出し方（docs/design.md 4節、docs/mcp.md）：
+
+- shudai.tsv の行は、論点の応答（issue）と試作のページの論点のページに、hino-ronten の確定済みの記録と同じ「議会での質問と答弁」に並べ、質問ごとに未確認の印を、段落ごとに一致か1回だけかを付ける。読み取りの行がある事項は、論点の一覧で ID を付け、issue を作る。
+- konkyo.tsv の行のうち、aite が資料の ID の行は document に、名前の表の出来事の行は event に出す。計画（案）と、名前の表に無い名前の行は、表に持つが、いまは出さない（数は tools/yomi.py が出す）。
+- テーマの定義に無い質問の題は、一般質問の台帳（hino-council-search の data/ippan.tsv。§1）の、その質問の題名の全部を「」で囲んで並べる。
 
 `taio/konkyo.tsv` の、入力の確定済みの記録から作る行（2026-11-27）：
 
 - 資料は事項にしない（2026-11-18 の決定）ので、論点から外した資料の名前（提言、計画（案）、基本構想）に付いていた、hino-ronten の確定済みの質問との対応の記録は、「質問が、この資料を取り上げている」として、この表に持つ。
 - 行は tools/konkyo.py が作る。手で書かない。作る決まり：入力の質問との対応の記録（records/taio.tsv。確定済み）のうち、point がどのテーマの論点（事項の表の name と、§8 の仮の表の論点の name）でもない行で、point の名前に、入力のつながりの記録（確定済み）の upper_ref か lower_ref があり、その ID がどれも、資料の一覧の表（7.1）にある1つの資料の1ページめ（pt と doc）か、資料そのもの（plan）を指すもの。aite はその資料の ID、hani は対応の記録の hani のまま、yomi は `入力の確定済み`（生成AIが読んだ行ではないことを示す）、chu には、もとにした入力の記録を書く。作れない point は、理由とともにツールが出す（止めない）。
 - 2026-11-27 の行は2つ（提言 doc:shingi-youho-teigen、基本構想 doc:jigyo-shinkodomoen-kousou）。計画（案）は、つながりの記録に ID が無く、資料の一覧の表にも計画（案）の資料が無いので、作れない。
-- 検査：tools/konkyo.py --kensa が、作り直した行と表が同じかを確認する（tools/kensa.py に入っている）。tools/build_mcp.py は、aite が資料の一覧の表にあること、yomi が決めた字であること、hani の段落がもとの発言にあること、question がどれかのテーマの定義の問い・質疑にあることを確認し、合わなければ止まる。
+- 検査：tools/build_mcp.py は、aite が資料の一覧の表にあるか、資料の ID の形でない名前であること（入力の確定済みの行は、資料の一覧の表にあること）、yomi が決めた字であること、hani の段落がもとの発言にあること、question がどれかのテーマの定義の問い・質疑か、読んだ質問にあることを確認し、合わなければ止まる。
 
 ## 8. まだ決めていない物
 
