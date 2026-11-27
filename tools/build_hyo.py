@@ -1,7 +1,7 @@
 """文書の部分の表の、表1つを1ページにする（SCHEMA.md §7.2・§7.3、docs/design.md 3節・4節）。
 
-実行：python3 -B tools/build_hyo.py <文書の鍵> <表の番号>
-  （例 pt:youho/honpen 4 → build/hyo/pt_youho_honpen_4.html。ファイル名は、文書の鍵の「:」と「/」を「_」にし、
+実行：python3 -B tools/build_hyo.py <文書の ID> <表の番号>
+  （例 pt:youho/honpen 4 → build/hyo/pt_youho_honpen_4.html。ファイル名は、文書の ID の「:」と「/」を「_」にし、
   表の番号を付けたもの）
 中身は teigi/ の4つの表と、lock の版の入力だけから作る。数値を計算しない。
 行は、文書の部分の表で、表を親にする行。並べる順は、原典の文字（text_raw）の表の範囲での、行の位置の順。
@@ -18,7 +18,7 @@ torikata が「読んだ」で、chu に確認の記録が無い表・行・列�
 作る前の検査（1つでも当たれば、件数と該当行を示して、ページを作らずに止まる。終了コード 1）：
   (a) 表の検査（tools/suji.py の check_all）で問題がある
   (b) 画面に出る文に、docs/design.md 2節の「使わない」言葉が残っている（資料からの文は除く）
-  (c) 文書の鍵と表の番号が、文書の表と文書の部分の表に無い。表に行か列が無い
+  (c) 文書の ID と表の番号が、文書の表と文書の部分の表に無い。表に行か列が無い
   (d) lock と入力が合わない
   (e) docs/design.md 3節の表と、このツールが合わない（tools/build_suji.py の design_problems。
       1つ目の表の「同じ定義の数値がある、ほかの文書」の画面の言葉と、2つ目の表の midashi-onaji の文が違う場合を含む）
@@ -50,7 +50,7 @@ RE_BANGO = re.compile(r"[1-9][0-9]*")
 
 
 def out_name(bkey, n):
-    """文書の鍵と表の番号 → 出力のファイル名。"""
+    """文書の ID と表の番号 → 出力のファイル名。"""
     return re.sub(r"[:/]", "_", bkey) + f"_{n}.html"
 
 
@@ -205,7 +205,7 @@ def thead(D, retsu):
 
 
 def hoka_bunsho(tables, h, bkey):
-    """この表の欄を指す数値の定義について、数値の表に行がある、ほかの文書。→ 文書の鍵 → ページの番号の集まり。"""
+    """この表の欄を指す数値の定義について、数値の表に行がある、ほかの文書。→ 文書の ID → ページの番号の集まり。"""
     sids = {r["suji"] for rs in h.atai.values() for r in rs}
     by = {r["bunsho"] for r in tables["bunsho"]}
     out = {}
@@ -301,7 +301,7 @@ def build(inp, tables, bkey, n, kotoba, today, read_problems=(), design=None):
 def main(argv=None, teigi_dir=None):
     argv = sys.argv[1:] if argv is None else argv
     if len(argv) != 2 or not RE_BANGO.fullmatch(argv[1]):
-        print("使い方：python3 -B tools/build_hyo.py <文書の鍵> <表の番号>", file=sys.stderr)
+        print("使い方：python3 -B tools/build_hyo.py <文書の ID> <表の番号>", file=sys.stderr)
         return 2
     bkey, n = argv
     try:

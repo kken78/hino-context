@@ -29,7 +29,7 @@ function schema(a: Hikisu) {
   return a.required ? s : s.optional();
 }
 
-// 引数 → 応答を引く鍵。ツールの引数の順に「名前=値」を「&」でつなぐ。値は前後の空白を除くだけで、ほかの推定はしない。
+// 引数 → 応答を引くための、引数の組の字。ツールの引数の順に「名前=値」を「&」でつなぐ。値は前後の空白を除くだけで、ほかの推定はしない。
 function kagi(tool: Tool, args: Record<string, unknown>): string {
   const out: string[] = [];
   for (const a of tool.args) {

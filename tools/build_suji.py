@@ -4,11 +4,11 @@
 中身は teigi/suji.tsv・atai.tsv・bunsho.tsv・bubun.tsv と、lock の版の入力だけから作る。hino-ronten の記録は使わない。
 列は、tools/suji.py の jiten_kankei が返す印（ato・mae・tochu）で分ける。単語で数値の意味や種類を決めない。数値を計算しない。
 画面に出す言葉は、すべて docs/design.md の3節の2つの表から読む。このファイルには、画面の言葉を書かない
-（HTML のタグとスタイル、記号は除く）。表の行は、左の列の字を鍵として、次の4つの呼び出しで引く。
-  D.kotoba(鍵)          1つ目の表（データの構造との対応）の、画面の言葉
-  D.retsu_setsumei(鍵)  1つ目の表の、出し方の列にある列の説明「」の中の字
-  D.dasanai(鍵)         1つ目の表の、画面に出さないと決めた行（何も返さない）
-  D.bun(鍵, 名前=字)     2つ目の表（見出しと決まった文）の文。{名前} に字を入れる
+（HTML のタグとスタイル、記号は除く）。表の行は、左の列の字を ID として、次の4つの呼び出しで引く。
+  D.kotoba(ID)          1つ目の表（データの構造との対応）の、画面の言葉
+  D.retsu_setsumei(ID)  1つ目の表の、出し方の列にある列の説明「」の中の字
+  D.dasanai(ID)         1つ目の表の、画面に出さないと決めた行（何も返さない）
+  D.bun(ID, 名前=字)     2つ目の表（見出しと決まった文）の文。{名前} に字を入れる
 
 作る前の検査（1つでも当たれば、件数と該当行を示して、ページを作らずに止まる。終了コード 1）：
   (a) 表の検査（tools/suji.py の check_all。inyo の照合、文書の部分の検査を含む）で問題がある
@@ -18,10 +18,10 @@
   (e) docs/design.md 3節の表と、このツールが合わない（design_problems。次の6つ）
       - データの側が返す印（suji.KANKEI）に、1つ目の表の行が無い
       - 1つ目の表の左の列が、SCHEMA.md にある列（suji.py の列の並び）か印でない
-      - このツールが引く鍵が表に無い。表にあって、ページを作るツール（PAGE_TOOLS）のどれも引かない行がある
+      - このツールが引く ID が表に無い。表にあって、ページを作るツール（PAGE_TOOLS）のどれも引かない行がある
       - D.bun に渡す名前と、文の中の {名前} が合わない
-      - このツールの中に、表の画面の言葉と文（4字以上のもの）が書かれている（1つ目の表の左の列の字は鍵として除く）
-      - 呼び出しの鍵が、字のままでない（検査できない）
+      - このツールの中に、表の画面の言葉と文（4字以上のもの）が書かれている（1つ目の表の左の列の字は ID として除く）
+      - 呼び出しの ID が、字のままでない（検査できない）
 """
 import ast
 import datetime
@@ -50,7 +50,7 @@ Stop = bn.Stop
 
 SETSU3 = "## 3. "
 HEAD1 = "| データの側 | 画面の言葉 | 出し方 |"
-HEAD2 = "| 鍵 | 文 |"
+HEAD2 = "| ID | 文 |"
 RE_KAGI2 = re.compile(r"[a-z]+(?:-[a-z]+)*")
 RE_SETSUMEI = re.compile(r"列の説明「([^」]*)」")
 RE_DASANAI = re.compile(r"（[^（）]*出さない）")           # 画面に出さないと決めた行の、画面の言葉の形
@@ -87,7 +87,7 @@ PAGE_TOOLS = ("build_suji.py", "build_hyo.py", "build_theme.py", "build_mcp.py")
 
 
 class Design:
-    """docs/design.md 3節の2つの表。h1：鍵 → (画面の言葉, 出し方)。h2：鍵 → 文。"""
+    """docs/design.md 3節の2つの表。h1：ID → (画面の言葉, 出し方)。h2：ID → 文。"""
 
     def __init__(self, h1, h2):
         self.h1, self.h2 = h1, h2
@@ -169,7 +169,7 @@ def hidari_problems(key):
 
 
 def scan_calls(src):
-    """このツールの文 → (1つ目の表の鍵の集まり, 2つ目の表の鍵 → 渡す名前の集まりの並び, 字のままでない呼び出しの行)。"""
+    """このツールの文 → (1つ目の表の ID の集まり, 2つ目の表の ID → 渡す名前の集まりの並び, 字のままでない呼び出しの行)。"""
     k1, k2, bad = set(), {}, []
     for node in ast.walk(ast.parse(src)):
         if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
@@ -222,10 +222,10 @@ def design_problems(d, src=None, path=SRC_PATH, others=None):
         o1, o2, _ = scan_calls(o)
         all1 |= o1
         all2 |= set(o2)
-    out += [f"このツールの {n} 行目：鍵が字のままでない" for n in bad]
-    out += [f"このツールが引く鍵「{k}」が、1つ目の表に無い" for k in sorted(k1 - set(d.h1))]
+    out += [f"このツールの {n} 行目：ID が字のままでない" for n in bad]
+    out += [f"このツールが引く ID「{k}」が、1つ目の表に無い" for k in sorted(k1 - set(d.h1))]
     out += [f"1つ目の表の行「{k}」を、ページを作るツールのどれも引いていない" for k in d.h1 if k not in all1]
-    out += [f"このツールが引く鍵「{k}」が、2つ目の表に無い" for k in sorted(set(k2) - set(d.h2))]
+    out += [f"このツールが引く ID「{k}」が、2つ目の表に無い" for k in sorted(set(k2) - set(d.h2))]
     out += [f"2つ目の表の行「{k}」を、ページを作るツールのどれも引いていない" for k in d.h2 if k not in all2]
     for k, uses in k2.items():
         if k in d.h2:
@@ -241,7 +241,7 @@ def design_problems(d, src=None, path=SRC_PATH, others=None):
         words += [w] + RE_KAGIKAKKO.findall(w) + RE_SETSUMEI.findall(how)
     for k, t in d.h2.items():
         words += _fragments(t) + RE_KAGIKAKKO.findall(t)
-    # 1つ目の表の左の列（データの側の名前）は鍵なので、ツールに書いてよい。鍵の字を除いてから探す
+    # 1つ目の表の左の列（データの側の名前）は ID なので、ツールに書いてよい。ID の字を除いてから探す
     rest = src
     for k in sorted(d.h1, key=len, reverse=True):
         rest = rest.replace(k, "")
@@ -302,7 +302,7 @@ def hi_str(D, h):
 
 
 def toki_of(D, r, teigi):
-    """行の jiten と nendo → (並べる順の鍵, 表に出す字)。印がある行（nendo がある行）に使う。"""
+    """行の jiten と nendo → (並べる順に使う値, 表に出す字)。印がある行（nendo がある行）に使う。"""
     m = sj.RE_NENGETSU.fullmatch(r["jiten"].strip())
     if m:
         y, mo = sj.GENGO[m.group(1)] + (1 if m.group(2) == "元" else int(m.group(2))), int(m.group(3))
@@ -317,7 +317,7 @@ def toki_of(D, r, teigi):
 
 
 def hiduke_of(D, shiryo, by):
-    """shiryo → (並べる順の鍵, 表に出す字)。発言は発言の日、ほかは文書の表の hiduke。無ければ None。"""
+    """shiryo → (並べる順に使う値, 表に出す字)。発言は発言の日、ほかは文書の表の hiduke。無ければ None。"""
     try:
         kind, g = keys.parse(shiryo)
     except keys.KeyFormError:
@@ -340,7 +340,7 @@ def hiduke_bun(D, nendo, nashi):
 
 
 def para_range(bubun):
-    """段落の鍵 → (始め, 終わり)。"""
+    """段落の ID → (始め, 終わり)。"""
     _, g = keys.parse(bubun)
     return int(g[1]), int(g[2] or g[1])
 
@@ -449,7 +449,7 @@ dt{color:#555;font-size:.85rem} dd{margin:0}
 class Page:
     def __init__(self, D, teigi, entries, index=None):
         self.D, self.t, self.es = D, teigi, entries
-        self.index = index or {}            # (文書の鍵, 番号) → 文書の部分の行。施設の判定に使う
+        self.index = index or {}            # (文書の ID, 番号) → 文書の部分の行。施設の判定に使う
         self.chigau = 0
         D.dasanai("時点の関係 無し")                          # 印が無い行は、表の列に入れない
         self.kotoba = {sj.KANKEI_ATO: D.kotoba("時点の関係 ato"),

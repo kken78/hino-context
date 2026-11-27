@@ -139,7 +139,7 @@ class TestAtai(unittest.TestCase):
         p = run(atai=[atai_row(inyo="令和7年4月 2 2 11 15 4", atai="4")])
         self.assertEqual(p, ["inyo が shiryo の資料の本文に無い（引用が資料の本文に無い：pt:youho/honpen/2）"])
         p = run(atai=[atai_row(shiryo="doc:nai/2")])
-        self.assertEqual(p, ["inyo が shiryo の資料の本文に無い（資料が入力に無いか、照合できない資料の鍵：doc:nai/2）"])
+        self.assertEqual(p, ["inyo が shiryo の資料の本文に無い（資料が入力に無いか、照合できない資料の ID：doc:nai/2）"])
 
     def test_inyo_sources(self):
         rows = [atai_row(atai="40程度", shiryo=f"sp:{SID}", inyo="定員は40名程度を考えております。"),
@@ -202,7 +202,7 @@ class TestAtai(unittest.TestCase):
     def test_shiryo_form(self):
         p = run(atai=[atai_row(shiryo="pt:youho")])
         self.assertEqual(len(p), 1)
-        self.assertTrue(p[0].startswith("shiryo の鍵の形が SCHEMA.md §2 に合わない"))
+        self.assertTrue(p[0].startswith("shiryo の ID の形が SCHEMA.md §2 に合わない"))
 
     def test_inyo_without_shiryo(self):
         p = run(atai=[atai_row(jotai=suji.NAI, atai="", shiryo="", inyo="何か", hani="計画")])
@@ -376,7 +376,7 @@ class TestBunsho(unittest.TestCase):
         p, _ = run7(bunsho=[bunsho_row(konkyo_tokoro="pt:kodomo/honpen/2")])
         self.assertEqual(p, ["konkyo の字が、konkyo_tokoro のページの原典の文字に無い（pt:kodomo/honpen/2）"])
         p, _ = run7(bunsho=[bunsho_row(konkyo_tokoro="pt:youho/honpen/3")])
-        self.assertEqual(p, ["konkyo_tokoro が、この文書のページの鍵でない（pt:youho/honpen/3）"])
+        self.assertEqual(p, ["konkyo_tokoro が、この文書のページの ID でない（pt:youho/honpen/3）"])
         p, _ = run7(bunsho=[bunsho_row(konkyo="", konkyo_tokoro="")])
         self.assertEqual(p, ["konkyo が空なのに、chu に探したページが無い"])
         p, _ = run7(bunsho=[bunsho_row(konkyo="", konkyo_tokoro="", chu="3ページを見た")])
@@ -390,10 +390,10 @@ class TestBunsho(unittest.TestCase):
         p, _ = run7(bunsho=[bunsho_row(hiduke_moto="")])
         self.assertEqual(p, ["hiduke があるのに、hiduke_moto が空"])
         p, _ = run7(bunsho=[bunsho_row(hiduke_moto="pt:youho/honpen/1")])
-        self.assertEqual(p, ["hiduke_moto が、この文書のページの鍵でない（pt:youho/honpen/1）"])
+        self.assertEqual(p, ["hiduke_moto が、この文書のページの ID でない（pt:youho/honpen/1）"])
         self.assertEqual(run7(bunsho=[bunsho_row(hiduke_moto="shiga-hino-plans data/plans/kodomo.json")])[0], [])
         p, _ = run7(bunsho=[bunsho_row(hiduke_moto="台帳")])
-        self.assertEqual(p, ["hiduke_moto が、ページの鍵でも、入力の台帳の名前でもない（台帳）"])
+        self.assertEqual(p, ["hiduke_moto が、ページの ID でも、入力の台帳の名前でもない（台帳）"])
         p, _ = run7(bunsho=[bunsho_row(hiduke="", hiduke_moto="")])
         self.assertEqual(p, ["hiduke が空なのに、chu に理由が無い"])
 
@@ -403,9 +403,9 @@ class TestBunsho(unittest.TestCase):
         p, _ = run7(bunsho=[bunsho_row(han="令和８年６月一部改正", han_tokoro="pt:kodomo/honpen/1")])
         self.assertEqual(p, ["han が、han_tokoro のページの原典の文字に無い（令和８年６月一部改正）"])
         p, _ = run7(bunsho=[bunsho_row(han="令和７年３月", han_tokoro="pt:youho/honpen/1")])
-        self.assertEqual(p, ["han_tokoro が、この文書のページの鍵でない（pt:youho/honpen/1）"])
+        self.assertEqual(p, ["han_tokoro が、この文書のページの ID でない（pt:youho/honpen/1）"])
         p, _ = run7(bunsho=[bunsho_row(han="令和７年３月", han_tokoro="")])
-        self.assertEqual(p, ["han_tokoro が、この文書のページの鍵でない（）"])
+        self.assertEqual(p, ["han_tokoro が、この文書のページの ID でない（）"])
         p, _ = run7(bunsho=[bunsho_row(han="", han_tokoro="pt:kodomo/honpen/1")])
         self.assertEqual(p, ["han が空なのに、han_tokoro がある"])
 
@@ -571,7 +571,7 @@ class TestAtaiBubun(unittest.TestCase):
         p, _ = run7(atai=[atai7(bubun=f"sp:{SID}/1", **row)])
         self.assertEqual(p, [f"bubun の発言が、shiryo の発言と違う（sp:{SID}/1）"])
         p, _ = run7(atai=[atai7(bubun="2", **row)])
-        self.assertEqual(p, ["発言を shiryo にした行で、bubun が段落の鍵の形でない（2）"])
+        self.assertEqual(p, ["発言を shiryo にした行で、bubun が段落の ID の形でない（2）"])
         p, _ = run7(atai=[atai7(bubun=f"sp:{SID7}/2", **dict(row, retsu="4"))])
         self.assertEqual(p, ["発言を shiryo にした行に、retsu がある"])
 
@@ -858,7 +858,7 @@ class TestShisetsu(unittest.TestCase):
         self.assertFalse(self.icchi("保育所あおぞら園鎌掛分園（平成２８年度から）", "fa:kaneka"))
         self.assertFalse(self.icchi("南比幼稚園 676㎡", "fa:minamihizusa-yo"))
         self.assertFalse(self.icchi("あおぞら園 鎌掛分園", "fa:kaneka"))
-        # 鍵が複数ある行は、どの鍵の施設とも一致する場合だけ一致。単語の一致で決めない
+        # ID が複数ある行は、どの ID の施設とも一致する場合だけ一致。単語の一致で決めない
         self.assertFalse(self.icchi("桜谷こども園", "fa:sakuradani-1;fa:sakuradani-2"))
         self.assertFalse(self.icchi("桜谷こども園第１園舎", "fa:sakuradani-1;fa:sakuradani-2"))
         self.assertIsNone(self.icchi("南比都佐幼稚園", ""))
@@ -875,12 +875,12 @@ class TestShisetsu(unittest.TestCase):
         self.assertEqual((out, kazoe["shisetsu_icchi"], kazoe["shisetsu_fuicchi"]), ([], 1, 0))
 
     def test_kagi(self):
-        """shisetsu の鍵は、施設の参照表の key にある。「;」で区切った空の鍵も止まる。"""
+        """shisetsu の ID は、施設の参照表の key にある。「;」で区切った空の ID も止まる。"""
         for v, want in (("fa:nai", "fa:nai"), ("fa:kaneka;fa:nai", "fa:nai"), ("fa:kaneka;", "空"),
                         ("fa:kaneka; fa:minamihizusa-yo", " fa:minamihizusa-yo"), ("kaneka", "kaneka")):
             with self.subTest(v=v):
                 p, _ = run7(bubun=change(bubun_rows(), "6", shisetsu=v), inp=fake_shisetsu())
-                self.assertEqual(p, [f"shisetsu の鍵が、施設の参照表に無い（{want}）"])
+                self.assertEqual(p, [f"shisetsu の ID が、施設の参照表に無い（{want}）"])
 
     def test_yomanai(self):
         """shisetsu がある行が無ければ、施設の参照表を読まない。"""
@@ -915,7 +915,7 @@ class TestShisetsuKakunin(unittest.TestCase):
         self.assertTrue(self.mikakunin("桜谷こども園", "fa:sakuradani-1;fa:sakuradani-2", "依頼者が確認（2026-13-01）"))
         # 見出しの確認の記録（chu の字）は、施設の確認の記録にならない
         self.assertTrue(self.mikakunin("桜谷こども園", "fa:sakuradani-1;fa:sakuradani-2", "2者が画像で確認（2026-11-24）"))
-        # shisetsu が空の行と、参照表に無い鍵の行は、印を付けない
+        # shisetsu が空の行と、参照表に無い ID の行は、印を付けない
         self.assertFalse(self.mikakunin("桜谷こども園", ""))
         self.assertFalse(self.mikakunin("桜谷こども園", "fa:nai"))
 
@@ -969,7 +969,7 @@ class TestIchiShinai(unittest.TestCase):
         self.assertFalse(self.ichi(self.r("180", "1", "2"), self.r("90", "1", "6")))
 
     def test_onaji_shisetsu(self):
-        # 同じ施設で値が違う2つの数値は不一致。鍵の並びの順は問わない
+        # 同じ施設で値が違う2つの数値は不一致。ID の並びの順は問わない
         self.assertTrue(self.ichi(self.r("180", "1", "2"), self.r("90", "2")))
         self.assertTrue(self.ichi(self.r("120", "1", "4"), self.r("90", "1", "5")))
         self.assertFalse(self.ichi(self.r("120", "1", "4"), self.r("１２０", "1", "5")))
@@ -1082,7 +1082,7 @@ class TestBunshoKankei(unittest.TestCase):
 
     def test_tokoro_inyo_hyogen(self):
         self.assertEqual(self.run_k(kankei_row(tokoro="pt:youho/honpen/2")),
-                         ["tokoro が、kara の文書のページの鍵でない（pt:youho/honpen/2）"])
+                         ["tokoro が、kara の文書のページの ID でない（pt:youho/honpen/2）"])
         self.assertEqual(self.run_k(kankei_row(tokoro="pt:kodomo/honpen/2")),
                          ["inyo が、tokoro のページの原典の文字に無い（pt:kodomo/honpen/2）"])
         self.assertEqual(self.run_k(kankei_row(hyogen="を上位計画とし")), ["hyogen が、inyo の中に無い（を上位計画とし）"])

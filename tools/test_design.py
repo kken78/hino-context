@@ -36,7 +36,7 @@ class TestDesign(unittest.TestCase):
         del d.h1["時点の関係 tochu"]
         p = problems(d)
         self.assertIn("データの側が返す印 tochu に、1つ目の表の行が無い", p)
-        self.assertIn("このツールが引く鍵「時点の関係 tochu」が、1つ目の表に無い", p)
+        self.assertIn("このツールが引く ID「時点の関係 tochu」が、1つ目の表に無い", p)
 
     def test_hidari(self):
         # 1つ目の表の左の列は、SCHEMA.md にある列か印か、決めた形の一覧にある字
@@ -61,7 +61,7 @@ class TestDesign(unittest.TestCase):
     def test_missing_row(self):
         d = design()
         del d.h2["erabu"]
-        self.assertIn("このツールが引く鍵「erabu」が、2つ目の表に無い", problems(d))
+        self.assertIn("このツールが引く ID「erabu」が、2つ目の表に無い", problems(d))
 
     def test_names(self):
         # D.bun に渡す名前と、文の中の {名前} が合わない
@@ -70,7 +70,7 @@ class TestDesign(unittest.TestCase):
         self.assertTrue(any("2つ目の表の行「kensu」" in m for m in problems(d)))
 
     def test_word_in_tool(self):
-        # ツールの中に、表の画面の言葉や文（4字以上）を書けば止まる。1つ目の表の左の列の字は鍵なので除く
+        # ツールの中に、表の画面の言葉や文（4字以上）を書けば止まる。1つ目の表の左の列の字は ID なので除く
         d = design()
         w = d.kotoba("文書の表 konkyo")
         self.assertIn(f"このツールの中に、表の字「{w}」が書かれている", problems(d, SRC + f'\nX = "{w}"\n'))
@@ -80,7 +80,7 @@ class TestDesign(unittest.TestCase):
 
     def test_key_not_literal(self):
         p = problems(None, SRC + "\nk = 'dai'\nD.bun(k, name='x')\n")
-        self.assertTrue(any("鍵が字のままでない" in m for m in p))
+        self.assertTrue(any("ID が字のままでない" in m for m in p))
 
     def test_read_errors(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -90,7 +90,7 @@ class TestDesign(unittest.TestCase):
             with self.assertRaises(inputs.InputError):                             # 2つ目の表が無い
                 bs.read_design(path)
             with open(path, "a", encoding="utf-8") as f:
-                f.write("\n| 鍵 | 文 |\n| --- | --- |\n| dai | {name} |\n| dai | {name} |\n")
+                f.write("\n| ID | 文 |\n| --- | --- |\n| dai | {name} |\n| dai | {name} |\n")
             with self.assertRaises(inputs.InputError):                             # 左の列が重なっている
                 bs.read_design(path)
 

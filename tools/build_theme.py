@@ -1,6 +1,6 @@
 """テーマ1つを1ページにする（SCHEMA.md §7.7、docs/design.md 3節・4節）。
 
-実行：python3 -B tools/build_theme.py <テーマの鍵>   （例 hoiku → build/theme/hoiku.html）
+実行：python3 -B tools/build_theme.py <テーマの ID>   （例 hoiku → build/theme/hoiku.html）
 テーマの名前、施設、資料は、hino-ronten のテーマの定義（ref/themes.tsv）から引く。資料のうち計画は、kind「系列」の
 value を系列の表（ref/lineage.tsv）の series で引いた plan の文書（pt:<plan>/…）とする。
 経過は過程の記録（records/katei.tsv）、施設ごとの欄は施設の記録（records/shisetsu.tsv）の、確定済みの行から作る。
@@ -84,7 +84,7 @@ def read_tables(teigi_dir=None):
 # ---- 資料の名前 ----
 
 class Namae:
-    """資料の鍵 → 画面に出す資料の名前と url。作れない資料は problems にためる。"""
+    """資料の ID → 画面に出す資料の名前と url。作れない資料は problems にためる。"""
 
     def __init__(self, D, inp, by_bunsho):
         self.D, self.inp, self.by = D, inp, by_bunsho
@@ -101,7 +101,7 @@ class Namae:
         return self.D.bun("koho", nen=int(m[1]), tsuki=int(m[2]), dai=S(dai))
 
     def nendo_dake(self, bkey):
-        """文書の鍵が、文書の表に無い doc の鍵で、入力の台帳（sources.tsv）の date が空、fiscal_year がある資料なら、
+        """文書の ID が、文書の表に無い doc の ID で、入力の台帳（sources.tsv）の date が空、fiscal_year がある資料なら、
         fiscal_year の字。ほかは空（docs/design.md 3節。2026-11-27）。広報（koho）は除く（号の年月で出すため）。"""
         if not bkey or bkey in self.by:
             return ""
@@ -113,7 +113,7 @@ class Namae:
         return fy if re.fullmatch(r"[0-9]{4}", fy or "") else ""
 
     def hiduke_nashi(self, bkey):
-        """文書の鍵が文書の表にあり、hiduke が空か。"""
+        """文書の ID が文書の表にあり、hiduke が空か。"""
         b = self.by.get(bkey or "")
         return b is not None and not sj.RE_HIDUKE.fullmatch(b["hiduke"] or "")
 
@@ -122,7 +122,7 @@ class Namae:
         return (self.hiduke_nashi(sj.bunsho_of(r["source"])), r["source_date"], r["source"], r["aspect"])
 
     def bunsho(self, bkey):
-        """文書の鍵 → 資料の名前（HTML）。文書の表にあれば namae と括弧（han と hiduke）。広報（koho）は koho の文。"""
+        """文書の ID → 資料の名前（HTML）。文書の表にあれば namae と括弧（han と hiduke）。広報（koho）は koho の文。"""
         b = self.by.get(bkey)
         if b:
             if b["shurui"] == sj.KOHO:
@@ -160,11 +160,11 @@ class Namae:
         return bs.RE_KAGIKAKKO.search(w).group(1)
 
     def shiryo(self, key, quote=""):
-        """資料の鍵（ページか発言）→ (資料の名前とページの HTML, url)。"""
+        """資料の ID（ページか発言）→ (資料の名前とページの HTML, url)。"""
         try:
             kind, g = keys.parse(key)
         except keys.KeyFormError:
-            self.stop(f"資料の鍵の形が違う（{key}）")
+            self.stop(f"資料の ID の形が違う（{key}）")
             return S(key), ""
         if kind == "sp":
             kubun = self.kubun(g[0])
@@ -176,7 +176,7 @@ class Namae:
         if kind in ("doc", "pt"):
             return (f"{self.bunsho(sj.bunsho_of(key))}　{E(self.D.bun('page', n=sj.page_no(key)))}",
                     keys.source_url(self.inp, key))
-        self.stop(f"資料の名前を作れない鍵（{key}）")
+        self.stop(f"資料の名前を作れない ID（{key}）")
         return S(key), ""
 
     def link(self, key, quote=""):
@@ -197,7 +197,7 @@ class Theme:
         self.plans = ronten.lineage_plans(inp, {r["value"] for r in rows if r["kind"] == KIND_KEIRETSU})
 
     def has(self, bkey):
-        """文書の鍵が、テーマの資料か。kind「資料」の doc の鍵か、系列の計画（pt:<plan>/… か plan:<plan>）。"""
+        """文書の ID が、テーマの資料か。kind「資料」の doc の ID か、系列の計画（pt:<plan>/… か plan:<plan>）。"""
         if bkey in self.docs:
             return True
         m = sj.RE_BUNSHO_PT.fullmatch(bkey) or keys.RE_PLAN.fullmatch(bkey)
@@ -205,7 +205,7 @@ class Theme:
 
 
 def shitei_hyo(trow):
-    """テーマの表の「施設の表」の行 → (文書の鍵, 表の番号)。行が無ければ None。"""
+    """テーマの表の「施設の表」の行 → (文書の ID, 表の番号)。行が無ければ None。"""
     return (sj.bunsho_of(trow["tokoro"]), trow["hyo"]) if trow else None
 
 
@@ -213,7 +213,7 @@ def kijutsu_no_hyo(part, by, th, shitei):
     """文書の部分の行 part が、施設ごとの欄に出す資料の表の行か列か。→ 親の表の行か None。
 
     行か列で、shisetsu があり、親の表がテーマの資料である文書の表で、施設の表として指定した表（shitei）ではないもの。
-    by は (文書の鍵, 番号) → 文書の部分の行。"""
+    by は (文書の ID, 番号) → 文書の部分の行。"""
     if part.get("shu") not in (sj.GYO, sj.RETSU) or not part.get("shisetsu", "").strip():
         return None
     if not th.has(part["bunsho"]) or (part["bunsho"], part["oya"]) == shitei:
@@ -245,7 +245,7 @@ def jun_shisetsu(hyo, th, ref):
 
 class Kaisei:
     """文書どうしの関係の表で hyogen が「一部改正」の行ごとの、数値の対（tools/suji.py の kaisei_tsui）。
-    kara（改正後の文書の鍵）→ (e の文書の鍵, KaiseiTsui) の並び。shinai は、対にしなかった行の数の合計。"""
+    kara（改正後の文書の ID）→ (e の文書の ID, KaiseiTsui) の並び。shinai は、対にしなかった行の数の合計。"""
 
     def __init__(self, tables):
         by = {(r["bunsho"], r["n"]): r for r in tables["bubun"]}
@@ -259,7 +259,7 @@ class Kaisei:
         self.hoka = sum(len(x.hoka) for v in self.by_kara.values() for _, x in v)
 
     def of(self, srcs):
-        """過程の記録の sources の並び → その行に出す (e の文書の鍵, KaiseiTsui) の並び。"""
+        """過程の記録の sources の並び → その行に出す (e の文書の ID, KaiseiTsui) の並び。"""
         out = []
         for s in srcs:
             for x in self.by_kara.get(sj.bunsho_of(s) or "", []):
@@ -323,7 +323,7 @@ def suji_page_aru(inp, tables, ids, kotoba, today, D):
 
 
 def anchor(fa):
-    """施設の鍵 → ページ内リンクの id。"""
+    """施設の ID → ページ内リンクの id。"""
     return fa.replace(":", "-")
 
 
@@ -349,9 +349,9 @@ class ShisetsuHyo:
             if bad:
                 self.problems.append(("(g) 施設の表", f"{sj.BUBUN_NAME} の {g['_gyo']} 行目：施設が、テーマの施設に無い"
                                                      f"（{'・'.join(bad)}）"))
-        # 施設の鍵の組が同じ数値（定義ごと）
+        # 施設の ID の組が同じ数値（定義ごと）
         self.suji = []            # 定義の表の行の並び（定義の表の順）
-        self.atai = {}            # (定義の id, 施設の鍵の組) → 数値の表の行の並び
+        self.atai = {}            # (定義の id, 施設の ID の組) → 数値の表の行の並び
         kumi = set(self.keys)
         shitei = shitei_hyo(trow)
         for r in tables["atai"]:
@@ -376,7 +376,7 @@ class ShisetsuHyo:
 # ---- 施設ごとの、資料の表の欄 ----
 
 class HyoKijutsu:
-    """施設の鍵 → 資料の表の行か列（kijutsu_no_hyo）と、その欄の並び。"""
+    """施設の ID → 資料の表の行か列（kijutsu_no_hyo）と、その欄の並び。"""
 
     def __init__(self, tables, th, trow, ref_by_key):
         self.problems = []
@@ -384,7 +384,7 @@ class HyoKijutsu:
         by = {(r["bunsho"], r["n"]): r for r in bub}
         hiduke = {r["bunsho"]: r["hiduke"] for r in tables["bunsho"]}
         shitei = shitei_hyo(trow)
-        self.gyo = {}                                   # 施設の鍵 → (部分, 表, 欄の並び) の並び
+        self.gyo = {}                                   # 施設の ID → (部分, 表, 欄の並び) の並び
         for p in bub:
             hyo = kijutsu_no_hyo(p, by, th, shitei)
             if hyo is None:
@@ -468,7 +468,7 @@ class Page:
                 f"<table>\n<thead><tr>{head}</tr></thead>\n<tbody>\n" + "\n".join(rows) + "\n</tbody>\n</table>")
 
     def kaisei_gyo(self, srcs):
-        """経過の行の下に足す行（一部改正の e の文書と、数値の対。docs/design.md 4節）。鍵は出さない。"""
+        """経過の行の下に足す行（一部改正の e の文書と、数値の対。docs/design.md 4節）。ID は出さない。"""
         D, out = self.D, []
         if self.kaisei is None:
             return out
@@ -735,7 +735,7 @@ def build(inp, tables, theme, kotoba, today, read_problems=(), design=None):
 def main(argv=None, teigi_dir=None):
     argv = sys.argv[1:] if argv is None else argv
     if len(argv) != 1 or not RE_THEME.fullmatch(argv[0]):
-        print("使い方：python3 -B tools/build_theme.py <テーマの鍵>", file=sys.stderr)
+        print("使い方：python3 -B tools/build_theme.py <テーマの ID>", file=sys.stderr)
         return 2
     theme = argv[0]
     try:

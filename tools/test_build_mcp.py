@@ -152,7 +152,7 @@ class TestReal(unittest.TestCase):
             self.assertEqual(D.kotoba("定義の表 kettei が「案」") in text, t["kettei"] == "案", t["id"])
 
     def test_keika_kaisei(self):
-        """経過：文書の表にある資料には鍵を付ける（13行のうち8行）。13行めの下に、改正前の資料と、違う数値を出す。"""
+        """経過：文書の表にある資料には ID を付ける（13行のうち8行）。13行めの下に、改正前の資料と、違う数値を出す。"""
         o = self.data["outou"]["theme"]
         t = "\n".join(self.data["bun"][o[k]] for k in sorted(o) if k.startswith("theme=hoiku&tsuzuki="))
         s = t.index(f"## {D.bun('midashi-keika')}")
@@ -171,7 +171,7 @@ class TestReal(unittest.TestCase):
             "    - 待機児童数（id：taiki）：改正後に、令和7年4月の数値が加わっている（11ページ）",
             "    - 待機児童数から除かれる者の小計（id：nozoku）：改正後に、令和7年4月の数値が加わっている（11ページ）"])
         self.assertIn(want + "\n", rows[12] + "\n")
-        # 会議録には鍵を付けない
+        # 会議録には ID を付けない
         self.assertNotIn("（bunsho：sp:", keika)
         self.assertEqual((self.info["kaisei_shinai"], self.info["kaisei_hoka"]), (0, 1))
 

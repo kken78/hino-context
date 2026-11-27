@@ -1,4 +1,4 @@
-"""鍵の読み書きと、出典の名前と url（SCHEMA.md §2・§4）。"""
+"""ID の読み書きと、出典の名前と url（SCHEMA.md §2・§4）。"""
 import re
 
 SID = r"[0-9]{10}_[^\s/,:]+_[0-9]{4}"
@@ -16,13 +16,13 @@ SEARCH = "https://kken78.github.io/hino-council-search/#sid={}"
 
 
 class KeyFormError(ValueError):
-    """鍵の形が SCHEMA.md §2 に合わない。"""
+    """ID の形が SCHEMA.md §2 に合わない。"""
 
 RE_EXT = re.compile(r"ext:([a-z0-9][a-z0-9-]*)/([0-9]+)")
 
 
 def parse(key):
-    """資料の鍵 → (種類, 部分の組)。種類は sp・para・iq・sq・doc・pt・plan・gi・node・ext。形が違えば KeyFormError。"""
+    """資料の ID → (種類, 部分の組)。種類は sp・para・iq・sq・doc・pt・plan・gi・node・ext。形が違えば KeyFormError。"""
     key = key or ""
     for kind, rx in (("sp", RE_SP), ("para", RE_PARA), ("iq", RE_IQ), ("sq", RE_SQ), ("doc", RE_DOC_PAGE),
                      ("pt", RE_PT_PAGE), ("plan", RE_PLAN), ("gi", RE_GI), ("node", RE_NODE), ("ext", RE_EXT)):
@@ -31,7 +31,7 @@ def parse(key):
             if kind == "para" and m.group(3) and int(m.group(2)) >= int(m.group(3)):
                 raise KeyFormError(f"段落の範囲の始めが終わりより小さくない（{key}）")
             return kind, m.groups()
-    raise KeyFormError(f"鍵の形が SCHEMA.md §2 に合わない（{key!r}）")
+    raise KeyFormError(f"ID の形が SCHEMA.md §2 に合わない（{key!r}）")
 
 
 def sp(sid):
@@ -39,7 +39,7 @@ def sp(sid):
 
 
 def para(sid, a, b=None):
-    """段落の鍵。b があり a と違えば範囲（a＜b）。"""
+    """段落の ID。b があり a と違えば範囲（a＜b）。"""
     if b is None or b == a:
         return f"sp:{sid}/{a}"
     if a > b:
@@ -48,12 +48,12 @@ def para(sid, a, b=None):
 
 
 def paras_of(hani):
-    """段落の鍵を「,」でつないだ字 → (sid, 段落の番号) の並び（書いた順）。"""
+    """段落の ID を「,」でつないだ字 → (sid, 段落の番号) の並び（書いた順）。"""
     out = []
     for part in (hani or "").split(","):
         kind, g = parse(part)
         if kind != "para":
-            raise KeyFormError(f"段落の鍵でない（{part!r}）")
+            raise KeyFormError(f"段落の ID でない（{part!r}）")
         a = int(g[1])
         b = int(g[2]) if g[2] else a
         out += [(g[0], i) for i in range(a, b + 1)]
@@ -61,10 +61,10 @@ def paras_of(hani):
 
 
 def sid_of(key):
-    """sp・para・iq・sq の鍵 → sid。"""
+    """sp・para・iq・sq の ID → sid。"""
     kind, g = parse(key)
     if kind not in ("sp", "para", "iq", "sq"):
-        raise KeyFormError(f"発言の鍵でない（{key}）")
+        raise KeyFormError(f"発言の ID でない（{key}）")
     return g[0]
 
 
@@ -99,7 +99,7 @@ def _page_url(inp, url, page):
 
 
 def source_name(inp, key):
-    """資料の鍵 → 出典の名前（SCHEMA.md §4）。作れなければ空。"""
+    """資料の ID → 出典の名前（SCHEMA.md §4）。作れなければ空。"""
     kind, g = parse(key)
     if kind == "sp":
         d = sid_date(g[0])
@@ -120,7 +120,7 @@ def source_name(inp, key):
 
 
 def source_url(inp, key, p=None):
-    """資料の鍵 → 出典の url（SCHEMA.md §4）。p は sp の段落の番号（分かるときだけ）。作れなければ空。"""
+    """資料の ID → 出典の url（SCHEMA.md §4）。p は sp の段落の番号（分かるときだけ）。作れなければ空。"""
     kind, g = parse(key)
     if kind in ("sp", "iq", "sq"):
         return search_url(g[0], p) if inp.statement_text(g[0]) is not None else ""
