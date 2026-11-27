@@ -160,6 +160,16 @@ class TestFake(unittest.TestCase):
         page, _ = self.build(tables(bunsho=b), inp=inp)
         self.assertIn(f"<li>{DOC_NAMAE}（改訂版、2025年4月）　{D.bun('page', n=2)}</li>", page)
 
+    def test_han_kakko(self):
+        # 版の表記の最初と最後が全角の括弧のときは、括弧を重ねずに、名前のすぐあとに続ける（docs/design.md 3節。2026-11-28）
+        b = dict(bunsho_rows()[1], han="（案）", hiduke="")
+        nj = lambda x: bh.namae_ji(D, x).replace(bn.A, "").replace(bn.B, "")     # noqa: E731
+        self.assertEqual(nj(b), f"{DOC_NAMAE}（案）（{D.kotoba('資料の一覧の表 hiduke が空')}）")
+        self.assertEqual(nj(dict(b, hiduke="2024-11")), f"{DOC_NAMAE}（案）（2024年11月）")
+        self.assertEqual(nj(dict(b, han="改訂版")),
+                         f"{DOC_NAMAE}（改訂版、{D.kotoba('資料の一覧の表 hiduke が空')}）")
+        self.assertEqual(nj(dict(b, han="")), f"{DOC_NAMAE}（{D.kotoba('資料の一覧の表 hiduke が空')}）")
+
     def test_stop_table_check(self):
         # 数値と内容の表の atai が、もとの資料から取り出した文字の行の数値と違えば止まる（表の検査で止まる）
         rows = atai_rows()

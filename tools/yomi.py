@@ -15,7 +15,8 @@
   質問と事項（資料と出来事は名前）の組ごとに、段落を1つずつに分け、2回とも付けた段落を yomi「一致」の行に、
   片方だけが付けた段落を、読み手ごとに yomi「1回だけ」の行にする。段落は発言の順に並べ、続いた段落は範囲にまとめる。
   事項は、事項の表（teigi/jiko.tsv）の name から ID を引く。資料と出来事の名前は、資料と出来事の名前の表
-  （teigi/konkyo-namae.tsv）で、資料の ID がある名前だけを ID にし、ほかは名前のまま持つ。
+  （teigi/konkyo-namae.tsv）で、資料の ID がある名前だけを ID にし、ほかは名前のまま持つ。ID にするのは、その名前の
+  資料のうち、資料の日付が質問の日より前か同じ日のもので、いちばん新しい資料だけ。当たる資料が無ければ名前のまま持つ。
   手で行を書かない。候補（kouho）は表にせず、名前と段落の数の一覧を出すだけにする。
 """
 import argparse
@@ -37,7 +38,7 @@ TABA = os.path.join(YOMI_DIR, "taba.json")
 PATH = os.path.join(inputs.ROOT, "taio", "shudai.tsv")
 NAMAE_PATH = os.path.join(inputs.ROOT, "teigi", "konkyo-namae.tsv")
 COLS = ["question", "jiko", "hani", "yomi", "chu"]
-NAMAE_COLS = ["namae", "shu", "id", "setsumei", "chu"]
+NAMAE_COLS = ["namae", "shu", "id", "setsumei", "kohyo", "chu"]
 YOMITE = ("a", "b")
 ICCHI, IKKAI = "一致", "1回だけ"
 YOMI = (ICCHI, IKKAI)
@@ -101,11 +102,11 @@ def matomeru(paras):
 
 
 def kumi_gyo(rows, col, key_of):
-    """読み手の行 → 組（質問, 相手）ごとの、一致の行と、読み手ごとの1回だけの行。col は相手の列、key_of は相手 → 表の字。
-    → [(question, 相手の字, hani, yomi, 読み手の字, 迷いの読み手)]"""
+    """読み手の行 → 組（質問, 相手）ごとの、一致の行と、読み手ごとの1回だけの行。col は相手の列、key_of は
+    (相手, 質問) → 表の字。→ [(question, 相手の字, hani, yomi, 読み手の字, 迷いの読み手)]"""
     paras, mayoi = {}, {}
     for r in rows:
-        k = (r["question"], key_of(r[col]))
+        k = (r["question"], key_of(r[col], r["question"]))
         paras.setdefault(k, {y: set() for y in YOMITE})[r["yomite"]] |= set(keys.paras_of(r["hani"]))
         if r.get("mayoi", "").strip() == "1":
             mayoi.setdefault(k, set()).add(r["yomite"])
@@ -137,31 +138,81 @@ def read_namae(path=NAMAE_PATH):
         return inputs.read_tsv(f.read(), os.path.relpath(path, inputs.ROOT), NAMAE_COLS)
 
 
-def check_namae(rows, bunsho):
+RE_HI = r"[0-9]{4}-[0-9]{2}(?:-[0-9]{2})?"
+
+
+def hi_of(h):
+    """資料の日付（YYYY-MM か YYYY-MM-DD）→ 比較に使う YYYY-MM-DD。月までの日付は、その月の1日とする（SCHEMA.md 7.10）。"""
+    return h + "-01" if len(h) == 7 else h
+
+
+def shiryo_hi(r, hiduke):
+    """資料と出来事の名前の表の、資料の行 → 資料の日付（資料の一覧の表の hiduke。空なら kohyo）。無ければ空。"""
+    return (hiduke or {}).get(r["id"]) or r.get("kohyo", "")
+
+
+def check_namae(rows, bunsho, hiduke=None):
     """資料と出来事の名前の表の検査 → 問題の並び。shu が2つのどちらかで、資料の id は資料の一覧の表にあり、
-    出来事の id は空でなく ID の形（英小文字・数字・ハイフン）で、namae と id が重ならないこと。"""
+    出来事の id は空でなく ID の形（英小文字・数字・ハイフン）で、id が重ならないこと。namae が重なるのは、どれも
+    shu が資料で id があり、setsumei が同じで、資料の日付が違う行だけ（版ごとの行）。hiduke（資料の ID → 資料の一覧の表の
+    hiduke）を渡したときは、資料の id のある行に、hiduke か kohyo の片方だけに日付があることも確認する。"""
     import re
     bad = []
-    seen = set()
+    by = {}
     for i, r in enumerate(rows, 2):
-        if r["namae"] in seen or not r["namae"]:
-            bad.append(f"{i} 行目：namae が空か重なっている（{r['namae']}）")
-        seen.add(r["namae"])
+        if not r["namae"]:
+            bad.append(f"{i} 行目：namae が空")
+        by.setdefault(r["namae"], []).append(r)
         if r["shu"] not in (SHIRYO, DEKIGOTO):
             bad.append(f"{i} 行目：shu が「{SHIRYO}」「{DEKIGOTO}」のどちらでもない（{r['shu']}）")
         elif r["shu"] == SHIRYO and r["id"] and r["id"] not in bunsho:
             bad.append(f"{i} 行目：資料の id が資料の一覧の表に無い（{r['id']}）")
         elif r["shu"] == DEKIGOTO and not re.fullmatch(r"[a-z0-9-]+", r["id"]):
             bad.append(f"{i} 行目：出来事の id が空か、形が違う（{r['id']}）")
+        if r.get("kohyo") and not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", r["kohyo"]):
+            bad.append(f"{i} 行目：kohyo の形が違う（{r['kohyo']}）")
+        if r.get("kohyo") and not (r["shu"] == SHIRYO and r["id"]):
+            bad.append(f"{i} 行目：kohyo があるのに、資料の id が無い（{r['namae']}）")
+        if hiduke is not None and r["shu"] == SHIRYO and r["id"] in bunsho:
+            h = hiduke.get(r["id"]) or ""
+            if bool(re.fullmatch(RE_HI, h)) == bool(r.get("kohyo")):
+                bad.append(f"{i} 行目：資料の日付が、資料の一覧の表の hiduke と kohyo の片方だけにない（{r['id']}）")
+    for n, rs in by.items():
+        if len(rs) < 2:
+            continue
+        if any(not (r["shu"] == SHIRYO and r["id"]) for r in rs) or len({r["setsumei"] for r in rs}) > 1:
+            bad.append(f"namae が重なっている行が、どれも資料の id のある行で setsumei が同じ、になっていない（{n}）")
+        elif hiduke is not None:
+            his = [hi_of(shiryo_hi(r, hiduke)) for r in rs]
+            if len(set(his)) < len(his):
+                bad.append(f"namae が重なっている行に、資料の日付が同じ行がある（{n}）")
     ids = [r["id"] for r in rows if r["id"]]
     bad += [f"id が重なっている（{x}）" for x in sorted({x for x in ids if ids.count(x) > 1})]
     return bad
 
 
-def aite_of(namae_rows):
-    """名前 → konkyo.tsv の aite の字。資料の ID がある名前は ID、ほかは名前のまま。"""
-    to = {r["namae"]: r["id"] for r in namae_rows if r["shu"] == SHIRYO and r["id"]}
-    return lambda n: to.get(n, n)
+def q_hi(q):
+    """質問の ID → 質問の日（質問の ID の発言の日。YYYY-MM-DD）。"""
+    return keys.sid_date(keys.sid_of(q))
+
+
+def aite_of(namae_rows, hiduke=None):
+    """(名前, 質問) → konkyo.tsv の aite の字。資料の ID がある名前は、その名前の資料のうち、資料の日付が質問の日より前か
+    同じ日のもので、いちばん新しい資料の ID。当たる資料が無い名前と、ほかの名前は、名前のまま（SCHEMA.md 7.10）。
+    hiduke は、資料の ID → 資料の一覧の表の hiduke（None なら読む）。"""
+    if hiduke is None:
+        import konkyo
+        hiduke = konkyo.bunsho_hiduke()
+    to = {}
+    for r in namae_rows:
+        if r["shu"] == SHIRYO and r["id"]:
+            to.setdefault(r["namae"], []).append((hi_of(shiryo_hi(r, hiduke)), r["id"]))
+
+    def f(n, q):
+        qh = q_hi(q)
+        mae = sorted(x for x in to.get(n, []) if x[0] <= qh)
+        return mae[-1][1] if mae else n
+    return f
 
 
 def shudai_rows(yomi, jiko_rows):
@@ -173,15 +224,15 @@ def shudai_rows(yomi, jiko_rows):
     if bad:
         return [], bad
     rows = [dict(question=q, jiko=a, hani=h, yomi=y, chu=chu_of(w, m))
-            for q, a, h, y, w, m in kumi_gyo(yomi["shudai"], "point", by.get)]
+            for q, a, h, y, w, m in kumi_gyo(yomi["shudai"], "point", lambda n, q: by.get(n))]
     rows.sort(key=lambda r: (r["question"], jun[r["jiko"]], YOMI.index(r["yomi"]), r["chu"]))
     return rows, []
 
 
-def konkyo_rows(yomi, namae_rows):
+def konkyo_rows(yomi, namae_rows, hiduke=None):
     """→ taio/konkyo.tsv の、読み取りの行（tools/konkyo.py が、入力の確定済みの行と合わせて表にする）。"""
     rows = [dict(question=q, aite=a, hani=h, yomi=y, chu=chu_of(w, m))
-            for q, a, h, y, w, m in kumi_gyo(yomi["konkyo"], "aite", aite_of(namae_rows))]
+            for q, a, h, y, w, m in kumi_gyo(yomi["konkyo"], "aite", aite_of(namae_rows, hiduke))]
     return rows
 
 
@@ -234,12 +285,13 @@ def main(argv=None):
         yomi = read_yomi()
         jiko_rows = jiko.read()
         namae = read_namae()
-        bunsho = konkyo.bunsho_ids()
+        hiduke = konkyo.bunsho_hiduke()
+        bunsho = set(hiduke)
     except (inputs.InputError, YomiError, ValueError, OSError) as e:
         print(f"止めた：lock と入力、または読み取りの結果と表を読めない\n{e}", file=sys.stderr)
         return 1
     rows, bad = shudai_rows(yomi, jiko_rows)
-    bad += check_namae(namae, bunsho)
+    bad += check_namae(namae, bunsho, hiduke)
     if not bad:
         bad += check(inp, rows, set(shitsumon()), {r["id"] for r in jiko_rows})
     if bad:
@@ -247,7 +299,7 @@ def main(argv=None):
         print("\n".join("  - " + b for b in bad), file=sys.stderr)
         return 1
     s = dumps(rows)
-    kr = konkyo_rows(yomi, namae)
+    kr = konkyo_rows(yomi, namae, hiduke)
     shu = {r["namae"]: r for r in namae}
     dasanai = {}
     for r in kr:
@@ -255,7 +307,7 @@ def main(argv=None):
             continue
         x = shu.get(r["aite"])
         why = ("出来事" if x and x["shu"] == DEKIGOTO else
-               "資料の ID が無い名前（" + r["aite"] + "）" if x else "資料と出来事の名前の表に無い名前")
+               "資料の日付が質問の日より後の名前（" + r["aite"] + "）" if x else "資料と出来事の名前の表に無い名前")
         dasanai[why] = dasanai.get(why, 0) + 1
     n = {y: sum(r["yomi"] == y for r in rows) for y in YOMI}
     nk = {y: sum(r["yomi"] == y for r in kr) for y in YOMI}

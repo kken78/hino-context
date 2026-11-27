@@ -11,7 +11,9 @@
 1ページめ（pt と doc）か、資料そのもの（plan）を指すもの。aite はその資料の ID、hani は対応の記録の hani のまま。
 作れない point は、理由とともに出す（止めない）。手で行を書かない。
 読み取りの行は、入力の確定済みの行のあとに、tools/yomi.py の順のまま置く。aite は、資料の ID か、資料と出来事の名前の表
-（teigi/konkyo-namae.tsv）の名前か、その表に無い名前（読み手が発言の言葉で書いた名前）。
+（teigi/konkyo-namae.tsv）の名前か、その表に無い名前（読み手が発言の言葉で書いた名前）。資料の ID にするのは、資料の日付が
+質問の日より前か同じ日の資料のうち、いちばん新しいものだけ（tools/yomi.py の aite_of）。名前ごとに、資料の ID ごとの
+結び付いた行の数と、結び付かなかった行の数を出す。
 """
 import argparse
 import os
@@ -98,11 +100,18 @@ def read(path=PATH):
         return inputs.read_tsv(f.read(), os.path.relpath(path, inputs.ROOT), COLS)
 
 
-def check(rows, bunsho):
+def check(rows, bunsho, hiduke=None, namae=None):
     """行の検査（SCHEMA.md 7.10）→ 問題の並び。aite が資料の一覧の表にあるか、資料の ID の形でない名前であること
-    （入力の確定済みの行は、資料の一覧の表にあること）、yomi が決めた字であること、hani があること。"""
+    （入力の確定済みの行は、資料の一覧の表にあること）、yomi が決めた字であること、hani があること。
+    hiduke（資料の ID → 資料の一覧の表の hiduke）と namae（資料と出来事の名前の表の行）を渡したときは、読み取りの行で
+    aite が資料の ID の行の、資料の日付（hiduke か kohyo）が質問の日より後でないことも確認する。"""
     bad = []
+    hi = {}
+    if hiduke is not None and namae is not None:
+        hi = {r["id"]: ym.hi_of(ym.shiryo_hi(r, hiduke)) for r in namae if r["shu"] == ym.SHIRYO and r["id"]}
     for i, r in enumerate(rows, 2):
+        if r["yomi"] != NYURYOKU and r["aite"] in hi and r["question"] and hi[r["aite"]] > ym.q_hi(r["question"]):
+            bad.append(f"{i} 行目：資料の日付（{hi[r['aite']]}）が質問の日（{ym.q_hi(r['question'])}）より後（{r['aite']}）")
         if r["aite"] not in bunsho and (r["yomi"] == NYURYOKU or not r["aite"] or ":" in r["aite"]):
             bad.append(f"{i} 行目：aite が資料の一覧の表に無い（{r['aite']}）")
         if r["yomi"] not in YOMI:
@@ -112,10 +121,33 @@ def check(rows, bunsho):
     return bad
 
 
+def bunsho_hiduke():
+    """資料の一覧の表の ID → hiduke。"""
+    with open(os.path.join(sj.TEIGI_DIR, "bunsho.tsv"), encoding="utf-8") as f:
+        return {r["bunsho"]: r["hiduke"] for r in sj.read_bunsho(f.read())[0]}
+
+
 def bunsho_ids():
     """資料の一覧の表の ID の集まり。"""
-    with open(os.path.join(sj.TEIGI_DIR, "bunsho.tsv"), encoding="utf-8") as f:
-        return {r["bunsho"] for r in sj.read_bunsho(f.read())[0]}
+    return set(bunsho_hiduke())
+
+
+def uchiwake(rows, namae):
+    """読み取りの行のうち、資料と出来事の名前の表で資料の ID がある名前の行 → [(名前, {資料の ID: 行の数}, 結び付かなかった行の数)]。
+    名前の表の順。"""
+    of = {r["id"]: r["namae"] for r in namae if r["shu"] == ym.SHIRYO and r["id"]}
+    out = {}
+    for r in namae:
+        if r["shu"] == ym.SHIRYO and r["id"]:
+            out.setdefault(r["namae"], ({}, [0]))[0][r["id"]] = 0
+    for r in rows:
+        if r["yomi"] == NYURYOKU:
+            continue
+        if r["aite"] in of:
+            out[of[r["aite"]]][0][r["aite"]] += 1
+        elif r["aite"] in out:
+            out[r["aite"]][1][0] += 1
+    return [(n, ids, c[0]) for n, (ids, c) in out.items()]
 
 
 def main(argv=None):
@@ -124,14 +156,16 @@ def main(argv=None):
     a = p.parse_args(sys.argv[1:] if argv is None else argv)
     try:
         inp = inputs.Inputs()
-        bunsho = bunsho_ids()
+        hiduke = bunsho_hiduke()
+        bunsho = set(hiduke)
+        namae = ym.read_namae()
         theme_jun = list(dict.fromkeys(r["theme"] for r in inp.ronten_tsv(ronten.THEMES)))
         rows, dekinai = tsukuru(inp, bunsho, ronten_names(theme_jun))
-        rows += ym.konkyo_rows(ym.read_yomi(), ym.read_namae())
+        rows += ym.konkyo_rows(ym.read_yomi(), namae, hiduke)
     except (inputs.InputError, ym.YomiError) as e:
         print(f"止めた：lock と入力、または表を読めない\n{e}", file=sys.stderr)
         return 1
-    bad = check(rows, bunsho)
+    bad = check(rows, bunsho, hiduke, namae) + ym.check_namae(namae, bunsho, hiduke)
     if bad:
         print(f"止めた：作った行に合わないものがある（{len(bad)} 件）", file=sys.stderr)
         print("\n".join("  - " + b for b in bad), file=sys.stderr)
@@ -139,6 +173,10 @@ def main(argv=None):
     s = dumps(rows)
     for P, why in dekinai:
         print(f"行を作れない point「{P}」：{why}")
+    uw = uchiwake(rows, namae)
+    print(f"読み取りの行のうち、資料の日付が質問の日より後のため、資料の ID を付けなかった行 {sum(c for _, _, c in uw)}")
+    for n, ids, c in uw:
+        print(f"  {n}：" + "、".join(f"{k} {v}行" for k, v in ids.items()) + f"、ID を付けなかった行 {c}")
     if a.kensa:
         moto = open(PATH, encoding="utf-8").read() if os.path.exists(PATH) else None
         if moto != s:

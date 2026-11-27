@@ -309,6 +309,20 @@ class TestReal(unittest.TestCase):
         self.assertEqual(info["quotes"].mismatched, [])
         self.assertEqual(info["paras"].mismatched, [])
 
+    def test_ippan_dai(self):
+        """テーマの定義に無い質問の題は、付いた段落の発言を turns に含む問いの題名だけ。当たらなければ全部（2026-11-28）。"""
+        q = "iq:0000006505_20220311_0295"
+        zen = bn.qhead_parts(bn.ippan_src(self.inp, q))[1]
+        self.assertEqual(zen.count("「"), 4)
+        self.assertEqual(bn.qhead_parts(bn.ippan_src(self.inp, q, {"0000006505_20220311_0341"}))[1], "「幼児教育・保育のあり方」")
+        # 2つの問いの turns にある発言（前の問いの最後と、次の問いの最初）は、両方の題名
+        self.assertEqual(bn.qhead_parts(bn.ippan_src(self.inp, q, {"0000006505_20220311_0337"}))[1],
+                         "「わたむき自動車プロジェクト」「幼児教育・保育のあり方」")
+        self.assertEqual(bn.qhead_parts(bn.ippan_src(self.inp, q, {"0000006505_20220311_0339"}))[1], zen)   # 答弁だけ
+        page, _ = self.build(self.inp)
+        self.assertRegex(page, "2017年9月14日　一般質問（[^）]*）「待機児童問題」</h3>")       # 質問した議員の段落がある論点
+        self.assertRegex(page, "2017年9月14日　一般質問（[^）]*）「松尾公園テニスコート」「待機児童問題」</h3>")  # 答弁の段落だけ
+
     def test_counts_yomi(self):
         """生成AIの2回の読み取りの行を入れると、37の論点の全部にページができ、質問は48（確定済み7と、読んだ41）。"""
         _, info = self.build(self.inp)
