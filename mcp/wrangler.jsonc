@@ -8,6 +8,6 @@
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
   "observability": { "enabled": true },
-  // PR のブランチで、Cloudflare がプレビューを作成する（npx wrangler preview）ために要る。プレビューだけの設定は無いので、空にしている。
-  "previews": {}
+  // プレビューの URL は使わない。画面でオフにしても、公開のたびに workers_dev の設定に合わせて戻るため、ここに書く。
+  "preview_urls": false
 }
