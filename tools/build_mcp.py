@@ -142,6 +142,7 @@ class Tsukuru:
         self.teigi = {r["id"]: r for r in tables["suji"]}
         self.ref = {r["key"]: r for r in inp.shisetsu()}
         self.namae = bt.Namae(D, inp, self.by)
+        self.kaisei = bt.Kaisei(tables)
         self.problems = []
 
     # 資料の名前と url
@@ -211,8 +212,20 @@ class Tsukuru:
                      f"  - {E(D.kotoba('過程の記録 quote'))}：「{S(r['quote'])}」"]
             for s in srcs:
                 nm, url = self.namae.shiryo(s, r["quote"])
+                b = sj.bunsho_of(s)
+                if b in self.by:
+                    nm = f"{self.bunsho_kagi(b)}　{E(D.bun('page', n=sj.page_no(s)))}" if sj.page_no(s) \
+                        else self.bunsho_kagi(b)
                 lines.append(f"  - {E(D.kotoba('過程の記録 sources'))}：{nm}　{E(url)}" if url
                              else f"  - {E(D.kotoba('過程の記録 sources'))}：{nm}")
+            for e, x in self.kaisei.of(srcs):
+                lines.append(f"  - {E(D.kotoba('文書どうしの関係の表 hyogen が「一部改正」の行の e'))}："
+                             f"{self.bunsho_kagi(e)}")
+                ks = self.kaisei.items(D, x, self.teigi_kagi)
+                if ks:
+                    lines.append(f"  - {E(D.kotoba('文書どうしの関係の表 kara、e の文書の数値の対で、atai が違うもの'))}"
+                                 f"{E(D.bun('mcp-kaisei-hani'))}")
+                    lines += [f"    - {k}" for k in ks]
             items.append("\n".join(lines))
         D.kotoba("過程の記録 from、to")
         D.kotoba("過程の記録 name")
@@ -792,6 +805,7 @@ def build(inp, tables, kotoba, read_problems=(), design=None, skill=None):
     data = dict(name=NAME, version=VERSION, description=setsumei, instructions=skill, top=top, tools=tools,
                 nai=nai, outou=outou, bun=[owari(x) for x in bun])
     info = dict(kumi=sum(len(v) for v in outou.values()), bun=len(bun), nagai=max(len(owari(x)) for x in bun),
+                kaisei_shinai=tk.kaisei.shinai, kaisei_hoka=tk.kaisei.hoka,
                 dasenai=dasenai, kazu={k: len(v) for k, v in outou.items()})
     return data, info
 
@@ -826,6 +840,8 @@ def main(argv=None, teigi_dir=None):
         print(f"表の形で出せない表 {x}：{why[0][1]}")
     print(f"組 {info['kumi']}（{'、'.join(f'{k} {v}' for k, v in info['kazu'].items())}）、応答の文 {info['bun']}、"
           f"いちばん長い応答 {info['nagai']} 字")
+    print(f"一部改正の前後の数値で、対にしなかった行 {info['kaisei_shinai']}"
+          f"（ほかのページの行が対になっているので出さない行 {info['kaisei_hoka']}）")
     if a.hikaku:
         moto = None
         if os.path.exists(a.hikaku):

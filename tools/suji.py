@@ -816,6 +816,92 @@ def ichi_shinai(rows, bubun_by):
     return any(len(v) > 1 for v in kumi.values())
 
 
+# 文書どうしの関係の表の hyogen のうち、改正前と改正後の対を作る行の字（SCHEMA.md §6.2。2026-11-27 の依頼者の決定）
+ICHIBU_KAISEI = "一部改正"
+
+# 一部改正の前後の数値の対（kaisei_tsui の結果）。
+#   chigau：(e の行, kara の行, 条件) の並び。atai が違う対。条件は 1・2・3（SCHEMA.md §6.2 の (1)〜(3)）
+#   onaji：atai が同じ対の数
+#   kuwawaru：(kara の行, 条件) の並び。kara の文書にだけある行（条件 1・2 で相手が無い）
+#   nai：(e の行, 条件) の並び。e の文書にだけある行（条件 1・2 で相手が無い）
+#   hoka：同じ文書の、suji・kubun・nendo（条件 2 は施設と列の見出し）が同じ行が、ほかのページで対になっているので出さない行
+#   shinai：対にしなかった行（条件 3 に当たらない行と、条件 1・2 で、どちらの文書にも複数の行があり、ページで対にならない行）
+KaiseiTsui = namedtuple("KaiseiTsui", "chigau onaji kuwawaru nai hoka shinai")
+
+
+def kaisei_kankei(kankei_rows):
+    """文書どうしの関係の表 → hyogen が「一部改正」の行の kara（改正後）→ e（改正前）の並び（表の順）の辞書。"""
+    out = {}
+    for r in kankei_rows:
+        if r["hyogen"].strip() == ICHIBU_KAISEI:
+            out.setdefault(r["kara"], []).append(r["e"])
+    return out
+
+
+def _tsui_kagi(r, bubun_by):
+    """数値の行 → (条件, 対にする鍵)。条件は SCHEMA.md §6.2 の (1)〜(3)。"""
+    ks = atai_shisetsu(r, bubun_by)
+    if r["nendo"].strip():
+        return 1, (r["suji"], r["kubun"], r["nendo"].strip(), ks)
+    if ks:
+        b = bunsho_of(r["shiryo"])
+        retsu = bubun_by.get((b, r["retsu"])) if r["retsu"] else None
+        return 2, (r["suji"], r["kubun"], ks, shogo.norm(retsu["name"]) if retsu else "")
+    return 3, (r["suji"], r["kubun"])
+
+
+def kaisei_tsui(kara, e, atai_rows, bubun_by, suji_jun=None):
+    """一部改正の kara の文書（改正後）と e の文書（改正前）の、数値がある行の対（SCHEMA.md §6.2）。→ KaiseiTsui。
+
+    bubun_by は (文書の鍵, 番号) → 文書の部分の行。suji_jun は定義の id → 定義の表の順（並べるときに使う）。
+    条件 (1)・(2) で、同じ鍵の行が片方の文書に2行以上あるときは、同じページの行どうしを対にし、残りが1行ずつなら
+    対にする。残った行は、同じ文書の同じ鍵の行が対になっていれば hoka（出さない）、なっていなければ shinai にする。
+    """
+    def rows_of(b):
+        return [r for r in atai_rows if r["jotai"] == ARU and r["shiryo"].strip() and bunsho_of(r["shiryo"]) == b]
+
+    groups = {}
+    for side, b in ((0, e), (1, kara)):
+        for r in rows_of(b):
+            jo, k = _tsui_kagi(r, bubun_by)
+            groups.setdefault((jo, k), ([], []))[side].append(r)
+    tsui, kuwawaru, nai, hoka, shinai = [], [], [], [], []
+    for (jo, _), (es, ks) in groups.items():
+        if jo == 3:
+            if len(es) == 1 and len(ks) == 1:
+                tsui.append((es[0], ks[0], jo))
+            else:
+                shinai += es + ks
+            continue
+        if not es or not ks:
+            kuwawaru += [(r, jo) for r in ks]
+            nai += [(r, jo) for r in es]
+            continue
+        es, ks, aru = list(es), list(ks), []
+        for k in list(ks):
+            same = [x for x in es if page_no(x["shiryo"]) == page_no(k["shiryo"])]
+            if same:
+                aru.append((same[0], k, jo))
+                es.remove(same[0])
+                ks.remove(k)
+        if len(es) == 1 and len(ks) == 1:
+            aru.append((es[0], ks[0], jo))
+            es, ks = [], []
+        tsui += aru
+        for x in es + ks:
+            (hoka if aru else shinai).append(x)
+    jun = suji_jun or {}
+
+    def key(r):
+        return (jun.get(r["suji"], len(jun)), r["kubun"], int(r["nendo"]) if r["nendo"].strip().isdigit() else 0,
+                page_no(r["shiryo"]) or 0, int(r["bubun"] or 0))
+    chigau = sorted(((a, b, jo) for a, b, jo in tsui if shogo.norm(a["atai"]) != shogo.norm(b["atai"])),
+                    key=lambda t: key(t[1]))
+    onaji = len(tsui) - len(chigau)
+    return KaiseiTsui(chigau, onaji, sorted(kuwawaru, key=lambda t: key(t[0])), sorted(nai, key=lambda t: key(t[0])),
+                      hoka, shinai)
+
+
 # ---------------------------------------------------------------- 文書どうしの関係（SCHEMA.md §7.6）
 
 def check_bunsho_kankei(inp, rows, bunsho_names):

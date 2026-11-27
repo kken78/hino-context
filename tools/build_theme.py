@@ -7,7 +7,8 @@ value を系列の表（ref/lineage.tsv）の series で引いた plan の文書
 施設ごとの欄には、テーマの資料である文書の表（テーマの表で施設の表として指定した表を除く）の、その施設の行か列の欄も、
 記録の表の下に出す。その欄は、施設の表には出さない（docs/design.md 4節。2026-11-25 の依頼者の了承）。
 説明の文と施設の表は、テーマの表（teigi/theme.tsv）から、施設の表の欄の数値は数値の表から、資料どうしの関係は
-文書どうしの関係の表から引く。数値を計算しない。外から何も読み込まない1つの HTML にする。
+文書どうしの関係の表から引く。経過の行の sources の文書が、hyogen が「一部改正」の関係の kara の文書なら、その行の下に、
+e の文書と、2つの文書の数値の対（tools/suji.py の kaisei_tsui）を出す（docs/design.md 4節）。数値を計算しない。外から何も読み込まない1つの HTML にする。
 画面に出す言葉は、docs/design.md 3節の2つの表から読む（tools/build_suji.py の read_design と同じ読み方）。
 
 作る前の検査（1つでも当たれば、件数と該当行を示して、ページを作らずに止まる。終了コード 1）：
@@ -240,6 +241,87 @@ def jun_shisetsu(hyo, th, ref):
     return [k for k in dict.fromkeys(out) if k in th.shisetsu]
 
 
+# ---- 一部改正の前後（docs/design.md 4節のテーマのページの3） ----
+
+class Kaisei:
+    """文書どうしの関係の表で hyogen が「一部改正」の行ごとの、数値の対（tools/suji.py の kaisei_tsui）。
+    kara（改正後の文書の鍵）→ (e の文書の鍵, KaiseiTsui) の並び。shinai は、対にしなかった行の数の合計。"""
+
+    def __init__(self, tables):
+        by = {(r["bunsho"], r["n"]): r for r in tables["bubun"]}
+        jun = {r["id"]: i for i, r in enumerate(tables["suji"])}
+        self.bubun_by = by
+        self.teigi = {r["id"]: r for r in tables["suji"]}
+        self.by_kara = {}
+        for kara, es in sj.kaisei_kankei(tables["kankei"]).items():
+            self.by_kara[kara] = [(e, sj.kaisei_tsui(kara, e, tables["atai"], by, jun)) for e in es]
+        self.shinai = sum(len(x.shinai) for v in self.by_kara.values() for _, x in v)
+        self.hoka = sum(len(x.hoka) for v in self.by_kara.values() for _, x in v)
+
+    def of(self, srcs):
+        """過程の記録の sources の並び → その行に出す (e の文書の鍵, KaiseiTsui) の並び。"""
+        out = []
+        for s in srcs:
+            for x in self.by_kara.get(sj.bunsho_of(s) or "", []):
+                if x not in out:
+                    out.append(x)
+        return out
+
+    def suji_ids(self):
+        """対の項目に出る定義の id の集まり。"""
+        out = set()
+        for v in self.by_kara.values():
+            for _, x in v:
+                out |= {a["suji"] for a, _, _ in x.chigau}
+                out |= {r["suji"] for r, _ in x.kuwawaru + x.nai}
+        return out
+
+    def items(self, D, x, teigi_namae):
+        """KaiseiTsui → 項目の文（HTML の断片）の並び。teigi_namae は定義の表の行 → 名前の HTML。
+        対の atai が違うもの、kara の文書にだけある数値、e の文書にだけある数値の順。"""
+        D.kotoba("文書どうしの関係の表 kara、e の文書の数値の対で、atai が違うもの")   # 見出しは呼ぶ側で出す
+        D.dasanai("数値の表 atai（一部改正の kara の文書にだけある数値）")            # 文は kaisei-kuwawaru
+        D.dasanai("数値の表 atai（一部改正の e の文書にだけある数値）")                # 文は kaisei-nai
+        mae_w = E(D.kotoba("数値の表 atai（一部改正の対の、e の文書の側）"))
+        ato_w = E(D.kotoba("数値の表 atai（一部改正の対の、kara の文書の側）"))
+
+        def page(r):
+            return E(D.bun("page", n=sj.page_no(r["shiryo"])))
+
+        def gyo(r):
+            part = self.bubun_by.get((sj.bunsho_of(r["shiryo"]), r["bubun"]))
+            return bh.midashi_ji(D, part) if part else ""
+
+        def name(r, jo):
+            nm = teigi_namae(self.teigi[r["suji"]])
+            return nm + (f"　{gyo(r)}" if jo == 2 and gyo(r) else "")
+
+        out = []
+        for a, b, jo in x.chigau:
+            out.append(D.bun("kaisei-tsui", name=name(b, jo),
+                             mae=D.bun("kaisei-atai", kaisei=mae_w, atai=S(a["atai"]), page=page(a)),
+                             ato=D.bun("kaisei-atai", kaisei=ato_w, atai=S(b["atai"]), page=page(b))))
+        for r, jo in x.kuwawaru:
+            out.append(D.bun("kaisei-kuwawaru", name=teigi_namae(self.teigi[r["suji"]]),
+                             jiki=S(r["jiten"]) if jo == 1 else gyo(r), page=page(r)))
+        for r, jo in x.nai:
+            out.append(D.bun("kaisei-nai", name=teigi_namae(self.teigi[r["suji"]]),
+                             jiki=S(r["jiten"]) if jo == 1 else gyo(r), page=page(r)))
+        return out
+
+
+def suji_page_aru(inp, tables, ids, kotoba, today, D):
+    """定義の id の集まり → 数値のページ（tools/build_suji.py）を作れる id の集まり。"""
+    out = set()
+    for sid in sorted(ids):
+        try:
+            bs.build(inp, tables, sid, kotoba, today, design=D)
+        except Stop:
+            continue
+        out.add(sid)
+    return out
+
+
 def anchor(fa):
     """施設の鍵 → ページ内リンクの id。"""
     return fa.replace(":", "-")
@@ -344,6 +426,7 @@ class Page:
         self.D, self.inp, self.t, self.theme, self.th = D, inp, tables, theme, th
         self.ref, self.kiroku, self.katei, self.n, self.hyo = ref_by_key, kiroku, katei, namae, hyo
         self.hk = hk
+        self.kaisei, self.suji_pages = None, set()
 
     def setsumei(self):
         """テーマの表の「説明の文」の行の部分。行が無ければ、見出しも出さない。"""
@@ -380,8 +463,33 @@ class Page:
             links = "、".join(self.n.link(s, r["quote"]) for s in srcs)
             rows.append(f"<tr><td>{E(kikan(D, r))}</td><td>{S(r['name'])}</td><td>「{S(r['quote'])}」</td>"
                         f"<td>{links}</td></tr>")
+            rows += self.kaisei_gyo(srcs)
         return (f"<h2>{E(D.bun('midashi-keika'))}</h2>\n<p class=s>{E(D.bun('keika-setsumei'))}</p>\n"
                 f"<table>\n<thead><tr>{head}</tr></thead>\n<tbody>\n" + "\n".join(rows) + "\n</tbody>\n</table>")
+
+    def kaisei_gyo(self, srcs):
+        """経過の行の下に足す行（一部改正の e の文書と、数値の対。docs/design.md 4節）。鍵は出さない。"""
+        D, out = self.D, []
+        if self.kaisei is None:
+            return out
+
+        def namae(t):
+            if t["id"] in self.suji_pages:
+                return f"<a href='../suji/{E(t['id'])}.html'>{E(t['name'])}</a>"
+            return E(t["name"])
+        for e, x in self.kaisei.of(srcs):
+            url = keys.source_url(self.inp, f"{e}/1") if sj.RE_BUNSHO_PT.fullmatch(e) or sj.RE_BUNSHO_DOC.fullmatch(e) \
+                else ""
+            nm = self.n.bunsho(e)
+            nm = f"<a href='{E(url)}'>{nm}</a>" if url else nm
+            cell = [f"<p>{E(D.kotoba('文書どうしの関係の表 hyogen が「一部改正」の行の e'))}：{nm}</p>"]
+            items = self.kaisei.items(D, x, namae)
+            if items:
+                cell.append(f"<p>{E(D.kotoba('文書どうしの関係の表 kara、e の文書の数値の対で、atai が違うもの'))}"
+                            f"<span class=s>{E(D.bun('kaisei-hani'))}</span></p>")
+                cell.append("<ul>" + "".join(f"<li>{i}</li>" for i in items) + "</ul>")
+            out.append(f"<tr><td></td><td colspan=3>{''.join(cell)}</td></tr>")
+        return out
 
     def shisetsu_hyo(self):
         D, h = self.D, self.hyo
@@ -608,7 +716,10 @@ def build(inp, tables, theme, kotoba, today, read_problems=(), design=None):
         raise Stop(problems)
     by = {r["bunsho"]: r for r in tables["bunsho"]}
     namae = Namae(D, inp, by)
-    page = Page(D, inp, tables, theme, th, ref, kiroku, katei, namae, hyo, hk).render(today)
+    pg = Page(D, inp, tables, theme, th, ref, kiroku, katei, namae, hyo, hk)
+    pg.kaisei = Kaisei(tables)
+    pg.suji_pages = suji_page_aru(inp, tables, pg.kaisei.suji_ids(), kotoba, today, D)
+    page = pg.render(today)
     if namae.problems:
         raise Stop(list(dict.fromkeys(namae.problems)))
     problems = bn.kotoba_problems(page, *kotoba)
@@ -617,7 +728,8 @@ def build(inp, tables, theme, kotoba, today, read_problems=(), design=None):
     page = page.replace(A, "").replace(B, "")
     return page, dict(katei=len(katei), kiroku=len(kiroku), shisetsu=len(th.shisetsu),
                       hyo=len(hyo.gyo) if hyo else 0, inyo=res.matched, ji=len(page), hyo_kijutsu=hk.kazu(),
-                      setsumei=sum(1 for r in tables["theme"] if r["theme"] == theme and r["shu"] == sj.SETSUMEI_BUN))
+                      setsumei=sum(1 for r in tables["theme"] if r["theme"] == theme and r["shu"] == sj.SETSUMEI_BUN),
+                      kaisei_shinai=pg.kaisei.shinai, kaisei_hoka=pg.kaisei.hoka)
 
 
 def main(argv=None, teigi_dir=None):
@@ -647,6 +759,8 @@ def main(argv=None, teigi_dir=None):
     print(f"説明の文 {info['setsumei']}、経過 {info['katei']} 行、施設の表 {info['hyo']} 行、"
           f"施設 {info['shisetsu']}（記録 {info['kiroku']} 行）、照合した引用 {info['inyo']}、"
           f"施設ごとの欄に出した資料の表の行 {info['hyo_kijutsu']}")
+    print(f"一部改正の前後の数値で、対にしなかった行 {info['kaisei_shinai']}"
+          f"（ほかのページの行が対になっているので出さない行 {info['kaisei_hoka']}）")
     return 0
 
 
