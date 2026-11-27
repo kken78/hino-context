@@ -4,7 +4,7 @@
   1. 書き方の検査（tools/bunsho.py）
   2. build/ を消して、全部のテスト
   3. 数値と内容の表と、資料の一覧の表・資料の中の場所の表の検査（tools/suji.py）
-  4. 試作のページの作成（tools/build_note.py hoiku）
+  4. 試作のページの作成（tools/build_note.py hoiku、kaigo、kokyo、chiiki）
   5. 数値のページの作成（tools/build_suji.py taiki）
   6. 資料の表のページの作成（tools/build_hyo.py pt:youho/honpen 4）
   7. 資料の表のページの作成（tools/build_hyo.py pt:kodomo/honpen 4）
@@ -33,7 +33,10 @@ STEPS = [
     ("書き方の検査", PY + [os.path.join(TOOLS, "bunsho.py")]),
     ("全部のテスト", PY + ["-m", "unittest", "discover", "-s", TOOLS, "-p", "test_*.py"]),
     ("表の検査", PY + [os.path.join(TOOLS, "suji.py")]),
-    ("試作のページの作成", PY + [os.path.join(TOOLS, "build_note.py"), "hoiku"]),
+    ("試作のページの作成（幼保）", PY + [os.path.join(TOOLS, "build_note.py"), "hoiku"]),
+    ("試作のページの作成（高齢者福祉・介護）", PY + [os.path.join(TOOLS, "build_note.py"), "kaigo"]),
+    ("試作のページの作成（公共施設の再編）", PY + [os.path.join(TOOLS, "build_note.py"), "kokyo"]),
+    ("試作のページの作成（地域のあり方・自治会活動）", PY + [os.path.join(TOOLS, "build_note.py"), "chiiki"]),
     ("数値のページの作成", PY + [os.path.join(TOOLS, "build_suji.py"), "taiki"]),
     ("資料の表のページの作成（再編整備計画の表4）", PY + [os.path.join(TOOLS, "build_hyo.py"), "pt:youho/honpen", "4"]),
     ("資料の表のページの作成（子ども・子育て支援事業計画の表4）",

@@ -178,15 +178,20 @@ def kotoba_problems(page, ng, ok):
 def collect(inp, teigi, theme):
     """記録を集め、(a)(b) の検査を行う。返り値は (model, problems, quote_result)。"""
     trows = ronten.themes(inp, theme)
-    points = {r["value"] for r in trows if r["kind"] == "事柄"}
+    qsrc = {r["value"]: r["source"] for r in trows if r["kind"] in ("問い", "質疑")}
+    # 論点は、テーマの定義の事柄にあるか、そのテーマの質問・質疑との確定済みの対応の記録があるもの（SCHEMA.md §8。
+    # 確定済みの記録があるものを出さないままにしない。2026-11-27 の依頼者の決定）
+    points = {r["value"] for r in trows if r["kind"] == "事柄"} | ronten.taio_points(inp, set(qsrc))
     problems = []
     for P, *_ in teigi["topics"]:
         if P not in points:
-            problems.append(("定義", f"論点「{P}」が hino-ronten の題材 {theme} の事柄に無い"))
-    qsrc = {r["value"]: r["source"] for r in trows if r["kind"] in ("問い", "質疑")}
+            problems.append(("定義", f"論点「{P}」が、hino-ronten の題材 {theme} の事柄に無く、"
+                                     "その題材の質問・質疑との確定済みの対応の記録も無い"))
     names = [t[0] for t in teigi["topics"]]
     ko = ronten.kotogara(inp, set(names))
     katei = ronten.katei(inp, theme)
+    _, more = ronten.katei_dasanai(inp, theme)      # 出さない過程の記録の行が、理由の条件に当たるか（SCHEMA.md §1）
+    problems += [("(b) 出典の無い記述", m) for m in more]
     ta = ronten.taio(inp, set(names), set(qsrc))
 
     # (a) 引用と段落
@@ -416,7 +421,7 @@ class Page:
 <p class='lead'>{E(T['setsumei'])}について、町の資料と議会の会議録の記述を、論点ごとに整理しています。意見や評価は加えていません。</p>
 <h2>論点ごとのページ</h2>
 <table><tr><th>論点</th><th>町の資料・答弁の記述</th><th>議会での質問</th></tr>{''.join(rows)}</table>
-<p class='m'>準備中の論点：{E('／'.join(T['junbi']))}　ほか</p>
+{"<p class='m'>準備中の論点：" + E('／'.join(T['junbi'])) + "　ほか</p>" if T['junbi'] else ""}
 <h2>これまでの経過（新しい順）</h2>
 <table><tr><th>時期</th><th>内容</th><th>もとの資料</th></tr>{self.katei_rows()}</table>
 <h2>議会での質問から見る（{len(qmap)}件）</h2>

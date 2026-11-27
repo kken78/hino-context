@@ -257,7 +257,7 @@ class Tsukuru:
         if hyo:
             blocks.append(hyo)
         items = ["- " + self.kagi_ji(S(self.ref[k]["name"]), "facility", k)
-                 for k in bt.jun_shisetsu(self._hyo.get(theme), th, self.ref)]
+                 for k in self.shisetsu_ichiran(theme, th)]
         blocks.append(([f"## {E(D.bun('mcp-midashi-shisetsu'))}"], items))
         docs = sorted((b for b in self.by if th.has(b)), key=lambda b: (self.by[b]["hiduke"] or "9999", b))
         hb = bs.hiduke_bun(D, False, any(self.namae.hiduke_nashi(b) for b in docs))
@@ -266,6 +266,17 @@ class Tsukuru:
         blocks.append(([f"## {E(D.bun('mcp-midashi-teigi'))}", E(D.bun("mcp-teigi-setsumei"))],
                        ["- " + self.teigi_kagi(x) for x in t["suji"]]))
         return Outou(S(name), blocks=blocks)
+
+    def shisetsu_ichiran(self, theme, th):
+        """テーマの施設のうち、facility で返す内容（施設の記録、表の行か列、施設を指す数値）があるもの。
+        テーマの施設の順（tools/build_theme.py の jun_shisetsu）。内容が無い施設は、theme の応答にも、facility の組にも
+        入れない（docs/design.md 4節。2026-11-27）。"""
+        hk = self._hk.get(theme)
+
+        def aru(k):
+            return (any(r["facility"] == k for r in self.kiroku) or bool(hk and hk.gyo.get(k))
+                    or any(r["jotai"] == sj.ARU and k in sj.atai_shisetsu(r, self.index) for r in self.t["atai"]))
+        return [k for k in bt.jun_shisetsu(self._hyo.get(theme), th, self.ref) if aru(k)]
 
     def shisetsu_hyo(self, theme, th):
         """テーマの施設の表（tools/build_theme.py の ShisetsuHyo）を、行ごとの箇条書きにする。"""
@@ -700,11 +711,21 @@ class Tsukuru:
         tz = [q for q in toi if q in zumi]
         tn = [q for q in toi if q not in zumi]
         sz = [q for q in shitsugi if q in zumi]
-        out = [E(D.bun("mcp-issue-hani", toi=len(toi), shitsugi=len(shitsugi), toi_zumi=len(tz),
-                       kikan=E(kikan(tz)) if tz else "", shitsugi_zumi=len(sz)))] if tz else []
-        if tz and tn:
+        if not (tz or sz):
+            return []
+        # 記録がある問いか質疑が0のテーマでも、文として読める形にする（docs/design.md 4節。2026-11-27）
+        if tz and sz:
+            out = [E(D.bun("mcp-issue-hani", toi=len(toi), shitsugi=len(shitsugi), toi_zumi=len(tz),
+                           kikan=E(kikan(tz)), shitsugi_zumi=len(sz)))]
+        elif tz:
+            out = [E(D.bun("mcp-issue-hani-toi-dake", toi=len(toi), shitsugi=len(shitsugi), toi_zumi=len(tz),
+                           kikan=E(kikan(tz))))]
+        else:
+            out = [E(D.bun("mcp-issue-hani-shitsugi-dake", toi=len(toi), shitsugi=len(shitsugi),
+                           shitsugi_zumi=len(sz)))]
+        if tn:
             out.append(E(D.bun("mcp-issue-hani-toi", n=len(tn), kikan=E(kikan(tn)))))
-        if tz and len(sz) < len(shitsugi):
+        if len(sz) < len(shitsugi):
             out.append(E(D.bun("mcp-issue-hani-shitsugi", n=len(shitsugi) - len(sz))))
         return out
 
@@ -775,8 +796,7 @@ class Tsukuru:
         ichi = "、".join
         th_erabu = list(themes)
         id_erabu = [x["id"] for x in self.t["suji"]]
-        fa_erabu = list(dict.fromkeys(k for th in themes for k in bt.jun_shisetsu(self._hyo.get(th),
-                                                                                 bt.Theme(self.inp, th), self.ref)))
+        fa_erabu = list(dict.fromkeys(k for th in themes for k in self.shisetsu_ichiran(th, bt.Theme(self.inp, th))))
         b_erabu = list(self.by)
         hyo_erabu = [f"{p['bunsho']} {p['n']}" for p in self.t["bubun"] if p["shu"] == sj.HYO]
         is_namae = {slug: P for T, _ in self.note.values() for P, slug, _, _ in T["topics"]}
@@ -849,14 +869,20 @@ def read_skill(path=SKILL_PATH):
     return "\n".join(out)
 
 
-def read_notes(themes):
-    """テーマごとの論点の仮の表（teigi/note-<テーマ>.tsv）。ファイルが無いテーマは除く。→ テーマ → 表（build_note.read_teigi）。"""
+def read_notes(inp):
+    """論点の仮の表（teigi/note-<テーマ>.tsv）の全部。→ テーマ → 表（build_note.read_teigi）。
+    並びは、hino-ronten のテーマの定義の順。"""
     out = {}
-    for theme in themes:
+    for theme in theme_jun(inp):
         path = os.path.join(NOTE_DIR, "note-" + theme + ".tsv")
         if os.path.exists(path):
             out[theme] = bn.read_teigi(path, theme)
     return out
+
+
+def theme_jun(inp):
+    """hino-ronten のテーマの定義にあるテーマの ID を、定義の順に並べたもの。"""
+    return list(dict.fromkeys(r["theme"] for r in inp.ronten_tsv(ronten.THEMES)))
 
 
 def build(inp, tables, kotoba, read_problems=(), design=None, skill=None, notes=None):
@@ -875,8 +901,10 @@ def build(inp, tables, kotoba, read_problems=(), design=None, skill=None, notes=
     if problems:
         raise Stop(problems)
     tk = Tsukuru(D, inp, tables)
-    themes = list(dict.fromkeys(r["theme"] for r in tables["theme"]))
-    tk._hyo, tk._hk, ths, kiroku = {}, {}, {}, []
+    # テーマは、テーマの表（teigi/theme.tsv）に行があるテーマと、論点の仮の表があるテーマ（docs/design.md 4節。2026-11-27）
+    notes = read_notes(inp) if notes is None else notes
+    themes = list(dict.fromkeys([r["theme"] for r in tables["theme"]] + list(notes)))
+    tk._hyo, tk._hk, ths, kiroku, katei_dasanai = {}, {}, {}, [], []
     for theme in themes:
         th = bt.Theme(inp, theme)
         ths[theme] = th
@@ -892,6 +920,9 @@ def build(inp, tables, kotoba, read_problems=(), design=None, skill=None, notes=
         ki = [r for r in inp.shisetsu_kiroku() if r["facility"] in th.shisetsu]
         kiroku += [r for r in ki if r not in kiroku]
         katei = ronten.katei(inp, theme)
+        dasanai, more = ronten.katei_dasanai(inp, theme)
+        problems += [("(f) 過程の記録", m) for m in more]
+        katei_dasanai += [(theme, r["step"], riyu) for r, riyu in dasanai]
         for r in katei:
             for c in ("from", "to"):
                 if r[c] and not (sj.RE_HIDUKE.fullmatch(r[c]) and (len(r[c]) == 7 or sj.is_ymd(r[c]))):
@@ -908,7 +939,7 @@ def build(inp, tables, kotoba, read_problems=(), design=None, skill=None, notes=
         problems += tk._hk[theme].problems
     # (h) 論点：試作のページと同じ集め方と検査（tools/build_note.py の collect）
     tk.note = {}
-    for theme, T in (read_notes(themes) if notes is None else notes).items():
+    for theme, T in notes.items():
         model, more, _ = bn.collect(inp, T, theme)
         problems += more
         tk.note[theme] = (T, bn.Page(inp, T, model))
@@ -948,7 +979,7 @@ def build(inp, tables, kotoba, read_problems=(), design=None, skill=None, notes=
                     ireru("item", [("item", t["id"]), ("document", b), ("breakdown", "1")], tk.suji(t, b, True))
     seen = set()
     for theme, th in ths.items():
-        for k in bt.jun_shisetsu(tk._hyo.get(theme), th, tk.ref):
+        for k in tk.shisetsu_ichiran(theme, th):
             if k not in seen:
                 seen.add(k)
                 ireru("facility", [("facility", k)], tk.shisetsu(k, theme, th))
@@ -980,7 +1011,7 @@ def build(inp, tables, kotoba, read_problems=(), design=None, skill=None, notes=
                 nai=nai, outou=outou, bun=[owari(x) for x in bun])
     info = dict(kumi=sum(len(v) for v in outou.values()), bun=len(bun), nagai=max(len(owari(x)) for x in bun),
                 kaisei_shinai=tk.kaisei.shinai, kaisei_hoka=tk.kaisei.hoka,
-                dasenai=dasenai, kazu={k: len(v) for k, v in outou.items()})
+                dasenai=dasenai, kazu={k: len(v) for k, v in outou.items()}, katei_dasanai=katei_dasanai)
     return data, info
 
 
@@ -1014,6 +1045,8 @@ def main(argv=None, teigi_dir=None):
         print(f"表の形で出せない表 {x}：{why[0][1]}")
     print(f"組 {info['kumi']}（{'、'.join(f'{k} {v}' for k, v in info['kazu'].items())}）、応答の文 {info['bun']}、"
           f"いちばん長い応答 {info['nagai']} 字")
+    for theme, step, riyu in info["katei_dasanai"]:
+        print(f"出さない過程の記録 {theme} step {step}：{riyu}")
     print(f"一部改正の前後の数値で、組み合わせなかった行 {info['kaisei_shinai']}"
           f"（ほかのページの行が組み合わされているので出さない行 {info['kaisei_hoka']}）")
     if a.hikaku:
