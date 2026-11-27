@@ -275,17 +275,26 @@ class Page:
     def link(self, x):
         return f"<a href='{E(self.url(x))}' target='_blank'>{S(self.srcname(x['source']))}</a>"
 
-    def atai(self, x):
+    def atai_shu(self, x):
+        """記述の値 → ("kingaku", 単位を付けた字) か ("suchi", 字) か None。MCP の応答（tools/build_mcp.py）も使う。"""
         v = x["value"]
         if not v:
-            return ""
+            return None
         if re.fullmatch(r"[\d,]+", v):
             unit = next((u for head, u in self.t["units"] if x["source"].startswith(head)), "")
             if unit:
-                return "金額：" + S(v + unit)
+                return ("kingaku", v + unit)
         if re.fullmatch(r"[\d,\.]+", v):
-            return "数値：" + S(v) + "（資料に単位の記述なし）"
-        return ""
+            return ("suchi", v)
+        return None
+
+    def atai(self, x):
+        a = self.atai_shu(x)
+        if a is None:
+            return ""
+        if a[0] == "kingaku":
+            return "金額：" + S(a[1])
+        return "数値：" + S(a[1]) + "（資料に単位の記述なし）"
 
     @staticmethod
     def doko(x):
@@ -299,48 +308,74 @@ class Page:
                        f"<td>{'、'.join(S(self.srcname(s)) for s in x['sources'].split(',')[:2])}</td></tr>"
                        for x in sorted(self.m["katei"], key=lambda x: x.get("from") or "", reverse=True))
 
-    def chu(self, sid_or_source, text):
-        """その資料の、その字を含む文に付ける「作成者の注」。無ければ空。"""
+    def chu_list(self, sid_or_source, text):
+        """その資料の、その字を含む文に付ける「作成者の注」の並び。注ごとに、文（text）、注のもとの資料の ID（moto）、
+        外部の公的な資料なら確認した日（kakunin。ほかは空）。MCP の応答（tools/build_mcp.py）も使う。"""
         out = []
         for c in self.t.get("chu", []):
             if c["source"].split("/")[0] == sid_or_source.split("/")[0] and c["part"] in text:
-                link = f"<a href='{E(keys.source_url(self.inp, c['moto']))}' target='_blank'>{S(keys.source_name(self.inp, c['moto']))}</a>"
+                k = ""
                 if c["moto"].startswith("ext:"):
                     k = next(r["kakunin"] for r in self.inp.gaibu() if c["moto"] == f"ext:{r['id']}/{r['page']}")
-                    link += f"　{keys.ymd(k)}に確認"
-                out.append(f"<div class='chu'>作成者の注：{E(c['text'])}（もとの資料：{link}）</div>")
+                out.append(dict(text=c["text"], moto=c["moto"], kakunin=k))
+        return out
+
+    def chu(self, sid_or_source, text):
+        """その資料の、その字を含む文に付ける「作成者の注」。無ければ空。"""
+        out = []
+        for c in self.chu_list(sid_or_source, text):
+            link = f"<a href='{E(keys.source_url(self.inp, c['moto']))}' target='_blank'>{S(keys.source_name(self.inp, c['moto']))}</a>"
+            if c["kakunin"]:
+                link += f"　{keys.ymd(c['kakunin'])}に確認"
+            out.append(f"<div class='chu'>作成者の注：{E(c['text'])}（もとの資料：{link}）</div>")
         return "".join(out)
+
+    def ronten(self, P):
+        """論点 P の記述と質問を集める（試作のページと MCP の応答の、共通の集め方）。
+        → dict(ko：記述（新しい順）, docs：町の資料の記述（新しい順）, tome：今後検討・決定するとされていること,
+               jisseki：実績の記述があるか, qs：質問（日付の新しい順）。質問ごとに question、date、sitsugi（議案への質疑か）、
+               who、dai、paras（(sid, 段落の番号, 段落の文) の並び）)"""
+        ko = sorted([x for x in self.m["ko"] if x["point"] == P], key=lambda x: x["source_date"], reverse=True)
+        docs = sorted([x for x in ko if not x["source"].startswith("sp:")], key=lambda x: x["source_date"], reverse=True)
+        tome = [x for x in ko if self.pat and self.pat.search(x["quote"])]
+        ta = sorted([r for r in self.m["ta"] if r["point"] == P], key=lambda r: qdate(r["question"]), reverse=True)
+        qs = []
+        for r in ta:
+            q = r["question"]
+            who, dai = qhead_parts(self.m["qsrc"].get(q, ""))
+            paras = [(sid, i, inputs.paragraphs(self.inp.statement_text(sid))[i - 1]) for sid, i in keys.paras_of(r["hani"])]
+            qs.append(dict(question=q, date=qdate(q), sitsugi=q.startswith("sq:"), who=who, dai=dai, paras=paras))
+        return dict(ko=ko, docs=docs, tome=tome, jisseki=any(x["kind"] == "実績" for x in ko), qs=qs)
 
     def topic(self, P, slug, short, setsumei):
         inp, T, qsrc = self.inp, self.t, self.m["qsrc"]
-        ko = sorted([x for x in self.m["ko"] if x["point"] == P], key=lambda x: x["source_date"], reverse=True)
-        docs = sorted([x for x in ko if not x["source"].startswith("sp:")], key=lambda x: x["source_date"], reverse=True)
+        R = self.ronten(P)
+        ko, docs = R["ko"], R["docs"]
         sec1 = "".join(f"<div class='now'><div>「{S(x['quote'])}」</div><div class='m'>{keys.ymd(x['source_date'])}の資料　"
                        f"{self.link(x)}{'　' + self.atai(x) if self.atai(x) else ''}</div></div>" for x in docs) \
             or "<p class='m'>町の資料の記述は、まだ整理できていません。</p>"
         rows2 = "".join(f"<tr><td class='nw'>{keys.ymd(x['source_date'])}</td><td class='nw'>{self.doko(x)}</td>"
                         f"<td>「{S(x['quote'])}」{'<br><span class=m>' + self.atai(x) + '</span>' if self.atai(x) else ''}{self.chu(x['source'], x['quote'])}</td>"
                         f"<td>{self.link(x)}</td></tr>" for x in ko)
-        tome = [x for x in ko if self.pat and self.pat.search(x["quote"])]
+        tome = R["tome"]
         rows3 = "".join(f"<tr><td class='nw'>{keys.ymd(x['source_date'])}</td><td>「{S(x['quote'])}」</td>"
                         f"<td>{self.link(x)}</td></tr>" for x in tome)
-        ta = sorted([r for r in self.m["ta"] if r["point"] == P], key=lambda r: qdate(r["question"]), reverse=True)
+        ta = R["qs"]
         blocks = []
         for r in ta:
             q = r["question"]
-            ps = keys.paras_of(r["hani"])
+            ps = r["paras"]
             body, cur = [], None
-            for sid, i in ps:
+            for sid, i, para in ps:
                 if sid != cur:
                     cur = sid
                     body.append(f"<div class='spk'>{S(inp.speaker(sid))}</div>")
-                para = inputs.paragraphs(inp.statement_text(sid))[i - 1]
                 body.append(f"<div class='para'>{S(para)}　<a href='{E(keys.search_url(sid, i))}' target='_blank'>会議録</a>{self.chu('sp:' + sid, para)}</div>")
             blocks.append(f"<div class='qa'><h3>{qhead(q, qsrc)}</h3><details><summary>{E(short)}に関する部分を表示（{len(ps)}か所）</summary>"
                           f"{''.join(body)}</details><p class='m'><a href='{E(keys.source_url(inp, q))}' target='_blank'>"
                           f"会議録でこの質問の全体を見る</a></p></div>")
         sib = "／".join(f"<a href='#{s}'>{E(p)}</a>" for p, s, _, _ in T["topics"] if s != slug)
-        jis = "" if any(x["kind"] == "実績" for x in ko) else \
+        jis = "" if R["jisseki"] else \
             "<p class='m'>実績（契約額、決算額、完成後の数値など）が分かる資料は、このページのもとにした資料の中にはありません。</p>"
         sec3 = (f"<h2>今後検討・決定するとされていること</h2><table><tr><th>時期</th><th>内容</th><th>もとの資料</th></tr>{rows3}</table>"
                 "<p class='m'>上の表のうち、「まだ」「今後」などの語を含む記述を抜き出しています。その後の状況は、上の表で、より新しい時期の記述を確認してください。</p>") \

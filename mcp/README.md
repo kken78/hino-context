@@ -3,7 +3,7 @@
 hino-context のデータを、使う人の生成AIから呼べる、読み取り専用の MCP サーバーです（非公式の試作）。日野町および日野町議会の公式のものではありません。
 
 - 応答は、リポジトリの tools/build_mcp.py が先に作った `data/outou.json` を、ツールと引数で引いて返すだけです。このフォルダのプログラムは、応答の文を組み立てません。
-- ツールは theme、suji、shisetsu、shiryo の4つです。ID は、ツールの引数の説明か、theme の応答にあります。形と決まりは、リポジトリの docs/mcp.md にあります。
+- ツールは theme、issue、item、facility、document の5つです。ID は、ツールの引数の説明か、theme の応答にあります。形と決まりは、リポジトリの docs/mcp.md にあります。
 - パスは `/mcp`（Streamable HTTP）。認証はありません。
 
 ## 使い方

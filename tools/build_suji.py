@@ -242,7 +242,8 @@ def design_problems(d, src=None, path=SRC_PATH, others=None):
             out.append(f"1つ目の表の行「{k}」：画面の言葉に {{}} がある")
         words += [w] + RE_KAGIKAKKO.findall(w) + RE_SETSUMEI.findall(how)
     for k, t in d.h2.items():
-        words += _fragments(t) + RE_KAGIKAKKO.findall(t)
+        # 「」の中が {名前} だけのもの（「{theme}」など）は、ツールの入れる字なので、言葉として探さない
+        words += _fragments(t) + [w for w in RE_KAGIKAKKO.findall(t) if not re.fullmatch(r"\{[^{}]*\}", w)]
     # 1つ目の表の左の列（データの側の名前）は ID なので、ツールに書いてよい。ID の字と、データの側の言葉（DATA_GO）を
     # 除いてから探す（データの側の言葉には、画面の言葉を一部に含むものがあるため）
     rest = src

@@ -77,6 +77,9 @@ class TestDesign(unittest.TestCase):
         t = d.retsu_setsumei("時点の関係 ato")
         self.assertIn(f"このツールの中に、表の字「{t}」が書かれている", problems(d, SRC + f'\nX = "{t}"\n'))
         self.assertEqual(problems(d, SRC + '\nX = "shiryo が計画・町の資料"\n'), [])
+        # 「」の中が {名前} だけの字（mcp-issue-lead の「{theme}」）は、ツールの入れる字なので探さない
+        self.assertIn("「{theme}」", d.bun("mcp-issue-lead", theme="{theme}", setsumei=""))
+        self.assertEqual(problems(d, SRC + '\ntheme = "x"\nX = f"{theme}"\n'), [])
 
     def test_key_not_literal(self):
         p = problems(None, SRC + "\nk = 'dai'\nD.bun(k, name='x')\n")

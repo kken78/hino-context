@@ -9,7 +9,8 @@
 このファイルには、画面の言葉を書かない。資料の名前、時期、掲載の場所などは、ページを作るツールの関数を使う。
 
 応答は、ツールと引数の組ごとに1つの文（見出しと箇条書き。HTML は入れない）。1回の応答が JOGEN 字を超える組は、
-区切りのよい所（資料ごと、表ごと、項目ごと）で分け、続きを引数 tsuzuki で返す。
+区切りのよい所（資料ごと、表ごと、項目ごと）で分け、続きを引数 page で返す。
+論点（issue）の応答は、試作のページ（tools/build_note.py）と同じ集め方（collect と Page.ronten）と検査で作る。
 
 作る前の検査（1つでも当たれば、件数と該当行を示して、何も書かずに止まる。終了コード 1）：
   (a) 表の検査（tools/suji.py の check_all）で問題がある
@@ -19,6 +20,7 @@
   (e) docs/design.md 3節の表と、このツールが合わない（tools/build_suji.py の design_problems）
   (f) 過程の記録と施設の記録の quote が、source の資料の本文に無い。資料の名前を作れない（tools/build_theme.py と同じ）
   (g) 施設の割り当てが未確認の行がある（tools/build_theme.py と同じ）
+  (h) 論点の仮の表（teigi/note-<テーマ>.tsv）の検査と、試作のページと同じ検査（tools/build_note.py の collect）
 """
 import argparse
 import datetime
@@ -51,13 +53,18 @@ A, B = bn.A, bn.B
 E, S = bn.E, bn.S
 Stop = bn.Stop
 
-# ツールと引数（名前、型、必須か）。引数の順は、応答を引く ID の並びの順でもある（docs/mcp.md）
-TSUZUKI = "tsuzuki"
+NOTE_DIR = os.path.join(inputs.ROOT, "teigi")   # 論点の仮の表 note-<テーマ>.tsv の場所（SCHEMA.md §5）
+
+# ツールと引数（名前、型、必須か）。引数の順は、応答を引く ID の並びの順でもある（docs/mcp.md）。
+# 名前は 2026-11-27 に直した（suji → item、shisetsu → facility、shiryo → document。引数 tsuzuki → page など）。
+# プログラムの中の関数の名前は、前のままにしている。
+TSUZUKI = "page"
 TOOLS = (("theme", (("theme", "string", False), (TSUZUKI, "integer", False))),
-         ("suji", (("id", "string", True), ("shiryo", "string", False), ("uchiwake", "integer", False),
+         ("issue", (("issue", "string", True), (TSUZUKI, "integer", False))),
+         ("item", (("item", "string", True), ("document", "string", False), ("breakdown", "integer", False),
                    (TSUZUKI, "integer", False))),
-         ("shisetsu", (("key", "string", True), (TSUZUKI, "integer", False))),
-         ("shiryo", (("bunsho", "string", True), ("hyo", "integer", False), (TSUZUKI, "integer", False))))
+         ("facility", (("facility", "string", True), (TSUZUKI, "integer", False))),
+         ("document", (("document", "string", True), ("table", "integer", False), (TSUZUKI, "integer", False))))
 
 
 def design_problems(D, src=None):
@@ -87,21 +94,31 @@ def kakunin_kiroku(chu):
 
 class Outou:
     """1つの組の応答。title は題（HTML の断片）、intro は題の下の行、blocks は (頭の行の並び, 項目の並び) の並び。
-    項目は、改行を含んでよい（分けるときは、項目の途中では分けない）。"""
+    項目は、改行を含んでよい（分けるときは、項目の途中では分けない）。
+    ブロックに3つ目の要素 True を付けると、そのブロックは新しい応答から始める（論点の、質問ごとの部分）。
+    pages を呼んだあと、hajime に、新しい応答から始めたブロックの、始まりの応答の番号（1から）が入る。"""
 
     def __init__(self, title, intro=(), blocks=()):
         self.title, self.intro, self.blocks = title, list(intro), [b for b in blocks if b and b[1]]
+        self.hajime = []
 
     def pages(self, D):
         """→ 応答の文（HTML の断片）の並び。1つ目から。"""
         atama = [E(D.bun("mcp-atama")), f"# {self.title}"]
+        self.hajime = []
         yobi = len(owari(E(D.bun("mcp-tsuzuki", n=99)))) + len(owari(E(D.bun("mcp-tsuzuki-dai", n=99, m=99)))) + 4
 
         def nagasa(lines):
             return len(owari("\n".join(lines))) + yobi
 
         out, cur, aru = [], atama + self.intro, False      # aru：いまの応答に、ブロックの中身が入っているか
-        for head, items in self.blocks:
+        for blk in self.blocks:
+            head, items = blk[0], blk[1]
+            if len(blk) > 2 and blk[2]:
+                if aru:
+                    out.append(cur)
+                    cur, aru = list(atama), False
+                self.hajime.append(len(out) + 1)
             cand = cur + [""] + head + items
             if nagasa(cand) <= JOGEN:
                 cur, aru = cand, True
@@ -144,6 +161,7 @@ class Tsukuru:
         self.namae = bt.Namae(D, inp, self.by)
         self.kaisei = bt.Kaisei(tables)
         self.problems = []
+        self.note = {}                   # テーマ → (論点の仮の表, build_note.Page)。build で入れる
 
     # 資料の名前と url
     def moto(self, key, quote=""):
@@ -169,10 +187,10 @@ class Tsukuru:
         return self.D.bun("mcp-kagi", name=name, hikisu=E(hikisu), ji=E(key))
 
     def teigi_kagi(self, t):
-        return self.kagi_ji(E(t["name"]), "id", t["id"])
+        return self.kagi_ji(E(t["name"]), "item", t["id"])
 
     def bunsho_kagi(self, bkey):
-        return self.kagi_ji(self.namae.bunsho(bkey), "bunsho", bkey)
+        return self.kagi_ji(self.namae.bunsho(bkey), "document", bkey)
 
     # theme（引数なし）
     def theme_ichiran(self, themes):
@@ -204,6 +222,11 @@ class Tsukuru:
                 items.append("\n".join(lines))
                 i = k
             blocks.append(([f"## {E(D.kotoba('テーマの表 shu が「説明の文」'))}"], items))
+        if theme in self.note:
+            T = self.note[theme][0]
+            items = ["- " + self.kagi_ji(E(P), "issue", slug) for P, slug, _, _ in T["topics"]]
+            items += ["- " + D.bun("mcp-junbi", name=E(x)) for x in T["junbi"]]
+            blocks.append(([f"## {E(D.bun('mcp-midashi-ronten'))}", E(D.bun("mcp-ronten-setsumei"))], items))
         katei = sorted(ronten.katei(inp, theme), key=lambda r: (r["from"][:7], int(r["step"])))
         items = []
         for r in katei:
@@ -233,7 +256,7 @@ class Tsukuru:
         hyo = self.shisetsu_hyo(theme, th)
         if hyo:
             blocks.append(hyo)
-        items = ["- " + self.kagi_ji(S(self.ref[k]["name"]), "key", k)
+        items = ["- " + self.kagi_ji(S(self.ref[k]["name"]), "facility", k)
                  for k in bt.jun_shisetsu(self._hyo.get(theme), th, self.ref)]
         blocks.append(([f"## {E(D.bun('mcp-midashi-shisetsu'))}"], items))
         docs = sorted((b for b in self.by if th.has(b)), key=lambda b: (self.by[b]["hiduke"] or "9999", b))
@@ -285,10 +308,10 @@ class Tsukuru:
                     nm = D.bun("retsu-tani", name=E(x["name"]), tani=E(x["tani"])) if x["tani"] else E(x["name"])
                     ran.append(f"{nm}：{'、'.join(S(r['atai']) for r in vs)}")
             if len(ks) == 1:
-                gyo = self.kagi_ji(bh.midashi_ji(D, g), "key", ks[0])
+                gyo = self.kagi_ji(bh.midashi_ji(D, g), "facility", ks[0])
             else:
                 gyo = bh.midashi_ji(D, g) + "（" + "、".join(
-                    self.kagi_ji(S(self.ref[k]["name"]), "key", k) for k in ks) + "）"
+                    self.kagi_ji(S(self.ref[k]["name"]), "facility", k) for k in ks) + "）"
             items.append(f"- {gyo}\n  - " + "　".join(ran))
         url = keys.source_url(self.inp, tr["tokoro"])
         foot = [self.url_gyo(url)]
@@ -514,7 +537,7 @@ class Tsukuru:
         blocks.append(([f"## {E(D.bun('mcp-midashi-shisetsu-suji'))}", E(D.bun("mcp-shisetsu-suji-setsumei"))],
                        items))
         blocks.append(([], [E(D.bun("mcp-shisetsu-teigi", theme=theme))]))
-        return Outou(self.kagi_ji(S(ref["name"]), "key", k), intro, blocks)
+        return Outou(self.kagi_ji(S(ref["name"]), "facility", k), intro, blocks)
 
     # shiryo
     def bunsho_intro(self, bkey):
@@ -577,7 +600,7 @@ class Tsukuru:
         for p in self.t["bubun"]:
             if p["bunsho"] == bkey and p["shu"] == sj.HYO:
                 page = E(D.bun("page", n=sj.page_no(p["tokoro"])))
-                items.append(f"- {bh.midashi_ji(D, p)}（{page}、hyo："
+                items.append(f"- {bh.midashi_ji(D, p)}（{page}、table："
                              f"{E(p['n'])}）")
         if items and any(sj.mikakunin(p) for p in self.t["bubun"] if p["bunsho"] == bkey and p["shu"] == sj.HYO):
             items.append(E(D.bun("mikakunin-hyo")))
@@ -589,7 +612,7 @@ class Tsukuru:
         D = self.D
         h = bh.Hyo(self.inp, self.t, bkey, n)
         hyo = self.index[(bkey, n)]
-        title = self.kagi_ji(bh.midashi_ji(D, hyo), "hyo", n)
+        title = self.kagi_ji(bh.midashi_ji(D, hyo), "table", n)
         page = E(D.bun("page", n=sj.page_no(hyo["tokoro"])))
         intro = [f"- {self.bunsho_kagi(bkey)}　{page}"]
         oya, mi = [], []
@@ -625,6 +648,103 @@ class Tsukuru:
             blocks.append(([f"## {E(D.bun('midashi-onaji'))}"], li))
         return Outou(title, intro, blocks), []
 
+    # issue
+    def kubun_of(self, source):
+        """記述の資料の ID → 区分の字。会議録は発言者の役職から決め（Namae.kubun）、ほかは計画と、町が公開した資料の区分（1つ目の表の行）。"""
+        if source.startswith("sp:"):
+            return self.namae.kubun(keys.sid_of(source)) or ""
+        return bs.RE_KAGIKAKKO.search(self.D.kotoba("shiryo が計画・町の資料")).group(1)
+
+    def chu_gyo(self, pg, source, text, sita):
+        """試作のページと同じ条件で付ける注（Page.chu_list）→ 項目の行の並び。sita は字下げ。"""
+        D, out = self.D, []
+        for c in pg.chu_list(source, text):
+            nm, url = self.moto(c["moto"])
+            out.append(f"{sita}- {D.bun('mcp-issue-chu', chu=E(c['text']))}")
+            moto = f"{sita}  - {E(D.kotoba('資料の一覧の表 namae と、shiryo のページ'))}：{nm}" + (f"　{E(url)}" if url else "")
+            if c["kakunin"]:
+                moto += "　" + D.bun("mcp-issue-kakunin-bi", hi=E(bs.hi_str(D, c["kakunin"])))
+            out.append(moto)
+        return out
+
+    def kijutsu(self, pg, x, kubun=True):
+        """論点の記述（hino-ronten の事柄の記録の1行）→ 項目。引用を先に出す。"""
+        D = self.D
+        nm, url = self.moto(x["source"], x["quote"])
+        jiki = E(bs.hi_str(D, x["source_date"]))
+        lines = [f"- 「{S(x['quote'])}」",
+                 "  - " + (D.bun("mcp-issue-jiki-kubun", jiki=jiki, kubun=E(self.kubun_of(x["source"]))) if kubun
+                           else D.bun("mcp-issue-jiki", jiki=jiki))]
+        a = pg.atai_shu(x)
+        if a and a[0] == "kingaku":
+            lines.append("  - " + D.bun("mcp-issue-kingaku", atai=S(a[1])))
+        elif a:
+            lines.append("  - " + D.bun("mcp-issue-suchi", atai=S(a[1])))
+        lines += self.chu_gyo(pg, x["source"], x["quote"], "  ")
+        lines.append(f"  - {E(D.kotoba('資料の一覧の表 namae と、shiryo のページ'))}：{nm}" + (f"　{E(url)}" if url else ""))
+        return "\n".join(lines)
+
+    def issue(self, theme, P, slug, short, setsumei):
+        """論点1つ。試作のページの論点のページと同じ集め方（Page.ronten）で、同じ見出しで返す。
+        質問ごとに、論点に関する段落を、続きの応答で返す（docs/design.md 4節）。"""
+        D, inp = self.D, self.inp
+        T, pg = self.note[theme]
+        R = pg.ronten(P)
+        intro = [D.bun("mcp-issue-lead", theme=E(T["theme"]), setsumei=E(setsumei))]
+        blocks = [([f"## {E(D.bun('mcp-midashi-issue-shiryo'))}"],
+                   [self.kijutsu(pg, x, False) for x in R["docs"]] or [E(D.bun("mcp-issue-shiryo-nashi"))])]
+        items = [self.kijutsu(pg, x) for x in R["ko"]]
+        if not R["jisseki"]:
+            items.append(E(D.bun("mcp-issue-jisseki-nashi")))
+        blocks.append(([f"## {E(D.bun('mcp-midashi-issue-setsumei'))}"], items))
+        if R["tome"]:
+            blocks.append(([f"## {E(D.bun('mcp-midashi-issue-kongo'))}"],
+                           [self.kijutsu(pg, x) for x in R["tome"]] + [E(D.bun("mcp-issue-kongo-setsumei"))]))
+        qs = R["qs"]
+        gikai = f"## {E(D.bun('mcp-midashi-issue-gikai', n=len(qs)))}"
+        zentai = E(D.bun("mcp-issue-zentai"))
+
+        def shitsumon(q):
+            if q["sitsugi"]:
+                shu = D.bun("mcp-issue-shitsugi")
+            else:
+                shu = D.bun("mcp-issue-ippan")
+            return D.bun("mcp-issue-shitsumon", hi=E(bs.hi_str(D, q["date"])), shu=E(shu), dai=bn.S_kagi(q["dai"]))
+
+        def bubun(q):
+            return E(D.bun("mcp-issue-bubun", short=E(short), n=len(q["paras"])))
+
+        tsuzuki = []
+        for q in qs:
+            head = [gikai, f"### {shitsumon(q)}　{bubun(q)}", f"{zentai}：{E(keys.source_url(inp, q['question']))}"]
+            items = []
+            for sid, i, para in q["paras"]:
+                nm = self.namae.shiryo("sp:" + sid)[0]
+                lines = [f"- 「{S(para)}」", f"  - {nm}　{E(D.bun('danraku', n=i))}"]
+                lines += self.chu_gyo(pg, "sp:" + sid, para, "  ")
+                lines.append(self.url_gyo(keys.search_url(sid, i), "  - "))
+                items.append("\n".join(lines))
+            tsuzuki.append((head, items, True))
+
+        def tsukuru(bango):
+            items = [f"- {shitsumon(q)}\n  - {self.kagi_ji(bubun(q), TSUZUKI, str(n))}"
+                     f"\n  - {zentai}：{E(keys.source_url(inp, q['question']))}" for q, n in zip(qs, bango)]
+            setsumei = [E(D.bun("mcp-issue-gikai-setsumei", short=E(short)))]
+            if qs:
+                setsumei.append(E(D.bun("mcp-issue-gikai-tsuzuki", short=E(short))))
+            items += [E(D.bun("mcp-issue-keisai", short=E(short))), E(D.bun("mcp-issue-owari"))]
+            return Outou(self.kagi_ji(E(P), "issue", slug), intro, blocks + [([gikai] + setsumei, items)] + tsuzuki)
+
+        # 続きの番号は、分けてみるまで分からないので、仮の番号で分けてから、その番号で作り直す
+        o = tsukuru([99] * len(qs))
+        o.pages(self.D)
+        bango = list(o.hajime)
+        o = tsukuru(bango)
+        o.pages(self.D)
+        if o.hajime != bango:
+            self.problems.append(("(h) 論点", f"{slug}：続きの番号が、作り直すと変わる（{bango} → {o.hajime}）"))
+        return o
+
     # ツールの説明
     def tools(self, themes):
         D = self.D
@@ -635,6 +755,8 @@ class Tsukuru:
                                                                                  bt.Theme(self.inp, th), self.ref)))
         b_erabu = list(self.by)
         hyo_erabu = [f"{p['bunsho']} {p['n']}" for p in self.t["bubun"] if p["shu"] == sj.HYO]
+        is_namae = {slug: P for T, _ in self.note.values() for P, slug, _, _ in T["topics"]}
+        is_erabu = list(is_namae)
 
         def namae_tsuki(ks, f):
             return ichi(f"{k}（{owari(f(k))}）" for k in ks)
@@ -644,20 +766,23 @@ class Tsukuru:
             "theme": (owari(E(D.bun("mcp-tool-theme"))), [
                 dict(name="theme", type="string", required=False, erabu=th_erabu, description=owari(E(D.bun(
                     "mcp-hikisu-theme", erabu=namae_tsuki(th_erabu, lambda k: S(bt.Theme(self.inp, k).namae[0]))))))]),
-            "suji": (owari(E(D.bun("mcp-tool-suji"))), [
-                dict(name="id", type="string", required=True, erabu=id_erabu, description=owari(E(D.bun(
+            "issue": (owari(E(D.bun("mcp-tool-issue"))), [
+                dict(name="issue", type="string", required=True, erabu=is_erabu, description=owari(E(D.bun(
+                    "mcp-hikisu-issue", erabu=namae_tsuki(is_erabu, lambda k: E(is_namae[k]))))))]),
+            "item": (owari(E(D.bun("mcp-tool-suji"))), [
+                dict(name="item", type="string", required=True, erabu=id_erabu, description=owari(E(D.bun(
                     "mcp-hikisu-id", erabu=namae_tsuki(id_erabu, lambda k: E(self.teigi[k]["name"])))))),
-                dict(name="shiryo", type="string", required=False, erabu=b_erabu,
+                dict(name="document", type="string", required=False, erabu=b_erabu,
                      description=owari(E(D.bun("mcp-hikisu-shiryo")))),
-                dict(name="uchiwake", type="integer", required=False, erabu=["1"],
+                dict(name="breakdown", type="integer", required=False, erabu=["1"],
                      description=owari(E(D.bun("mcp-hikisu-uchiwake"))))]),
-            "shisetsu": (owari(E(D.bun("mcp-tool-shisetsu"))), [
-                dict(name="key", type="string", required=True, erabu=fa_erabu, description=owari(E(D.bun(
+            "facility": (owari(E(D.bun("mcp-tool-shisetsu"))), [
+                dict(name="facility", type="string", required=True, erabu=fa_erabu, description=owari(E(D.bun(
                     "mcp-hikisu-key", erabu=namae_tsuki(fa_erabu, lambda k: S(self.ref[k]["name"]))))))]),
-            "shiryo": (owari(E(D.bun("mcp-tool-shiryo"))), [
-                dict(name="bunsho", type="string", required=True, erabu=b_erabu, description=owari(E(D.bun(
+            "document": (owari(E(D.bun("mcp-tool-shiryo"))), [
+                dict(name="document", type="string", required=True, erabu=b_erabu, description=owari(E(D.bun(
                     "mcp-hikisu-bunsho", erabu=namae_tsuki(b_erabu, self.namae.bunsho))))),
-                dict(name="hyo", type="integer", required=False, erabu=hyo_erabu,
+                dict(name="table", type="integer", required=False, erabu=hyo_erabu,
                      description=owari(E(D.bun("mcp-hikisu-hyo"))))]),
         }
         out = []
@@ -700,10 +825,20 @@ def read_skill(path=SKILL_PATH):
     return "\n".join(out)
 
 
-def build(inp, tables, kotoba, read_problems=(), design=None, skill=None):
+def read_notes(themes):
+    """テーマごとの論点の仮の表（teigi/note-<テーマ>.tsv）。ファイルが無いテーマは除く。→ テーマ → 表（build_note.read_teigi）。"""
+    out = {}
+    for theme in themes:
+        path = os.path.join(NOTE_DIR, "note-" + theme + ".tsv")
+        if os.path.exists(path):
+            out[theme] = bn.read_teigi(path, theme)
+    return out
+
+
+def build(inp, tables, kotoba, read_problems=(), design=None, skill=None, notes=None):
     """検査を通れば、応答の JSON（辞書）と件数を返す。当たれば Stop。
 
-    tables は tools/build_theme.py の read_tables で読んだもの。
+    tables は tools/build_theme.py の read_tables で読んだもの。notes は read_notes で読んだもの（None なら読む）。
     """
     D = design or bs.read_design()
     problems = [("(e) デザインシステムとの対応", m) for m in design_problems(D)]
@@ -747,6 +882,14 @@ def build(inp, tables, kotoba, read_problems=(), design=None, skill=None):
             problems += tk._hyo[theme].problems
         tk._hk[theme] = bt.HyoKijutsu(tables, th, trows[0] if trows else None, tk.ref)
         problems += tk._hk[theme].problems
+    # (h) 論点：試作のページと同じ集め方と検査（tools/build_note.py の collect）
+    tk.note = {}
+    for theme, T in (read_notes(themes) if notes is None else notes).items():
+        model, more, _ = bn.collect(inp, T, theme)
+        problems += more
+        tk.note[theme] = (T, bn.Page(inp, T, model))
+    slugs = [slug for T, _ in tk.note.values() for _, slug, _, _ in T["topics"]]
+    problems += [("(h) 論点", f"論点の ID {x} が、2つ以上のテーマにある") for x in sorted({x for x in slugs if slugs.count(x) > 1})]
     if problems:
         raise Stop(list(dict.fromkeys(problems)))
     tk.kiroku = kiroku
@@ -765,31 +908,34 @@ def build(inp, tables, kotoba, read_problems=(), design=None, skill=None):
     ireru("theme", [], tk.theme_ichiran(themes))
     for theme, th in ths.items():
         ireru("theme", [("theme", theme)], tk.theme(theme))
+    for theme, (T, _) in tk.note.items():
+        for P, slug, short, setsumei in T["topics"]:
+            ireru("issue", [("issue", slug)], tk.issue(theme, P, slug, short, setsumei))
     for t in tables["suji"]:
         rs = [r for r in tables["atai"] if r["suji"] == t["id"]]
-        ireru("suji", [("id", t["id"])], tk.suji(t))
+        ireru("item", [("item", t["id"])], tk.suji(t))
         if any(r["kubun"] for r in rs):
-            ireru("suji", [("id", t["id"]), ("uchiwake", "1")], tk.suji(t, uchiwake=True))
+            ireru("item", [("item", t["id"]), ("breakdown", "1")], tk.suji(t, uchiwake=True))
         docs = dict.fromkeys(sj.bunsho_of(r["shiryo"]) for r in rs if r["shiryo"].strip())
         for b in docs:
             if b in tk.by:
-                ireru("suji", [("id", t["id"]), ("shiryo", b)], tk.suji(t, b))
+                ireru("item", [("item", t["id"]), ("document", b)], tk.suji(t, b))
                 if any(r["kubun"] and sj.bunsho_of(r["shiryo"]) == b for r in rs if r["shiryo"].strip()):
-                    ireru("suji", [("id", t["id"]), ("shiryo", b), ("uchiwake", "1")], tk.suji(t, b, True))
+                    ireru("item", [("item", t["id"]), ("document", b), ("breakdown", "1")], tk.suji(t, b, True))
     seen = set()
     for theme, th in ths.items():
         for k in bt.jun_shisetsu(tk._hyo.get(theme), th, tk.ref):
             if k not in seen:
                 seen.add(k)
-                ireru("shisetsu", [("key", k)], tk.shisetsu(k, theme, th))
+                ireru("facility", [("facility", k)], tk.shisetsu(k, theme, th))
     for b in tk.by:
-        ireru("shiryo", [("bunsho", b)], tk.shiryo(b))
+        ireru("document", [("document", b)], tk.shiryo(b))
         for p in tables["bubun"]:
             if p["bunsho"] == b and p["shu"] == sj.HYO:
                 o, why = tk.hyo(b, p["n"])
                 if why:
                     dasenai.append((f"{b} {p['n']}", why))
-                ireru("shiryo", [("bunsho", b), ("hyo", p["n"])], o)
+                ireru("document", [("document", b), ("table", p["n"])], o)
     if tk.namae.problems or tk.problems:
         raise Stop(list(dict.fromkeys(tk.namae.problems + tk.problems)))
 
