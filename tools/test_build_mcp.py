@@ -437,6 +437,15 @@ class TestReal(unittest.TestCase):
         self.assertTrue(all(len(x) <= bm.JOGEN for x in pages))
         self.assertTrue(t.endswith(D.bun("mcp-tsuzuki", n=2)))
 
+    def test_issue_hani(self):
+        """論点の応答に、扱っている質問の範囲を、数と時期で書く（データから数える）。"""
+        for slug in ("hiyo", "menseki", "yochi", "teiin"):
+            t = "\n".join(self.issue_pages(slug))
+            self.assertIn(D.bun("mcp-issue-hani", toi=16, shitsugi=3, toi_zumi=4, kikan="2025年3月〜2025年12月",
+                                shitsugi_zumi=3), t)
+            self.assertIn(D.bun("mcp-issue-hani-toi", n=12, kikan="2022年3月〜2026年3月"), t)
+            self.assertNotIn(D.bun("mcp-issue-hani-shitsugi", n=0), t)
+
     def test_issue_onaji(self):
         """試作のページと同じ集め方（build_note の collect と Page.ronten）の結果から作られている：記述の数、質問の数、
         段落の数、引用の字。4つの論点の合計で、質問と答弁は16件、関する部分は96か所。"""
