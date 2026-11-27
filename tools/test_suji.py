@@ -1110,6 +1110,114 @@ class TestBunshoKankei(unittest.TestCase):
                          ["inyo が、tokoro のページの原典の文字に無い（pt:youho/honpen-202503/24）"])
 
 
+class TestKaiseiTsui(unittest.TestCase):
+    """一部改正の前後の数値の対（SCHEMA.md §6.2。tools/suji.py の kaisei_tsui）。kara は改正後、e は改正前。"""
+
+    KARA, E = "pt:p/ato", "pt:p/mae"
+    BUBUN = {(KARA, "1"): dict(shisetsu="", name="見出し"), (E, "1"): dict(shisetsu="", name="見出し"),
+             (KARA, "2"): dict(shisetsu="fa:a", name="A園"), (E, "2"): dict(shisetsu="fa:a", name="A園"),
+             (KARA, "3"): dict(shisetsu="", name="面積"), (E, "3"): dict(shisetsu="", name="面積"),
+             (KARA, "4"): dict(shisetsu="", name="方針"), (E, "4"): dict(shisetsu="", name="方 針"),
+             (KARA, "5"): dict(shisetsu="fa:b", name="B園"), (E, "5"): dict(shisetsu="fa:b", name="B園")}
+
+    def r(self, doc, atai, suji_id="s", nendo="", page="1", bubun="1", retsu="", kubun="", jotai=suji.ARU):
+        return dict(suji=suji_id, kubun=kubun, jiten=nendo, nendo=nendo, atai=atai, jotai=jotai,
+                    shiryo=f"{doc}/{page}", bubun=bubun, retsu=retsu)
+
+    def tsui(self, *rows):
+        return suji.kaisei_tsui(self.KARA, self.E, list(rows), self.BUBUN, {"s": 0, "t": 1})
+
+    def test_jouken1(self):
+        # nendo が同じ行を対にする。atai が違えば chigau、同じなら数えるだけ
+        x = self.tsui(self.r(self.E, "3", nendo="2024"), self.r(self.KARA, "4", nendo="2024"),
+                      self.r(self.E, "5", nendo="2023"), self.r(self.KARA, "５", nendo="2023"))
+        self.assertEqual([(a["atai"], b["atai"], jo) for a, b, jo in x.chigau], [("3", "4", 1)])
+        self.assertEqual(x.onaji, 1)
+        self.assertEqual((x.kuwawaru, x.nai, x.hoka, x.shinai), ([], [], [], []))
+        # kubun が違えば対にしない（片方にだけある行になる）
+        x = self.tsui(self.r(self.E, "3", nendo="2024", kubun="0歳"), self.r(self.KARA, "3", nendo="2024"))
+        self.assertEqual((len(x.kuwawaru), len(x.nai), x.onaji), (1, 1, 0))
+
+    def test_jouken2(self):
+        # nendo が空で、施設と列の見出し（§3 の正規化のあと）が同じ行を対にする
+        x = self.tsui(self.r(self.E, "100", bubun="2", retsu="3", page="27"),
+                      self.r(self.KARA, "120", bubun="2", retsu="3", page="27"),
+                      self.r(self.E, "集約", bubun="2", retsu="4", page="27"),
+                      self.r(self.KARA, "集約", bubun="2", retsu="4", page="27"))
+        self.assertEqual([(a["atai"], b["atai"], jo) for a, b, jo in x.chigau], [("100", "120", 2)])
+        self.assertEqual(x.onaji, 1)
+        # 施設が違えば対にしない
+        x = self.tsui(self.r(self.E, "100", bubun="2", retsu="3"), self.r(self.KARA, "100", bubun="5", retsu="3"))
+        self.assertEqual((x.onaji, len(x.kuwawaru), len(x.nai)), (0, 1, 1))
+        self.assertEqual(x.kuwawaru[0][1], 2)
+
+    def test_jouken3(self):
+        # nendo も施設も空で、1行ずつだけなら対にする
+        x = self.tsui(self.r(self.E, "令和10年度", page="34"), self.r(self.KARA, "令和11年度", page="34"))
+        self.assertEqual([(a["atai"], b["atai"], jo) for a, b, jo in x.chigau], [("令和10年度", "令和11年度", 3)])
+        # 片方に2行あれば対にせず、出さない（shinai に数える）
+        x = self.tsui(self.r(self.E, "a"), self.r(self.E, "b", page="2"), self.r(self.KARA, "c"))
+        self.assertEqual((x.chigau, x.onaji, x.kuwawaru, x.nai, len(x.shinai)), ([], 0, [], [], 3))
+        # 片方の文書にしか無い行も、加わっている数値としては出さない
+        x = self.tsui(self.r(self.KARA, "c"))
+        self.assertEqual((x.kuwawaru, len(x.shinai)), ([], 1))
+
+    def test_onaji_dasanai(self):
+        # atai が同じ対だけなら、出すものは無い
+        x = self.tsui(self.r(self.E, "3", nendo="2024"), self.r(self.KARA, "3", nendo="2024"),
+                      self.r(self.E, "x"), self.r(self.KARA, "x"))
+        self.assertEqual((x.chigau, x.kuwawaru, x.nai, x.onaji), ([], [], [], 2))
+
+    def test_katahou(self):
+        # 条件 (1) で相手が無い行は、kara の側なら加わっている数値、e の側なら改正後に無い数値
+        x = self.tsui(self.r(self.KARA, "3", nendo="2025", page="11"), self.r(self.E, "9", nendo="2017", page="11"),
+                      self.r(self.E, "1", suji_id="t", nendo="2018"), self.r(self.KARA, "1", suji_id="t", nendo="2018"))
+        self.assertEqual([(r["nendo"], jo) for r, jo in x.kuwawaru], [("2025", 1)])
+        self.assertEqual([(r["nendo"], jo) for r, jo in x.nai], [("2017", 1)])
+        # 数値がある でない行は対にしない
+        x = self.tsui(self.r(self.KARA, "", nendo="2025", jotai=suji.KARA))
+        self.assertEqual((x.kuwawaru, x.shinai), ([], []))
+
+    def test_hoka_page(self):
+        # 同じ文書の、同じ suji・kubun・nendo の行がほかのページにあり、その行が対になっていれば、出さない
+        x = self.tsui(self.r(self.E, "34", nendo="2024", page="11"), self.r(self.E, "34", nendo="2024", page="21"),
+                      self.r(self.KARA, "34", nendo="2024", page="11"))
+        self.assertEqual((x.onaji, x.kuwawaru, x.nai, len(x.hoka), x.shinai), (1, [], [], 1, []))
+        self.assertEqual(x.hoka[0]["shiryo"], f"{self.E}/21")
+        # ページが違っても、1行ずつなら対にする
+        x = self.tsui(self.r(self.E, "34", nendo="2024", page="11"), self.r(self.KARA, "35", nendo="2024", page="12"))
+        self.assertEqual(len(x.chigau), 1)
+
+    def test_onaji_page_shisetsu(self):
+        # 同じページに、同じ nendo の行が施設ごとにあるときは、施設が同じ行どうしを対にする
+        x = self.tsui(self.r(self.E, "10", nendo="2024", retsu="2"), self.r(self.E, "20", nendo="2024", retsu="5"),
+                      self.r(self.KARA, "20", nendo="2024", retsu="5"), self.r(self.KARA, "10", nendo="2024", retsu="2"))
+        self.assertEqual((x.chigau, x.onaji), ([], 2))
+
+    def test_narabi(self):
+        # 定義の表の順に並べる
+        x = self.tsui(self.r(self.KARA, "1", suji_id="t", nendo="2025"), self.r(self.KARA, "1", nendo="2025"))
+        self.assertEqual([r["suji"] for r, _ in x.kuwawaru], ["s", "t"])
+
+    def test_kankei(self):
+        rows = [dict(kara="a", e="b", hyogen="一部改正"), dict(kara="a", e="c", hyogen="基本とした")]
+        self.assertEqual(suji.kaisei_kankei(rows), {"a": ["b"]})
+        self.assertEqual(suji.kaisei_kankei(rows[1:]), {})
+
+    def test_jitsubutsu(self):
+        """実際の表：再編整備計画の2つの資料。SCHEMA.md §6.2 の実物の例と同じ結果になる。"""
+        t = real_tables()
+        by = {(r["bunsho"], r["n"]): r for r in t["bubun"]}
+        jun = {r["id"]: i for i, r in enumerate(t["suji"])}
+        x = suji.kaisei_tsui("pt:youho/honpen", "pt:youho/honpen-202503", t["atai"], by, jun)
+        self.assertEqual([(a["suji"], a["atai"], b["atai"], a["shiryo"], b["shiryo"]) for a, b, _ in x.chigau],
+                         [("kaien", "令和10年度", "令和11年度", "pt:youho/honpen-202503/34", "pt:youho/honpen/34")])
+        self.assertEqual([(r["suji"], r["jiten"], r["shiryo"]) for r, _ in x.kuwawaru],
+                         [("taiki", "令和7年4月", "pt:youho/honpen/11"), ("nozoku", "令和7年4月", "pt:youho/honpen/11")])
+        self.assertEqual((x.nai, x.shinai, x.onaji), ([], [], 50))
+        self.assertEqual([(r["suji"], r["shiryo"]) for r in x.hoka], [("nozoku", "pt:youho/honpen-202503/21")])
+
+
 class TestMain(unittest.TestCase):
     def main(self, files, inp=None):
         with tempfile.TemporaryDirectory() as d:

@@ -133,13 +133,13 @@ def theme_rows(*extra):
     return [dict(theme="hoiku", shu="施設の表", jun="1", inyo="", tokoro=f"{KK}/2", hyo="1", chu="")] + list(extra)
 
 
-def tables(theme=None, bubun=None, atai=None, teigi=()):
+def tables(theme=None, bubun=None, atai=None, teigi=(), kankei=None):
     s, p1 = suji.read_suji(tsv(suji.SUJI_COLUMNS, [dict(id="teiin", name="定員", nani="施設の定員", tani="人",
                                                         kettei="案")] + list(teigi)))
     a, p2 = suji.read_atai(tsv(suji.ATAI_COLUMNS, atai if atai is not None else atai_rows()))
     b, p3 = suji.read_bunsho(tsv(suji.BUNSHO_COLUMNS, bunsho_rows()))
     c, p4 = suji.read_bubun(tsv(suji.BUBUN_COLUMNS, bubun if bubun is not None else bubun_rows()))
-    k, p5 = suji.read_bunsho_kankei(tsv(suji.BUNSHO_KANKEI_COLUMNS, kankei_rows()))
+    k, p5 = suji.read_bunsho_kankei(tsv(suji.BUNSHO_KANKEI_COLUMNS, kankei if kankei is not None else kankei_rows()))
     t, p6 = suji.read_theme(tsv(suji.THEME_COLUMNS, theme if theme is not None else theme_rows()))
     assert not (p1 + p2 + p3 + p4 + p5 + p6), p1 + p2 + p3 + p4 + p5 + p6
     return dict(suji=s, atai=a, bunsho=b, bubun=c, kankei=k, theme=t)
@@ -431,6 +431,61 @@ def real_inputs():
         return None
 
 
+class TestKaisei(unittest.TestCase):
+    """経過の行の下の、改正前の資料と、改正前と改正後で違う数値（docs/design.md 4節のテーマのページの3）。"""
+
+    def setUp(self):
+        self.kotoba = bn.read_kotoba()
+
+    def inp(self):
+        f = fake()
+        f._doc_texts[("koho-1", "text")] = "お知らせ\n町は幼保の再編を進めています。構想を基に整備します。令和８年６月一部改正"
+        return f
+
+    def kankei(self):
+        return kankei_rows() + [dict(kara=KOHO, e=KK, hyogen="一部改正", inyo="令和８年６月一部改正", tokoro=f"{KOHO}/1",
+                                     chu="")]
+
+    def build(self, **kw):
+        return bt.build(self.inp(), tables(kankei=self.kankei(), **kw), "hoiku", self.kotoba, TODAY, design=D)
+
+    def test_nai(self):
+        # 構想（e）にだけある定員の2行は、改正後に無い数値。経過の3行め（もとの資料が広報）の下に出す
+        page, info = self.build()
+        mae = D.kotoba("文書どうしの関係の表 hyogen が「一部改正」の行の e")
+        i = page.index("<td>提言</td>")
+        row = page[i:page.index("</tr>", page.index("</tr>", i) + 1)]
+        self.assertIn(f"<p>{mae}：", row)
+        self.assertIn("構想（2025年8月）", row)
+        self.assertIn(D.bun("kaisei-hani"), row)
+        self.assertEqual(row.count("<li>"), 2)
+        self.assertIn(D.bun("kaisei-nai", name="<a href='../suji/teiin.html'>定員</a>", jiki="令和7年4月1日現在", page=D.bun("page", n=2)), row)
+        self.assertEqual(page.count("<td colspan=3>"), 1)
+        self.assertEqual(info["kaisei_shinai"], 0)
+        # 画面には鍵を出さない
+        self.assertNotIn(f"bunsho：{KK}", page)
+
+    def test_chigau_nashi(self):
+        # 違う数値も片方にだけある数値も無いときは、改正前の行だけを出し、見出しは出さない
+        page, _ = self.build(atai=[])
+        self.assertIn(D.kotoba("文書どうしの関係の表 hyogen が「一部改正」の行の e"), page)
+        self.assertNotIn(D.kotoba("文書どうしの関係の表 kara、e の文書の数値の対で、atai が違うもの"), page)
+        self.assertNotIn("<li>", page)
+
+    def test_kankei_nashi(self):
+        # 「一部改正」の関係が無いテーマでは、出力が変わらない
+        page, _ = bt.build(fake(), tables(), "hoiku", self.kotoba, TODAY, design=D)
+        self.assertNotIn("<td colspan=3>", page)
+        self.assertNotIn(D.kotoba("文書どうしの関係の表 hyogen が「一部改正」の行の e") + "：", page)
+        moto = bt.Page.kaisei_gyo
+        try:
+            bt.Page.kaisei_gyo = lambda self, srcs: []
+            mae, _ = bt.build(fake(), tables(), "hoiku", self.kotoba, TODAY, design=D)
+        finally:
+            bt.Page.kaisei_gyo = moto
+        self.assertEqual(page, mae)
+
+
 class TestReal(unittest.TestCase):
     """lock の版の入力と実際の表で、幼保のテーマのページを作る。施設の表は、基本構想の14ページの表（文書の部分の表の18）。"""
 
@@ -499,6 +554,27 @@ class TestReal(unittest.TestCase):
         i = page.index("<h3 id='fa-sakuradani-1'>")
         self.assertEqual(page[i:page.index("<h3 ", i + 1)].count("<td>桜谷こども園 第１園舎（旧幼稚園）</td>"), 2)
         self.assertNotIn(D.bun("mikakunin-hyo"), page)
+
+    def test_hoiku_kaisei(self):
+        """経過の13行め（再編整備計画の一部改正）の下に、改正前の資料と、違う数値（kaien）と加わっている数値を出す。"""
+        page, info = bt.build(self.inp, self.tables, "hoiku", bn.read_kotoba(), TODAY, self.read_problems, D)
+        self.assertEqual(page.count("<td colspan=3>"), 1)
+        i = page.index("<td colspan=3>")
+        self.assertLess(page.index("<td>再編整備計画の一部改正</td>"), i)
+        row = page[i:page.index("</tr>", i)]
+        self.assertIn("日野町幼児教育保育施設再編整備計画（2025年3月）</a>", row)
+        mae = D.bun("kaisei-atai", kaisei=D.kotoba("数値の表 atai（一部改正の対の、e の文書の側）"), atai="令和10年度",
+                    page=D.bun("page", n=34))
+        ato = D.bun("kaisei-atai", kaisei=D.kotoba("数値の表 atai（一部改正の対の、kara の文書の側）"), atai="令和11年度",
+                    page=D.bun("page", n=34))
+        self.assertIn(D.bun("kaisei-tsui", name="<a href='../suji/kaien.html'>新こども園の開園の時期</a>", mae=mae,
+                            ato=ato), row)
+        self.assertIn(D.bun("kaisei-kuwawaru", name="<a href='../suji/taiki.html'>待機児童数</a>", jiki="令和7年4月",
+                            page=D.bun("page", n=11)), row)
+        self.assertIn("待機児童数から除かれる者の小計：", row)
+        self.assertEqual(row.count("<li>"), 3)
+        self.assertEqual((info["kaisei_shinai"], info["kaisei_hoka"]), (0, 1))
+        self.assertNotIn("（bunsho：", page)
 
 
 if __name__ == "__main__":

@@ -151,6 +151,30 @@ class TestReal(unittest.TestCase):
             text = self.bun("suji", f"id={t['id']}")
             self.assertEqual(D.kotoba("定義の表 kettei が「案」") in text, t["kettei"] == "案", t["id"])
 
+    def test_keika_kaisei(self):
+        """経過：文書の表にある資料には鍵を付ける（13行のうち8行）。13行めの下に、改正前の資料と、違う数値を出す。"""
+        o = self.data["outou"]["theme"]
+        t = "\n".join(self.data["bun"][o[k]] for k in sorted(o) if k.startswith("theme=hoiku&tsuzuki="))
+        s = t.index(f"## {D.bun('midashi-keika')}")
+        keika = t[s:t.index("\n## ", s + 1)]
+        rows = re.split(r"\n(?=- )", keika)[1:]
+        self.assertEqual(len(rows), 13)
+        self.assertEqual(sum("（bunsho：" in r for r in rows), 8)
+        mae = D.kotoba("文書どうしの関係の表 hyogen が「一部改正」の行の e")
+        self.assertEqual([i for i, r in enumerate(rows, 1) if f"  - {mae}：" in r], [13])
+        want = "\n".join([
+            "  - もとの資料：日野町幼児教育保育施設再編整備計画（令和８年６月一部改正、2026年6月）（bunsho：pt:youho/honpen）"
+            "　1ページ　https://www.town.shiga-hino.lg.jp/cmsfiles/contents/0000008/8225/syuusei.pdf#page=1",
+            f"  - {mae}：日野町幼児教育保育施設再編整備計画（2025年3月）（bunsho：pt:youho/honpen-202503）",
+            "  - " + D.kotoba("文書どうしの関係の表 kara、e の文書の数値の対で、atai が違うもの") + D.bun("mcp-kaisei-hani"),
+            "    - 新こども園の開園の時期（id：kaien）：改正前「令和10年度」（34ページ）、改正後「令和11年度」（34ページ）",
+            "    - 待機児童数（id：taiki）：改正後に、令和7年4月の数値が加わっている（11ページ）",
+            "    - 待機児童数から除かれる者の小計（id：nozoku）：改正後に、令和7年4月の数値が加わっている（11ページ）"])
+        self.assertIn(want + "\n", rows[12] + "\n")
+        # 会議録には鍵を付けない
+        self.assertNotIn("（bunsho：sp:", keika)
+        self.assertEqual((self.info["kaisei_shinai"], self.info["kaisei_hoka"]), (0, 1))
+
     def test_jogen(self):
         self.assertTrue(all(len(b) <= bm.JOGEN for b in self.data["bun"]))
         o = self.data["outou"]["suji"]
