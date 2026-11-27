@@ -25,7 +25,7 @@ SID_T = "0000000001_20260309_0002"     # 町の答弁（役職「子ども支援
 SID_C = "0000000001_20260309_0003"     # 議長の発言
 KK = "doc:jigyo-k"
 KOHO = "doc:koho-1"
-KAKUNIN2 = "2者が画像で確認（2026-11-24）"
+KAKUNIN2 = "生成AIが画像を2回読んで一致（2026-11-24）"
 D = bs.read_design()
 
 
@@ -114,7 +114,7 @@ def bubun_rows(**kw):
     rows = [b("1", "", "表", "■施設の表■"),
             b("2", "1", "行", "定員"),
             b("3", "1", "列", "日野幼稚園", "1", "幼稚園", "fa:hino-yo"),
-            b("4", "1", "列", "桜谷こども園", "2", "こども園", "fa:s1;fa:s2", "依頼者が確認（2026-11-24）"),
+            b("4", "1", "列", "桜谷こども園", "2", "こども園", "fa:s1;fa:s2", "人が確認（2026-11-24）"),
             b("5", "1", "列", "計", "3")]
     return [dict(r, **kw.get(r["n"], {})) for r in rows]
 
@@ -158,14 +158,14 @@ class TestThemeCheck(unittest.TestCase):
 
     def test_setsumei(self):
         ok = dict(theme="hoiku", shu="説明の文", jun="1", inyo="町は幼保の再編を進めています。", tokoro=f"{KOHO}/1",
-                  hyo="", chu="依頼者が PDF で確認（2026-11-24）")
+                  hyo="", chu="人が PDF で確認（2026-11-24）")
         self.assertEqual(theme_check(theme_rows(ok)), [])
-        # 広報ひのの行に、依頼者の確認の記録が無い（日付の形が違う場合も無いものとする）
-        for chu in ("", "依頼者が PDF で確認（2026-13-01）", KAKUNIN2):
+        # 広報ひのの行に、人が PDF で確認した記録が無い（日付の形が違う場合も無いものとする）
+        for chu in ("", "人が PDF で確認（2026-13-01）", KAKUNIN2):
             with self.subTest(chu=chu):
                 p = theme_check(theme_rows(dict(ok, chu=chu)))
                 self.assertEqual(len(p), 1)
-                self.assertIn("依頼者が PDF で確認", p[0])
+                self.assertIn("人が PDF で確認", p[0])
         # inyo がページの原典の文字に無い。こちらで書いた文は入らない
         p = theme_check(theme_rows(dict(ok, inyo="町は保育を充実させます。")))
         self.assertEqual(p, [f"inyo が、tokoro のページの原典の文字に無い（{KOHO}/1）"])
@@ -183,7 +183,7 @@ class TestThemeCheck(unittest.TestCase):
         p = theme_check([dict(r, theme="kaigo")])
         self.assertEqual(p, ["テーマの定義に、theme（kaigo）の kind「名前」の行が無い"])
         s = dict(theme="hoiku", shu="説明の文", jun="1", inyo="構想を基に整備します。", tokoro=f"{KOHO}/1", hyo="",
-                 chu="依頼者が PDF で確認（2026-11-24）")
+                 chu="人が PDF で確認（2026-11-24）")
         p = theme_check(theme_rows(s, dict(s, inyo="町は幼保の再編を進めています。")))
         self.assertEqual(p, ["同じ theme と shu の中で、jun が重なっている（1）"] * 2)
 
@@ -206,7 +206,7 @@ class TestThemeCheck(unittest.TestCase):
 
 
 # テーマの資料（広報ひの koho-1）の表。行が施設を指し、欄は文。見出しは原典の文字に無く、確認の記録がある
-IRAI = "依頼者が PDF で確認（2026-11-25）"
+IRAI = "人が PDF で確認（2026-11-25）"
 
 
 def bubun_koho(**kw):
@@ -215,7 +215,7 @@ def bubun_koho(**kw):
                     shisetsu=shisetsu, shisetsu_kakunin=shisetsu_kakunin, torikata="読んだ", chu=IRAI)
     rows = [b("1", "", "表", "整備の表"),
             b("2", "1", "行", "日野幼稚園", shisetsu="fa:hino-yo"),
-            b("3", "1", "行", "桜谷第１", shisetsu="fa:s1", shisetsu_kakunin="2者の読みが一致（2026-11-25）"),
+            b("3", "1", "行", "桜谷第１", shisetsu="fa:s1", shisetsu_kakunin="生成AIが2回読んで一致（2026-11-25）"),
             b("4", "1", "列", "整備方針", "1"),
             b("5", "1", "列", "形態", "2")]
     return bubun_rows() + [dict(r, **kw.get(r["n"], {})) for r in rows]
@@ -368,7 +368,7 @@ class TestPage(unittest.TestCase):
 
     def test_setsumei_page(self):
         s = dict(theme="hoiku", shu="説明の文", jun="2", inyo="構想を基に整備します。", tokoro=f"{KOHO}/1", hyo="",
-                 chu="依頼者が PDF で確認（2026-11-24）")
+                 chu="人が PDF で確認（2026-11-24）")
         page, info = self.build(t=tables(theme=theme_rows(s, dict(s, jun="1", inyo="町は幼保の再編を進めています。"))))
         self.assertEqual(info["setsumei"], 2)
         self.assertIn(f"<h2>{D.kotoba('テーマの表 shu が「説明の文」')}</h2>", page)
@@ -459,7 +459,8 @@ class TestKaisei(unittest.TestCase):
         self.assertIn("構想（2025年8月）", row)
         self.assertIn(D.bun("kaisei-hani"), row)
         self.assertEqual(row.count("<li>"), 2)
-        self.assertIn(D.bun("kaisei-nai", name="<a href='../suji/teiin.html'>定員</a>", jiki="令和7年4月1日現在", page=D.bun("page", n=2)), row)
+        self.assertIn(D.bun("kaisei-nai", name="<a href='../suji/teiin.html'>定員</a>", jiki="令和7年4月1日現在",
+                             nakami=D.kotoba("数値の表 atai"), page=D.bun("page", n=2)), row)
         self.assertEqual(page.count("<td colspan=3>"), 1)
         self.assertEqual(info["kaisei_shinai"], 0)
         # 画面には ID を出さない
@@ -570,7 +571,7 @@ class TestReal(unittest.TestCase):
         self.assertIn(D.bun("kaisei-tsui", name="<a href='../suji/kaien.html'>新こども園の開園の時期</a>", mae=mae,
                             ato=ato), row)
         self.assertIn(D.bun("kaisei-kuwawaru", name="<a href='../suji/taiki.html'>待機児童数</a>", jiki="令和7年4月",
-                            page=D.bun("page", n=11)), row)
+                            nakami=D.kotoba("数値の表 atai"), page=D.bun("page", n=11)), row)
         self.assertIn("待機児童数から除かれる者の小計：", row)
         self.assertEqual(row.count("<li>"), 3)
         self.assertEqual((info["kaisei_shinai"], info["kaisei_hoka"]), (0, 1))

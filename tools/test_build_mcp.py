@@ -4,6 +4,7 @@ JSON の形（ツール4つ、引数の説明）、応答に資料の名前と U
 該当する組が無いときの文、使わない言葉で止まること、議員の名前が出ないこと。
 """
 import copy
+import json
 import os
 import re
 import sys
@@ -37,8 +38,8 @@ class TestParts(unittest.TestCase):
                          "id=taiki&shiryo=pt:youho/honpen&tsuzuki=2")
 
     def test_kakunin_kiroku(self):
-        chu = "抽出した文字の並びが崩れている。2者が画像で確認（2026-11-23）。依頼者が PDF で確認（2026-13-01）"
-        self.assertEqual(bm.kakunin_kiroku(chu), ["2者が画像で確認（2026-11-23）"])      # 日付の形が違う記録は出さない
+        chu = "抽出した文字の並びが崩れている。生成AIが画像を2回読んで一致（2026-11-23）。人が PDF で確認（2026-13-01）"
+        self.assertEqual(bm.kakunin_kiroku(chu), ["生成AIが画像を2回読んで一致（2026-11-23）"])      # 日付の形が違う記録は出さない
         self.assertEqual(bm.kakunin_kiroku("対応づけの根拠：…"), [])
 
     def test_owari(self):
@@ -137,7 +138,7 @@ class TestReal(unittest.TestCase):
                       "contents/0000008/8225/syuusei.pdf#page=11", t)
         self.assertIn("- 令和7年4月：3（" + D.kotoba("時点の関係 mae") + "）", t)
         t = self.bun("suji", "id=taiki&shiryo=doc:jigyo-shinkodomoen-kousou")
-        self.assertIn("2者が画像で確認（2026-11-23）", t)
+        self.assertIn("生成AIが画像を2回読んで一致（2026-11-23）", t)
         self.assertNotIn("対応づけ", self.bun("suji", "id=nozoku"))      # chu の作業の注は出さない
         t = self.bun("suji", "id=kaien")
         self.assertIn("会議録 2025年9月11日（議会での答弁）", t)
@@ -242,12 +243,27 @@ class TestReal(unittest.TestCase):
         self.assertIn("id=taiki&shiryo=pt:kodomo/honpen&uchiwake=1", o)
         self.assertNotIn("id=taiki&shiryo=plan:sogo6&uchiwake=1", o)
 
+    def test_naiyo(self):
+        # 単位の無い項目（開園の時期）は「内容」、単位のある項目（待機児童数）は「数値」と出す（docs/design.md 3節）
+        for k, atai, toki in (("id=kaien", "数値の表 atai（定義の表 tani が空）", "定義の表 toki（定義の表 tani が空）"),
+                              ("id=taiki", "数値の表 atai", "定義の表 toki")):
+            with self.subTest(k=k):
+                t = self.bun("suji", k)
+                self.assertIn(f"## {D.bun('mcp-midashi-suji', nakami=D.kotoba(atai))}", t)
+                self.assertIn(f"- {D.kotoba(toki)}：", t)
+
+    def test_kakunin_ji(self):
+        # 確認の記録は、読む人に通じる字で出す（SCHEMA.md §6.3・§7.2。2026-11-27）
+        zenbu = json.dumps(self.data, ensure_ascii=False)
+        for ji in ("人が PDF で確認（", "生成AIが画像を2回読んで一致（", "人が確認（", "生成AIが2回読んで一致（"):
+            self.assertIn(ji, zenbu)
+
     def test_chigau(self):
         # 資料の間で一致しない時期は、数値のページと同じ判定で出す（待機児童数の2018年4月）
         t = self.bun("suji", "id=taiki")
         midashi = f"## {D.bun('chigau')}"
         self.assertEqual(t.count(midashi), 1)
-        part = t[t.index(midashi):t.index(f"## {D.bun('mcp-midashi-suji')}")]
+        part = t[t.index(midashi):t.index(f"## {D.bun('mcp-midashi-suji', nakami=D.kotoba('数値の表 atai'))}")]
         self.assertIn("- 2018年4月：1（", part)
         self.assertIn("なし（会議録 2019年6月14日（議会での答弁））", part)
         self.assertEqual(part.count("\n- "), 1)
@@ -301,7 +317,7 @@ class TestReal(unittest.TestCase):
         t = self.bun("suji", "id=taiki&shiryo=doc:hyoka-r4-senryaku-kensho")
         self.assertEqual(t.count(D.bun("inyo-kuzure")), 6)
         self.assertNotIn("「基準値【R1】", t)
-        self.assertIn("2者が画像で確認（2026-11-23）", t)
+        self.assertIn("生成AIが画像を2回読んで一致（2026-11-23）", t)
         self.assertNotIn(D.bun("inyo-kuzure"), self.bun("suji", "id=taiki&shiryo=pt:youho/honpen"))
 
     def test_shiryo_hani(self):

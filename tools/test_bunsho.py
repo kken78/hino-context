@@ -45,6 +45,9 @@ class TestCheck(unittest.TestCase):
     def test_table_rows_skipped(self):
         text = bunsho.HEAD + "\n| --- | --- |\n| `道具` | ツール |\n\n道具を作る"
         self.assertEqual(self.found(text), ["道具"])
+        # docs/design.md 2節の言葉の表（画面と応答で使わない言葉の表）の行も調べない
+        text = "| 使わない | 使う | 確認する所 |\n| --- | --- | --- |\n| 道具 | ツール | 文 |\n\n道具を作る"
+        self.assertEqual(self.found(text), ["道具"])
 
 
 class TestRepo(unittest.TestCase):

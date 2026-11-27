@@ -167,11 +167,28 @@ class TestFake(unittest.TestCase):
         page, _ = self.build(tables([t], rows), "kaien")
         self.assertNotIn(f"<h2>{D.bun('midashi-hyo')}</h2>", page)
         self.assertNotIn("並べ方は、まだ決まっていません", page)        # docs/design.md 4節（2026-11-21 の依頼者の決定）
-        body = page[page.index(f"<h2>{D.bun('midashi-hiduke')}</h2>"):page.index(f"<h2>{D.bun('midashi-shosai')}</h2>")]
+        naiyo = D.kotoba("数値の表 atai（定義の表 tani が空）")                 # 単位の無い項目は「内容」
+        body = page[page.index(f"<h2>{D.bun('midashi-hiduke', nakami=naiyo)}</h2>"):
+                    page.index(f"<h2>{D.bun('midashi-shosai', nakami=naiyo)}</h2>")]
         self.assertEqual(re.findall(r"<tr><td>(.*?)</td>", body),
                          ["2024年12月13日", "2025年3月", D.kotoba("文書の表 hiduke が空")])
         # shurui がどの行にも無ければ、その列を出さない
-        self.assertNotIn(D.kotoba("数値の表 shurui"), heads(page, f"<h2>{D.bun('midashi-hiduke')}</h2>"))
+        self.assertNotIn(D.kotoba("数値の表 shurui"), heads(page, f"<h2>{D.bun('midashi-hiduke', nakami=naiyo)}</h2>"))
+
+    def test_naiyo(self):
+        # 単位の無い項目は、数値を「内容」と出す。判定は tools/suji.py の tani_nashi（docs/design.md 3節。2026-11-27）
+        rows = [atai_row(suji="kaien", jiten="資料A", nendo="", atai="9", shiryo="doc:jigyo-1/2", inyo="令和7年度 9 人")]
+        for tani, w, toki in (("", D.kotoba("数値の表 atai（定義の表 tani が空）"), D.kotoba("定義の表 toki（定義の表 tani が空）")),
+                              ("人", D.kotoba("数値の表 atai"), D.kotoba("定義の表 toki"))):
+            with self.subTest(tani=tani):
+                page, _ = self.build(tables([teigi_row(id="kaien", name="開園の時期", nendo_tsuki="", tani=tani)], rows),
+                                     "kaien")
+                self.assertIn(D.bun("atama", nakami=w), page)
+                self.assertIn(f"<dt>{toki}</dt>", page)
+                self.assertIn(f"<h2>{D.bun('midashi-hiduke', nakami=w)}</h2>", page)
+                self.assertIn(D.bun("erabu", nakami=w), page)
+                self.assertEqual(heads(page, f"<h2>{D.bun('midashi-hiduke', nakami=w)}</h2>")[1], w)
+                self.assertIn(f"<h2>{D.bun('midashi-shosai', nakami=w)}</h2>", page)
 
     def test_detail(self):
         page, _ = self.build()
@@ -289,7 +306,7 @@ class TestReal(unittest.TestCase):
 
     def test_no_chu_of_bunsho_and_bubun(self):
         # 文書の表と文書の部分の表の chu は、どのページにも出さない。数値の表の chu（確認の状態として出す）と
-        # 同じ字の chu（「2者が画像で確認（2026-11-23）」だけの chu など）は除く
+        # 同じ字の chu（「生成AIが画像を2回読んで一致（2026-11-23）」だけの chu など）は除く
         chus = {r["chu"] for r in self.tables["bunsho"] + self.tables["bubun"] if len(r["chu"]) >= 6}
         chus -= {r["chu"] for r in self.tables["atai"]}
         for sid in ("taiki", "fusoku", "kakuho", "kaien"):

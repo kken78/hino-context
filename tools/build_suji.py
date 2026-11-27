@@ -333,6 +333,17 @@ def hiduke_of(D, shiryo, by):
     return tuple(int(x) for x in h.split("-")) + (0,) * (3 - len(h.split("-"))), hi_str(D, h)
 
 
+def atai_go(D, t):
+    """定義の表の行 t → その項目の数値を指す言葉（表の列の見出しと、2つ目の表の文の {nakami} に入れる字）。
+    単位の無い項目（tools/suji.py の tani_nashi）は「内容」の行の言葉（docs/design.md 3節）。"""
+    return D.kotoba("数値の表 atai（定義の表 tani が空）") if sj.tani_nashi(t) else D.kotoba("数値の表 atai")
+
+
+def toki_go(D, t):
+    """定義の表の行 t → 定義の欄の toki の見出し。単位の無い項目は、その項目の行の言葉（docs/design.md 3節）。"""
+    return D.kotoba("定義の表 toki（定義の表 tani が空）") if sj.tani_nashi(t) else D.kotoba("定義の表 toki")
+
+
 def hiduke_bun(D, nendo, nashi):
     """日付の順に並べた一覧の上に添える文。nendo：年度だけが分かる資料があるか。nashi：文書の表の hiduke が空の
     資料があるか（docs/design.md 3節。2026-11-27）。"""
@@ -467,11 +478,11 @@ class Page:
         items = [(D.kotoba("定義の表 nani"), t["nani"])]
         if t["tani"]:
             items.append((D.kotoba("定義の表 tani"), t["tani"]))
-        items += [(D.kotoba("定義の表 toki"), t["toki"]), (D.kotoba("定義の表 iikata"), t["iikata"]),
+        items += [(toki_go(D, t), t["toki"]), (D.kotoba("定義の表 iikata"), t["iikata"]),
                   (D.kotoba("定義の表 chui"), t["chui"])]
         dl = "".join(f"<dt>{E(k)}</dt><dd>{E(v)}</dd>" for k, v in items)
         return (f"<h1>{D.bun('dai', name=E(t['name']))}</h1>\n"
-                f"<p class=note>{E(D.bun('atama'))}{an}</p>\n<h2>{E(D.bun('midashi-teigi'))}</h2>\n<dl>{dl}</dl>\n")
+                f"<p class=note>{E(D.bun('atama', nakami=atai_go(D, t)))}{an}</p>\n<h2>{E(D.bun('midashi-teigi'))}</h2>\n<dl>{dl}</dl>\n")
 
     def cell_mae(self, es):
         """mae の列の中身。数値が一致しなければ（判定は tools/suji.py の ichi_shinai。施設が違う数値は比較しない）、
@@ -515,7 +526,7 @@ class Page:
         else:
             nendo = ""
         setsumei = (f"<p>{E(D.bun('retsu-setsumei'))}{E(nendo)}{E(D.bun('yobikata-setsumei'))}"
-                    f"{E(D.bun('erabu'))}</p>")
+                    f"{E(D.bun('erabu', nakami=atai_go(D, self.t)))}</p>")
         body = "\n".join(out)
         chigau = f"<p class=note>{E(D.bun('chigau-setsumei'))}</p>" if self.chigau else ""
         return f"<h2>{E(D.bun('midashi-hyo'))}</h2>\n{setsumei}\n{body}\n{chigau}\n{self.nai()}"
@@ -550,12 +561,14 @@ class Page:
             f"<td><a href='#{e.id}'><b>{e.atai}</b></a></td>"
             + (f"<td>{S(e.r['shurui']) if e.r['shurui'] else ''}</td>" if shurui else "")
             + f"<td>{e.namae}{'　' + e.page if e.page else ''}</td></tr>" for e in es)
-        heads = [D.kotoba("文書の表 hiduke、発言の日"), D.kotoba("数値の表 atai")]
+        heads = [D.kotoba("文書の表 hiduke、発言の日"), atai_go(D, self.t)]
         heads += [D.kotoba("数値の表 shurui")] if shurui else []
         heads += [D.kotoba("文書の表 namae と、shiryo のページ")]
         nashi = any(e.hiduke is None and e.r["shiryo"].strip() and not e.r["shiryo"].startswith("ext:") for e in es)
-        return (f"<h2>{E(D.bun('midashi-hiduke'))}</h2>\n"
-                f"<p>{E(D.bun('hiduke-setsumei'))}{E(hiduke_bun(D, False, nashi))}{E(D.bun('erabu'))}</p>\n"
+        nakami = atai_go(D, self.t)
+        return (f"<h2>{E(D.bun('midashi-hiduke', nakami=nakami))}</h2>\n"
+                f"<p>{E(D.bun('hiduke-setsumei'))}{E(hiduke_bun(D, False, nashi))}"
+                f"{E(D.bun('erabu', nakami=nakami))}</p>\n"
                 f"<table>\n<thead><tr>{''.join(f'<th>{E(h)}</th>' for h in heads)}</tr></thead>\n"
                 f"<tbody>{rows}</tbody>\n</table>")
 
@@ -609,7 +622,7 @@ class Page:
             li.append(E(D.bun("nosete-inai-toi")))
         nashi = list(dict.fromkeys(e.namae for e in self.es if e.r["shiryo"].strip() and not e.sp and not e.r["bubun"]))
         if nashi:
-            li.append(D.bun("nosete-inai-tokoro", shiryo="、".join(nashi)))
+            li.append(D.bun("nosete-inai-tokoro", nakami=E(atai_go(D, self.t)), shiryo="、".join(nashi)))
         docs = {sj.bunsho_of(e.r["shiryo"]) or e.r["shiryo"] for e in self.es if e.r["shiryo"].strip()}
         if len(docs) > 1:
             li.append(E(D.bun("nosete-inai-kankei")))
@@ -638,7 +651,7 @@ class Page:
 </style></head><body>
 {self.head()}
 {main}
-<h2>{E(D.bun('midashi-shosai'))}</h2>
+<h2>{E(D.bun('midashi-shosai', nakami=atai_go(D, self.t)))}</h2>
 {mikakunin}{details}
 {self.nosete_inai()}
 {note}
