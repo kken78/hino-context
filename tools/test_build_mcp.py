@@ -117,13 +117,13 @@ class TestReal(unittest.TestCase):
         n = len(d["bun"])
         self.assertTrue(all(0 <= i < n for v in d["outou"].values() for i in v.values()))
         self.assertEqual(set(range(n)), {i for v in d["outou"].values() for i in v.values()})
-        # 組：テーマの一覧と4つのテーマ、論点74（幼保37、介護23、公共施設9、地域5）、項目27、施設13、資料22と表17、出来事3
+        # 組：テーマの一覧と4つのテーマ、論点85（幼保48、介護23、公共施設9、地域5）、項目27、施設13、資料22と表17、出来事3
         o = d["outou"]
         self.assertIn("", o["theme"])
         self.assertEqual(sorted(k for k in o["theme"] if re.fullmatch(r"theme=[a-z]+", k)),
                          ["theme=chiiki", "theme=hoiku", "theme=kaigo", "theme=kokyo"])
         issue = [k for k in o["issue"] if "page" not in k]
-        self.assertEqual(len(issue), 74)
+        self.assertEqual(len(issue), 85)
         self.assertEqual(sorted(k for k in o["event"] if "page" not in k),
                          ["event=konwakai", "event=pabukome", "event=setsumeikai"])
         for k in ("issue=hiyo", "issue=menseki", "issue=teiin", "issue=yochi", "issue=kaigo23", "issue=chiiki05"):
@@ -408,7 +408,7 @@ class TestReal(unittest.TestCase):
         # テーマの応答の論点の一覧（事項の表があるテーマ）：計画の章立ての要素ごとに、章立ての順にまとめ、種類を出す。
         # 記録のある論点は名前と ID、記録の無い論点は、ID を付けずに、まだ入れていないことの文（2026-11-27）
         T = bm.read_notes(self.inp)["hoiku"]
-        self.assertEqual((len(T["topics"]), len(T["junbi"]), len(T["jiko"])), (37, 0, 37))
+        self.assertEqual((len(T["topics"]), len(T["junbi"]), len(T["jiko"])), (48, 0, 48))
         t = "\n".join(self.data["bun"][i] for k, i in sorted(self.data["outou"]["theme"].items())
                       if k.startswith("theme=hoiku&page="))
         s = t.index(f"## {D.bun('mcp-midashi-ronten')}\n")
@@ -420,9 +420,19 @@ class TestReal(unittest.TestCase):
         self.assertEqual(mi[-1], D.bun("ronten-nashi", keikaku=keikaku))
         self.assertEqual(len(mi), 9)
         gyo = [x for x in part.split("\n") if x.startswith("- ")]
-        self.assertEqual(len(gyo), 37)
-        # 生成AIの2回の読み取りの行を入れたので、37の全部に ID がある（2026-11-28）
-        self.assertEqual(sum("（issue：" in x for x in gyo), 37)
+        self.assertEqual(len(gyo), 48)
+        # 生成AIの2回の読み取りの行を入れたので、全部に ID がある（2026-11-28。候補から足した11を含む）
+        self.assertEqual(sum("（issue：" in x for x in gyo), 48)
+        for i in range(37, 48):
+            self.assertIn(f"issue=hoiku{i}", self.data["outou"]["issue"])
+        # 章立てに入らない論点のうち、資料の外のまとまりがあるものは、まとまりの名前の見出しにまとめる（2026-11-28）
+        nashi = part[part.index("### " + D.bun("ronten-nashi", keikaku=keikaku)):]
+        self.assertIn("\n#### 園の安全\n" + D.bun("ronten-matome-setsumei") + "\n", nashi)
+        self.assertEqual([x for x in nashi[nashi.index("#### 園の安全"):].split("\n") if x.startswith("- ")],
+                         ["- 園の施設の修繕と安全対策（issue：hoiku33）　種類：取り組み",
+                          "- 園での感染症対策（issue：hoiku34）　種類：取り組み",
+                          "- 園児の安全対策（issue：hoiku42）　種類：取り組み"])
+        self.assertIn("- 給食のアレルギー対応（issue：hoiku40）　種類：取り組み", gyo)
         self.assertEqual(sum(x.endswith(f"（{D.bun('ronten-mada')}）") for x in gyo), 0)
         self.assertIn("- 新こども園の定員（issue：teiin）　種類：数・時期・場所・費用", gyo)
         self.assertIn("- 保育士等の不足（issue：hoiku17）　種類：課題", gyo)
@@ -487,7 +497,7 @@ class TestReal(unittest.TestCase):
         notes = bm.read_notes(self.inp)
         self.assertEqual(list(notes), ["chiiki", "hoiku", "kaigo", "kokyo"])          # テーマの定義の順
         self.assertEqual({th: len(T["topics"]) for th, T in notes.items()},
-                         dict(hoiku=37, kaigo=23, kokyo=9, chiiki=5))
+                         dict(hoiku=48, kaigo=23, kokyo=9, chiiki=5))
         self.assertEqual({th: len(T["junbi"]) for th, T in notes.items()}, dict(hoiku=0, kaigo=0, kokyo=0, chiiki=0))
         slugs = [slug for T in notes.values() for _, slug, _, _ in T["topics"]]
         self.assertEqual(len(slugs), len(set(slugs)))                                   # ID はテーマをまたいで重ならない
@@ -640,8 +650,8 @@ class TestReal(unittest.TestCase):
                 nb += sum(len(q["paras"]) for q in R["qs"])
         # 4つの論点の合計（確定済みの記録だけのときは、質問16件、関する部分96か所。2026-11-28 に読み取りの行を入れた）
         self.assertEqual((nq, nb), (30, 188))
-        # 試作のページは、幼保の37の論点の全部（確定済みの記録だけのときは、13の論点で121か所）
-        self.assertEqual(sum(int(x) for x in re.findall(r"に関する部分を表示（(\d+)か所）", page)), 2052)
+        # 試作のページは、幼保の48の論点の全部（2026-11-28 に候補から11を足した。37の論点のときは 2052）（確定済みの記録だけのときは、13の論点で121か所）
+        self.assertEqual(sum(int(x) for x in re.findall(r"に関する部分を表示（(\d+)か所）", page)), 2189)
 
     def test_issue_namae(self):
         # 発言者の名前（議員と、答弁した人）を出さない。区分は発言者の役職から決める（委員長の報告は議員の発言）

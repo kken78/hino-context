@@ -168,6 +168,14 @@ def jiko_matome(inp, teigi):
     return keikaku, out
 
 
+def nashi_wake(rows):
+    """章立てに入らない事項の行 → [(まとまりの名前, 行の並び)]。matome が空の行を先に（名前は空）、そのあとに、
+    matome のある行を、まとまりごとに、表で最初に出る順に並べる（SCHEMA.md 7.9、docs/design.md 4節。2026-11-28）。"""
+    out = [("", [r for r in rows if not r.get("matome")])]
+    out += list(jiko.matome_jun(rows).items())
+    return out          # matome が空の行が無くても、見出しのために先頭を残す
+
+
 def _words(cell):
     return [w.strip() for w in re.sub(r"（[^）]*）", "", cell).split("、") if w.strip()]
 
@@ -592,16 +600,21 @@ class Page:
             return "".join(rows[s] for _, s, _, _ in T["topics"]), ""
         keikaku, matome = jiko_matome(self.inp, T)
         out = []
-        for youso, rs in matome:
+        D.dasanai("事項の表 matome")
+        for youso, rs0 in matome:
             mi = S(youso["name"]) if youso else E(D.bun("ronten-nashi", keikaku=keikaku))
             out.append(f"<tr><th colspan='4'>{mi}</th></tr>")
-            for r in rs:
-                shu = E({"kadai": D.kotoba("事項の表 shurui が「kadai」"), "torikumi": D.kotoba("事項の表 shurui が「torikumi」"),
-                         "atai": D.kotoba("事項の表 shurui が「atai」")}[r["shurui"]])
-                if r["aru"]:
-                    out.append(rows[r["id"]].replace("</td>", f"</td><td>{shu}</td>", 1))
-                else:
-                    out.append(f"<tr><td>{E(r['name'])}</td><td>{shu}</td><td colspan='2'>{E(D.bun('ronten-mada'))}</td></tr>")
+            for mt, rs in ([("", rs0)] if youso else nashi_wake(rs0)):
+                if mt:
+                    out.append(f"<tr><th colspan='4'>{E(mt)}</th></tr>"
+                               f"<tr><td colspan='4' class='m'>{E(D.bun('ronten-matome-setsumei'))}</td></tr>")
+                for r in rs:
+                    shu = E({"kadai": D.kotoba("事項の表 shurui が「kadai」"), "torikumi": D.kotoba("事項の表 shurui が「torikumi」"),
+                             "atai": D.kotoba("事項の表 shurui が「atai」")}[r["shurui"]])
+                    if r["aru"]:
+                        out.append(rows[r["id"]].replace("</td>", f"</td><td>{shu}</td>", 1))
+                    else:
+                        out.append(f"<tr><td>{E(r['name'])}</td><td>{shu}</td><td colspan='2'>{E(D.bun('ronten-mada'))}</td></tr>")
         return "".join(out), f"<p class='m'>{E(D.bun('ronten-jiko-setsumei', keikaku=keikaku))}</p>"
 
     def render(self, today):
