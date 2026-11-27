@@ -20,7 +20,9 @@
   (e) docs/design.md 3節の表と、このツールが合わない（tools/build_suji.py の design_problems）
   (f) 過程の記録と施設の記録の quote が、source の資料の本文に無い。資料の名前を作れない（tools/build_theme.py と同じ）
   (g) 施設の割り当てが未確認の行がある（tools/build_theme.py と同じ）
-  (h) 論点の仮の表（teigi/note-<テーマ>.tsv）の検査と、試作のページと同じ検査（tools/build_note.py の collect）
+  (h) 論点の仮の表（teigi/note-<テーマ>.tsv）と事項の表（teigi/jiko.tsv）の検査と、試作のページと同じ検査
+      （tools/build_note.py の jiko_ni_suru と collect）
+  (i) 質問が取り上げた資料と出来事の表（taio/konkyo.tsv）の検査（tools/konkyo.py の check）と、範囲の段落の確認
 """
 import argparse
 import datetime
@@ -39,7 +41,9 @@ import build_suji as bs  # noqa: E402
 import build_theme as bt  # noqa: E402
 import inputs  # noqa: E402
 import keys  # noqa: E402
+import konkyo  # noqa: E402
 import ronten  # noqa: E402
+import shogo  # noqa: E402
 import suji as sj  # noqa: E402
 
 OUT_PATH = os.path.join(inputs.ROOT, "mcp", "data", "outou.json")
@@ -162,6 +166,8 @@ class Tsukuru:
         self.kaisei = bt.Kaisei(tables)
         self.problems = []
         self.note = {}                   # テーマ → (論点の仮の表, build_note.Page)。build で入れる
+        self.konkyo = {}                 # 資料の ID → 質問が取り上げた資料と出来事の表の質問（Page.ronten の qs と同じ形）。build で入れる
+        self.konkyo_pg = {}              # 質問 → 注（Page.chu_list）を引く build_note.Page（その質問があるテーマの Page）
 
     # 資料の名前と url
     def moto(self, key, quote=""):
@@ -223,10 +229,7 @@ class Tsukuru:
                 i = k
             blocks.append(([f"## {E(D.kotoba('テーマの表 shu が「説明の文」'))}"], items))
         if theme in self.note:
-            T = self.note[theme][0]
-            items = ["- " + self.kagi_ji(E(P), "issue", slug) for P, slug, _, _ in T["topics"]]
-            items += ["- " + D.bun("mcp-junbi", name=E(x)) for x in T["junbi"]]
-            blocks.append(([f"## {E(D.bun('mcp-midashi-ronten'))}", E(D.bun("mcp-ronten-setsumei"))], items))
+            blocks += self.ronten_ichiran(theme)
         katei = sorted(ronten.katei(inp, theme), key=lambda r: (r["from"][:7], int(r["step"])))
         items = []
         for r in katei:
@@ -261,8 +264,10 @@ class Tsukuru:
         blocks.append(([f"## {E(D.bun('mcp-midashi-shisetsu'))}"], items))
         docs = sorted((b for b in self.by if th.has(b)), key=lambda b: (self.by[b]["hiduke"] or "9999", b))
         hb = bs.hiduke_bun(D, False, any(self.namae.hiduke_nashi(b) for b in docs))
+        D.kotoba("質問が取り上げた資料と出来事の表 aite")
         blocks.append(([f"## {E(D.bun('mcp-midashi-shiryo'))}", E(D.bun("mcp-shiryo-setsumei")) + E(hb)],
-                       ["- " + self.bunsho_kagi(b) for b in docs]))
+                       ["- " + self.bunsho_kagi(b) + (f"　{E(D.bun('mcp-shiryo-konkyo-ari'))}" if self.konkyo.get(b) else "")
+                        for b in docs]))
         # 項目は、まだテーマと結び付けていない。テーマの表に行があるテーマ（項目を作ったテーマ）にだけ並べ、
         # ほかのテーマに、別のテーマの項目を並べない（docs/design.md 4節）
         teigi = t["suji"] if any(r["theme"] == theme for r in t["theme"]) else []
@@ -270,6 +275,40 @@ class Tsukuru:
             blocks.append(([f"## {E(D.bun('mcp-midashi-teigi'))}", E(D.bun("mcp-teigi-setsumei"))],
                            ["- " + self.teigi_kagi(x) for x in teigi]))
         return Outou(S(name), blocks=blocks)
+
+    def shurui(self, r):
+        """事項の表の shurui → 種類の言葉（docs/design.md 3節）。"""
+        D = self.D
+        return {"kadai": D.kotoba("事項の表 shurui が「kadai」"), "torikumi": D.kotoba("事項の表 shurui が「torikumi」"),
+                "atai": D.kotoba("事項の表 shurui が「atai」")}[r["shurui"]]
+
+    def ronten_ichiran(self, theme):
+        """テーマの応答の、論点のブロックの並び（docs/design.md 4節）。
+        事項の表があるテーマは、計画の章立ての要素ごとにまとめ、種類を出す。記録の無い論点は ID を付けずに、ronten-mada の文を出す。
+        事項の表が無いテーマは、論点の仮の表の論点と準備中の行を、表の順に並べる。"""
+        D = self.D
+        T = self.note[theme][0]
+        midashi = f"## {E(D.bun('mcp-midashi-ronten'))}"
+        if not T.get("jiko"):
+            items = ["- " + self.kagi_ji(E(P), "issue", slug) for P, slug, _, _ in T["topics"]]
+            items += ["- " + D.bun("mcp-junbi", name=E(x)) for x in T["junbi"]]
+            return [([midashi, E(D.bun("mcp-ronten-setsumei"))], items)]
+        keikaku, matome = bn.jiko_matome(self.inp, T)
+        D.dasanai("事項の表 taikei")
+        D.dasanai("事項の表 taikei が「nashi」")
+        out = []
+        for youso, rs in matome:
+            items = []
+            for r in rs:
+                shu = f"{E(D.kotoba('事項の表 shurui'))}：{E(self.shurui(r))}"
+                if r["aru"]:
+                    items.append(f"- {self.kagi_ji(E(r['name']), 'issue', r['id'])}　{shu}")
+                else:
+                    items.append(f"- {E(r['name'])}　{shu}　（{E(D.bun('ronten-mada'))}）")
+            mi = f"### {S(youso['name'])}" if youso else f"### {E(D.bun('ronten-nashi', keikaku=S(keikaku)))}"
+            head = [mi] if out else [midashi, E(D.bun("mcp-ronten-setsumei-jiko", keikaku=S(keikaku))), mi]
+            out.append((head, items))
+        return out
 
     def shisetsu_ichiran(self, theme, th):
         """テーマの施設のうち、facility で返す内容（施設の記録、表の行か列、施設を指す数値）があるもの。
@@ -570,7 +609,7 @@ class Tsukuru:
         hyo = [p for p in self.t["bubun"] if p["bunsho"] == bkey and p["shu"] == sj.HYO]
         intro = [E(D.bun("mcp-shiryo-hani")),
                  E(D.bun("mcp-shiryo-kazu", hyo=len(hyo), atai=len(ar), teigi=len({r["suji"] for r in ar}),
-                         kara=len(kk), e=len(ke))),
+                         kara=len(kk), e=len(ke), q=len(self.konkyo.get(bkey, [])))),
                  f"- {E(D.kotoba('資料の一覧の表 shurui'))}：{E(shurui.get(b['shurui'], b['shurui']))}"]
         if b["konkyo"]:
             kp = D.bun("page", n=sj.page_no(b["konkyo_tokoro"]))
@@ -620,7 +659,14 @@ class Tsukuru:
         if items and any(sj.mikakunin(p) for p in self.t["bubun"] if p["bunsho"] == bkey and p["shu"] == sj.HYO):
             items.append(E(D.bun("mikakunin-hyo")))
         blocks.append(([f"## {E(D.bun('mcp-midashi-hyo-ichiran'))}"], items or nai))
-        return Outou(self.bunsho_kagi(bkey), self.bunsho_intro(bkey), blocks)
+        qs = self.konkyo.get(bkey, [])
+        if not qs:
+            return Outou(self.bunsho_kagi(bkey), self.bunsho_intro(bkey), blocks)
+        # 質問が取り上げた資料と出来事の表（SCHEMA.md 7.10、docs/design.md 4節）。issue の質問のブロックと同じ形
+        D.kotoba("質問が取り上げた資料と出来事の表 hani")
+        return self.gikai(self.bunsho_kagi(bkey), self.bunsho_intro(bkey), blocks, qs, D.bun("mcp-konkyo-short"),
+                          lambda q: self.konkyo_pg.get(q["question"]),
+                          f"## {E(D.bun('mcp-midashi-konkyo', n=len(qs)))}", [], bkey)
 
     def hyo(self, bkey, n):
         """表1つ（tools/build_hyo.py の Hyo）を、行ごとの箇条書きにする。表の形で出せない表は、定型文を返す。"""
@@ -747,8 +793,30 @@ class Tsukuru:
         if R["tome"]:
             blocks.append(([f"## {E(D.bun('mcp-midashi-issue-kongo'))}"],
                            [self.kijutsu(pg, x) for x in R["tome"]] + [E(D.bun("mcp-issue-kongo-setsumei"))]))
+        if R["mokuteki"]:
+            blocks.append(([f"## {E(D.kotoba('つながりの記録 link が「目的と手段」'))}", E(D.bun("mokuteki-setsumei"))],
+                           [self.mokuteki(a) for a in R["mokuteki"]]))
         qs = R["qs"]
-        gikai = f"## {E(D.bun('mcp-midashi-issue-gikai', n=len(qs)))}"
+        return self.gikai(self.kagi_ji(E(P), "issue", slug), intro, blocks, qs, short, lambda q: pg,
+                          f"## {E(D.bun('mcp-midashi-issue-gikai', n=len(qs)))}", self.issue_hani(theme), slug)
+
+    def mokuteki(self, a):
+        """つながりの記録の相手1つ（Page.ronten の mokuteki の1つ）→ 項目。相手の名前のあとに、issue があれば ID を付ける。"""
+        D = self.D
+        yaku = D.kotoba("つながりの記録 upper") if a["gawa"] == "upper" else D.kotoba("つながりの記録 lower")
+        name = self.kagi_ji(E(a["name"]), "issue", a["slug"]) if a["slug"] else E(a["name"])
+        lines = [f"- {E(yaku)}：{name}"]
+        for r in a["rows"]:
+            nm, url = self.moto(r["source"], r["quote"])
+            lines += [f"  - {E(D.kotoba('つながりの記録 quote'))}：「{S(r['quote'])}」",
+                      f"    - {E(D.kotoba('つながりの記録 source'))}：{nm}" + (f"　{E(url)}" if url else "")]
+        return "\n".join(lines)
+
+    def gikai(self, title, intro, blocks, qs, short, pg_of, gikai, hani, ji):
+        """議会での質問と答弁のブロック（issue と document で共通。docs/design.md 4節）。1回めの応答に質問の一覧を出し、
+        質問ごとの部分を、続きの応答で返す。pg_of は、質問 → 注（Page.chu_list）を引く build_note.Page（無ければ None）。
+        hani は、扱っている質問の範囲の文の並び。ji は、検査の問題に出す字。"""
+        D, inp = self.D, self.inp
         zentai = E(D.bun("mcp-issue-zentai"))
 
         def shitsumon(q):
@@ -765,10 +833,12 @@ class Tsukuru:
         for q in qs:
             head = [gikai, f"### {shitsumon(q)}　{bubun(q)}", f"{zentai}：{E(keys.source_url(inp, q['question']))}"]
             items = []
+            pg = pg_of(q)
             for sid, i, para in q["paras"]:
                 nm = self.namae.shiryo("sp:" + sid)[0]
                 lines = [f"- 「{S(para)}」", f"  - {nm}　{E(D.bun('danraku', n=i))}"]
-                lines += self.chu_gyo(pg, "sp:" + sid, para, "  ")
+                if pg is not None:
+                    lines += self.chu_gyo(pg, "sp:" + sid, para, "  ")
                 lines.append(self.url_gyo(keys.search_url(sid, i), "  - "))
                 items.append("\n".join(lines))
             tsuzuki.append((head, items, True))
@@ -779,8 +849,8 @@ class Tsukuru:
             setsumei = [E(D.bun("mcp-issue-gikai-setsumei", short=E(short)))]
             if qs:
                 setsumei.append(E(D.bun("mcp-issue-gikai-tsuzuki", short=E(short))))
-            items += [E(D.bun("mcp-issue-keisai", short=E(short)))] + self.issue_hani(theme) + [E(D.bun("mcp-issue-owari"))]
-            return Outou(self.kagi_ji(E(P), "issue", slug), intro, blocks + [([gikai] + setsumei, items)] + tsuzuki)
+            items += [E(D.bun("mcp-issue-keisai", short=E(short)))] + list(hani) + [E(D.bun("mcp-issue-owari"))]
+            return Outou(title, intro, blocks + [([gikai] + setsumei, items)] + tsuzuki)
 
         # 続きの番号は、分けてみるまで分からないので、仮の番号で分けてから、その番号で作り直す
         o = tsukuru([99] * len(qs))
@@ -789,7 +859,7 @@ class Tsukuru:
         o = tsukuru(bango)
         o.pages(self.D)
         if o.hajime != bango:
-            self.problems.append(("(h) 論点", f"{slug}：続きの番号が、作り直すと変わる（{bango} → {o.hajime}）"))
+            self.problems.append(("(h) 論点", f"{ji}：続きの番号が、作り直すと変わる（{bango} → {o.hajime}）"))
         return o
 
     # ツールの説明
@@ -878,7 +948,7 @@ def read_notes(inp):
     for theme in theme_jun(inp):
         path = os.path.join(NOTE_DIR, "note-" + theme + ".tsv")
         if os.path.exists(path):
-            out[theme] = bn.read_teigi(path, theme)
+            out[theme] = bn.jiko_ni_suru(inp, bn.read_teigi(path, theme), theme)
     return out
 
 
@@ -887,10 +957,43 @@ def theme_jun(inp):
     return list(dict.fromkeys(r["theme"] for r in inp.ronten_tsv(ronten.THEMES)))
 
 
-def build(inp, tables, kotoba, read_problems=(), design=None, skill=None, notes=None):
+def konkyo_problems(inp, tk, tables, rows):
+    """質問が取り上げた資料と出来事の表の行を検査し、資料の ID ごとに質問を tk.konkyo に入れる。→ 問題の並び。
+    質問の題は、その質問があるテーマの定義の行から取り、注は、そのテーマの Page から引く。"""
+    bunsho = {r["bunsho"] for r in tables["bunsho"]}
+    problems = [("(i) 質問が取り上げた資料", m) for m in konkyo.check(rows, bunsho)]
+    qsrc, qtheme = {}, {}
+    for r in inp.ronten_tsv(ronten.THEMES):
+        if r["kind"] in ("問い", "質疑"):
+            qsrc.setdefault(r["value"], r["source"])
+            qtheme.setdefault(r["value"], r["theme"])
+    pres = shogo.check_paras(inp, [dict(where=f"質問が取り上げた資料 {r['question']} / {r['aite']}", hani=r["hani"])
+                                   for r in rows])
+    for m in pres.mismatched:
+        problems.append(("(i) 質問が取り上げた資料", f"{m['where']}：{m['reason']}（{m['source']}）"))
+    if problems:
+        return problems
+    for r in rows:
+        q = r["question"]
+        if q not in qsrc:
+            problems.append(("(i) 質問が取り上げた資料", f"{q}：どのテーマの定義の問い・質疑にも無い"))
+            continue
+        who, dai = bn.qhead_parts(qsrc[q])
+        paras = [(sid, i, inputs.paragraphs(inp.statement_text(sid))[i - 1]) for sid, i in keys.paras_of(r["hani"])]
+        tk.konkyo.setdefault(r["aite"], []).append(dict(question=q, date=bn.qdate(q), sitsugi=q.startswith("sq:"),
+                                                       who=who, dai=dai, paras=paras))
+        if qtheme[q] in tk.note:
+            tk.konkyo_pg[q] = tk.note[qtheme[q]][1]
+    for b in tk.konkyo:
+        tk.konkyo[b].sort(key=lambda x: x["date"], reverse=True)
+    return problems
+
+
+def build(inp, tables, kotoba, read_problems=(), design=None, skill=None, notes=None, konkyo_rows=None):
     """検査を通れば、応答の JSON（辞書）と件数を返す。当たれば Stop。
 
     tables は tools/build_theme.py の read_tables で読んだもの。notes は read_notes で読んだもの（None なら読む）。
+    konkyo_rows は taio/konkyo.tsv の行（None なら読む）。
     """
     D = design or bs.read_design()
     problems = [("(e) デザインシステムとの対応", m) for m in design_problems(D)]
@@ -905,6 +1008,7 @@ def build(inp, tables, kotoba, read_problems=(), design=None, skill=None, notes=
     tk = Tsukuru(D, inp, tables)
     # テーマは、テーマの表（teigi/theme.tsv）に行があるテーマと、論点の仮の表があるテーマ（docs/design.md 4節。2026-11-27）
     notes = read_notes(inp) if notes is None else notes
+    konkyo_rows = konkyo.read() if konkyo_rows is None else konkyo_rows
     themes = list(dict.fromkeys([r["theme"] for r in tables["theme"]] + list(notes)))
     tk._hyo, tk._hk, ths, kiroku, katei_dasanai = {}, {}, {}, [], []
     for theme in themes:
@@ -945,6 +1049,8 @@ def build(inp, tables, kotoba, read_problems=(), design=None, skill=None, notes=
         model, more, _ = bn.collect(inp, T, theme)
         problems += more
         tk.note[theme] = (T, bn.Page(inp, T, model))
+    # (i) 質問が取り上げた資料と出来事の表
+    problems += konkyo_problems(inp, tk, tables, konkyo_rows)
     slugs = [slug for T, _ in tk.note.values() for _, slug, _, _ in T["topics"]]
     problems += [("(h) 論点", f"論点の ID {x} が、2つ以上のテーマにある") for x in sorted({x for x in slugs if slugs.count(x) > 1})]
     if problems:

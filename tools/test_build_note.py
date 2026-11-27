@@ -180,9 +180,10 @@ class TestTeigi(unittest.TestCase):
 
     def test_real_table(self):
         t = bn.read_teigi(os.path.join(inputs.ROOT, "teigi", "note-hoiku.tsv"), "hoiku")
+        # 資料の3つ（hoiku07、hoiku09、hoiku12）と準備中の行は、事項の表にしたので除いた（2026-11-27）
         self.assertEqual([x[1] for x in t["topics"]],
-                         ["hiyo", "menseki", "yochi", "teiin"] + [f"hoiku{i:02d}" for i in range(1, 13)])
-        self.assertEqual(t["junbi"], ["小規模保育施設の整備", "幼児教育・保育の課題（保育士の不足、園舎の老朽化など）"])
+                         ["hiyo", "menseki", "yochi", "teiin"] + [f"hoiku{i:02d}" for i in range(1, 12) if i not in (7, 9)])
+        self.assertEqual(t["junbi"], [])
 
 
 def git(cwd, *args):
@@ -284,7 +285,8 @@ class TestReal(unittest.TestCase):
         cls.inp = real_inputs()
         if cls.inp is None:
             raise unittest.SkipTest("lock の版の入力が無い")
-        cls.teigi = bn.read_teigi(os.path.join(inputs.ROOT, "teigi", "note-hoiku.tsv"), "hoiku")
+        cls.teigi = bn.jiko_ni_suru(cls.inp, bn.read_teigi(os.path.join(inputs.ROOT, "teigi", "note-hoiku.tsv"), "hoiku"),
+                                    "hoiku")
         cls.kotoba = bn.read_kotoba()
 
     def build(self, inp, t=None):
@@ -294,10 +296,50 @@ class TestReal(unittest.TestCase):
         _, info = self.build(self.inp)
         self.assertEqual([(n, k) for _, n, k in info["counts"]],
                          [(13, 5), (9, 4), (8, 4), (6, 3), (2, 0), (3, 0), (12, 0), (2, 0),
-                          (0, 1), (0, 1), (0, 1), (0, 4), (0, 1), (0, 1), (0, 3), (0, 1)])
+                          (0, 1), (0, 1), (0, 4), (0, 1), (0, 3)])
         self.assertEqual(info["questions"], 7)
         self.assertEqual(info["quotes"].mismatched, [])
         self.assertEqual(info["paras"].mismatched, [])
+
+    def test_jiko(self):
+        """事項の表から作る論点の一覧（SCHEMA.md 7.9）：記録のある13の論点にページを作り、記録の無い24は、一覧に名前と
+        種類と、まだ入れていないことの文を出す。資料の3つ（提言、計画（案）、基本構想）は論点にしない。"""
+        T = self.teigi
+        self.assertEqual(len(T["jiko"]), 37)
+        self.assertEqual(sum(r["aru"] for r in T["jiko"]), 13)
+        for P in ("子育て環境の未来に向けての提言", "日野町幼児教育保育施設再編整備計画（案）", "日野町認定こども園整備基本構想"):
+            self.assertNotIn(P, [x[0] for x in T["topics"]])
+        page, _ = self.build(self.inp)
+        top = page[page.index("<section id='top'"):page.index("</section>")]
+        self.assertEqual(top.count("議会での質問と町の資料の記述は、まだ入れていません</td>"), 24)
+        self.assertIn("<th colspan='4'>日野町幼児教育保育施設再編整備計画の章立てに入らない論点</th>", top)
+        self.assertLess(top.index("３ 計画の期間"), top.index("７ 日野町の幼児教育・保育をめぐる課題"))
+        # 目的と手段（両端が事項の表にある、入力の確定済みの組）
+        sec = page[page.index("<section id='hoiku10'"):]
+        sec = sec[:sec.index("</section>")]
+        self.assertIn("<h2>目的と手段</h2>", sec)
+        self.assertEqual(sec.count("<td>手段：<a href='#hoiku08'>幼保連携型認定こども園の新設</a></td>"), 3)
+        self.assertEqual(sec.count("<td>手段：<a href='#hoiku11'>幼児教育保育施設の再編整備</a></td>"), 1)
+        sec = page[page.index("<section id='hoiku08'"):]
+        self.assertIn("<td>目的：<a href='#hoiku10'>適正な集団規模の確保</a></td>", sec[:sec.index("</section>")])
+        sec = page[page.index("<section id='hiyo'"):]
+        self.assertNotIn("目的と手段", sec[:sec.index("</section>")])
+
+    def test_jiko_stop(self):
+        # 仮の表の論点の key が事項の表に無いか、name が違う。準備中の行がある。どちらも止まる
+        import copy
+        t = bn.read_teigi(os.path.join(inputs.ROOT, "teigi", "note-hoiku.tsv"), "hoiku")
+        for f in (lambda t: t["topics"].append(("無い論点", "nai", "無い", "無い")),
+                  lambda t: t["topics"].__setitem__(0, ("違う名前",) + t["topics"][0][1:]),
+                  lambda t: t["junbi"].append("準備中の論点")):
+            x = copy.deepcopy(t)
+            f(x)
+            with self.assertRaises(inputs.InputError):
+                bn.jiko_ni_suru(self.inp, x, "hoiku")
+        # 事項の表に行が無いテーマは、そのまま
+        x = copy.deepcopy(t)
+        self.assertIsNone(bn.jiko_ni_suru(self.inp, x, "kaigo", rows=[])["jiko"])
+        self.assertEqual(x["topics"], t["topics"])
 
     def first_point_row(self, path, rows, col, f):
         r = next(r for r in rows if r["status"] == "confirmed" and r.get("point") == "新こども園の面積")
