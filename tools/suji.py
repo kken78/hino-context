@@ -388,7 +388,7 @@ def check_atai(rows, suji_ids):
                 keys.parse(r["shiryo"])
                 key_ok = True
             except keys.KeyFormError as e:
-                out.append(Mondai(ATAI_NAME, n, f"shiryo の{e}"))
+                out.append(Mondai(ATAI_NAME, n, f"shiryo の {e}"))
         if r["inyo"].strip():
             if not r["shiryo"].strip():
                 out.append(Mondai(ATAI_NAME, n, "inyo があるが、shiryo が空"))
