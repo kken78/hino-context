@@ -167,10 +167,34 @@ def jiko_ni_suru(inp, teigi, theme, rows=None, shudai=None):
     names = {r["name"] for r in rows}
     aru = {r["point"] for r in ronten.kotogara(inp, names)} | (ronten.taio_points(inp, qs) & names)
     teigi["shudai"] = shudai_of(theme, rows, shudai)    # 生成AIの2回の読み取りの行（SCHEMA.md 7.10）
+    teigi["kihon"] = set()
+    if jiko.is_bunya(theme):
+        # 総合計画の分野のテーマ：基本施策そのものの行には、この分野のほかの論点に入らない段落だけを残す（SCHEMA.md 7.9。2026-11-28）
+        teigi["kihon"] = jiko.kihon_gyo(rows, jiko.kihon_names_of(inp))
+        teigi["shudai"] = kihon_nokori(teigi["shudai"], teigi["kihon"], theme)
     aru |= {r["point"] for r in teigi["shudai"]}
     teigi["jiko"] = [dict(r, aru=r["name"] in aru) for r in rows]
     teigi["topics"] = [(r["name"], r["id"]) + nagai.get(r["id"], (r["name"], r["name"])) for r in rows if r["name"] in aru]
     return teigi
+
+
+def kihon_nokori(rows, kihon, theme):
+    """質問と事項の対応の表の行（point 付き）→ 基本施策そのものの行（事項の ID が kihon にある行）の段落から、同じ質問で、
+    この分野（theme）で読んだ、ほかの論点の行にある段落を除いた行の並び（SCHEMA.md 7.9。2026-11-28）。段落が残らない行は除く。
+    ほかの行は、そのまま。"""
+    komakai = {}
+    for r in rows:
+        if r["theme"] == theme and r["jiko"] not in kihon:
+            komakai.setdefault(r["question"], set()).update(keys.paras_of(r["hani"]))
+    out = []
+    for r in rows:
+        if r["jiko"] in kihon:
+            ps = [p for p in keys.paras_of(r["hani"]) if p not in komakai.get(r["question"], ())]
+            if not ps:
+                continue
+            r = dict(r, hani=ym.matomeru(ps))
+        out.append(r)
+    return out
 
 
 def jiko_matome(inp, teigi):
@@ -317,9 +341,15 @@ def collect(inp, teigi, theme):
     problems = []
     yomi = teigi.get("shudai") or [] if teigi.get("jiko") else []
     points |= {r["point"] for r in yomi}
+    hoka_src = {}
+    for r in inp.ronten_tsv(ronten.THEMES):
+        if r["kind"] in ("問い", "質疑"):
+            hoka_src.setdefault(r["value"], r["source"])
     for q in dict.fromkeys(r["question"] for r in yomi):
         if q not in qsrc:
-            qsrc[q] = ippan_src(inp, q)       # テーマの定義に無い質問の、議員の名前と題名（題は dai_of で選ぶ）
+            # テーマの定義に無い質問の、議員の名前と題名（題は dai_of で選ぶ）。一般質問の台帳に無い質問（ほかのテーマの定義の
+            # 問いの2つめなど。総合計画の分野の論点に、テーマの論点を入れたときに出る。2026-11-28）は、ほかのテーマの定義の行から
+            qsrc[q] = ippan_src(inp, q) or hoka_src.get(q, "")
     for P, *_ in teigi["topics"]:
         if P not in points:
             problems.append(("定義", f"論点「{P}」が、hino-ronten の題材 {theme} の事柄に無く、"

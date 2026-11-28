@@ -30,10 +30,16 @@ class TestParts(unittest.TestCase):
         # 2回とも付けた段落は一致の行、片方だけの段落は、読み手ごとの1回だけの行。片方だけが付けた組は1回だけの行だけ
         rows = [gyo("a", "P", f"sp:{S}/1-3", "1"), gyo("b", "P", f"sp:{S}/2-4"), gyo("b", "R", f"sp:{S}/7")]
         out = ym.kumi_gyo(rows, "point", lambda x, q: x)
-        self.assertEqual(out, [(Q, "P", f"sp:{S}/2-3", "一致", "", "a", ""),
-                               (Q, "P", f"sp:{S}/1", "1回だけ", "a", "a", ""),
-                               (Q, "P", f"sp:{S}/4", "1回だけ", "b", "a", ""),
-                               (Q, "R", f"sp:{S}/7", "1回だけ", "b", "", "")])
+        self.assertEqual(out, [(Q, "", "P", f"sp:{S}/2-3", "一致", "", "a", ""),
+                               (Q, "", "P", f"sp:{S}/1", "1回だけ", "a", "a", ""),
+                               (Q, "", "P", f"sp:{S}/4", "1回だけ", "b", "a", ""),
+                               (Q, "", "R", f"sp:{S}/7", "1回だけ", "b", "", "")])
+        # 分野の読み取りの行（題の番号 n がある。SCHEMA.md 7.10。2026-11-28）は、質問と題の番号と相手の組ごとに行を作る
+        rows = [dict(gyo("a", "P", f"sp:{S}/1-2"), n="1"), dict(gyo("b", "P", f"sp:{S}/2"), n="1"),
+                dict(gyo("b", "P", f"sp:{S}/5"), n="2")]
+        self.assertEqual(ym.kumi_gyo(rows, "point", lambda x, q: x),
+                         [(Q, "1", "P", f"sp:{S}/2", "一致", "", "", ""), (Q, "1", "P", f"sp:{S}/1", "1回だけ", "a", "", ""),
+                          (Q, "2", "P", f"sp:{S}/5", "1回だけ", "b", "", "")])
         self.assertEqual(ym.chu_of("a", "a、b"), "読み手 a だけが付けた。迷いの印：読み手 a、b")
         self.assertEqual(ym.chu_of("", "", "b"), "候補の名前から入れた段落がある：読み手 b")
         # 質問の読み取りについての注（taio/yomi-<テーマ>/chu.tsv）は、最後に足す
@@ -60,9 +66,9 @@ class TestParts(unittest.TestCase):
         y2 = ym.kouho_ni_ireru(yomi, kr, jr)
         self.assertEqual([r["aite"] for r in y2["konkyo"]], ["提言"])
         out = ym.kumi_gyo(y2["shudai"], "point", lambda x, q: x)
-        self.assertEqual(out, [(Q, "P", f"sp:{S}/2", "一致", "", "", "b"),
-                               (Q, "P", f"sp:{S}/1,sp:{S}/7", "1回だけ", "a", "", "a"),
-                               (Q, "P", f"sp:{S}/3,sp:{S}/6", "1回だけ", "b", "", "b")])
+        self.assertEqual(out, [(Q, "", "P", f"sp:{S}/2", "一致", "", "", "b"),
+                               (Q, "", "P", f"sp:{S}/1,sp:{S}/7", "1回だけ", "a", "", "a"),
+                               (Q, "", "P", f"sp:{S}/3,sp:{S}/6", "1回だけ", "b", "", "b")])
         # 表に無い候補の名前、読み取りに無い名前の行、saki が合わない行、atsukai が違う行は止まる
         bad = ym.check_kouho(kr[1:] + [dict(namae="候補5", atsukai="事項に入れる", saki="x9", chu=""),
                                        dict(namae="候補6", atsukai="あとで", saki="", chu="")],
@@ -128,7 +134,17 @@ class TestRepo(unittest.TestCase):
             raise unittest.SkipTest("lock の版の入力が無い")
         self.assertEqual(ym.main(["--kensa"]), 0)
         rows = ym.read()
-        self.assertEqual(ym.themes(), ["hoiku", "kaigo", "kokyo", "chiiki"])
+        # 総合計画の分野の読み取り（2026-11-28）の30の分野は、4つのテーマのあとに、分野の番号の順に並ぶ
+        bunya = ["b02", "b03", "b04", "b05", "b06", "b07", "b08", "b09", "b10", "b11", "b12", "b13", "b14", "b15", "b16",
+                 "b17", "b19", "b20", "b21", "b22", "b23", "b24", "b25", "b26", "b27", "b28", "b29", "b31", "b33", "b34"]
+        self.assertEqual(ym.themes(), ["hoiku", "kaigo", "kokyo", "chiiki"] + bunya)
+        self.assertEqual(len(rows), 7143)
+        bu_rows = [r for r in rows if ym.jiko.is_bunya(r["theme"])]
+        self.assertEqual((len(bu_rows), sum(r["yomi"] == "一致" for r in bu_rows)), (5730, 2953))
+        self.assertTrue(all(r["n"] for r in bu_rows))
+        # 4つのテーマの行は、分野の読み取りを入れる前と同じ（題の番号の列 n は空）
+        rows = [r for r in rows if not ym.jiko.is_bunya(r["theme"])]
+        self.assertTrue(all(r["n"] == "" for r in rows))
         self.assertEqual(len(rows), 1413)
         self.assertEqual(sum(r["yomi"] == "一致" for r in rows), 727)
         # 行はテーマの順に並ぶ（2回めの読み取り（2026-11-28）のあと。前は、幼保484行、介護144行、公共施設232行、
@@ -145,10 +161,10 @@ class TestRepo(unittest.TestCase):
         self.assertTrue(all(r["theme"] in th[r["jiko"]] for r in rows))
         # 1つの質問を2つのテーマで読んだもの（28問。2回めの読み取りの前は12問）。同じ質問と事項の組に、2つのテーマの
         # 読み取りの行があるのは12組（前は6組）で、どれも公共施設の再編と地域のあり方に共通の事項
-        self.assertEqual(sum(len(x) > 1 for x in ym.shitsumon_theme().values()), 28)
+        self.assertEqual(sum(len([t for t in x if not ym.jiko.is_bunya(t)]) > 1 for x in ym.shitsumon_theme().values()), 28)
         f2 = ym.futatsu(rows, "jiko")
         self.assertEqual(len(f2), 12)
-        self.assertTrue(all(th[j] == ["kokyo", "chiiki"] for _, j in f2))
+        self.assertTrue(all([t for t in th[j] if not ym.jiko.is_bunya(t)] == ["kokyo", "chiiki"] for _, j in f2))
         # 介護の2026年3月10日の質問（除雪・除草）は、読んだが、当たる論点が無かった（SKILL.md 4.4 の G5）。
         # 同じ質問を地域のあり方でも読み、地域のあり方の論点に付いた
         self.assertEqual(ym.nashi_shitsumon("kaigo", rows), ["iq:0000008942_20260310_0029"])
@@ -159,6 +175,10 @@ class TestRepo(unittest.TestCase):
         q7 = "iq:0000008691_20251212_0378"
         self.assertTrue(all("読み手 a の結果のファイルを画面に出した" in r["chu"] for r in rows if r["question"] == q7))
         self.assertTrue(any(r["question"] == q7 for r in rows))
+        # 分野の読み取りの束は、質問と題の番号の並び。題は、どれかの論点に関する部分がある
+        self.assertEqual(len(ym.dai("b25")), 46)
+        self.assertEqual(ym.nashi_dai("b25"), [])
+        self.assertEqual(ym.dai("hoiku")[0][1], "")
 
 
 if __name__ == "__main__":

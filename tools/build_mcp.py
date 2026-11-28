@@ -867,7 +867,17 @@ class Tsukuru:
         D, inp = self.D, self.inp
         T, pg = self.note[theme]
         R = pg.ronten(P)
-        intro = [D.bun("mcp-issue-lead", theme=E(T["theme"]), setsumei=E(setsumei))]
+        if jiko.is_bunya(theme):
+            # 総合計画の分野の論点（SCHEMA.md 7.9。2026-11-28）。テーマの名前は、分野の番号と名前（入力の字）
+            intro = [D.bun("mcp-issue-lead", theme=S(T["theme"]), setsumei=E(setsumei))]
+            if slug in T["kihon"]:
+                intro.append(D.bun("mcp-issue-kihon", keikaku=S(self.bu["kk"]["name"])))
+            hani = self.issue_hani_bunya(theme)
+        else:
+            intro = [D.bun("mcp-issue-lead", theme=E(T["theme"]), setsumei=E(setsumei))]
+            hani = self.issue_hani(theme)
+            if any(r["point"] == P and jiko.is_bunya(r["theme"]) for r in pg.m.get("yomi", [])):
+                hani = hani + [D.bun("mcp-issue-hani-bunya-hoka", keikaku=S(self.bu["kk"]["name"]))]
         blocks = [([f"## {E(D.bun('mcp-midashi-issue-shiryo'))}"],
                    [self.kijutsu(pg, x, False) for x in R["docs"]] or [E(D.bun("mcp-issue-shiryo-nashi"))])]
         items = [self.kijutsu(pg, x) for x in R["ko"]]
@@ -880,7 +890,20 @@ class Tsukuru:
                            [self.mokuteki(a) for a in R["mokuteki"]]))
         qs = R["qs"]
         return self.gikai(self.kagi_ji(E(P), "issue", slug), intro, blocks, qs, short, lambda q: pg,
-                          f"## {E(D.bun('mcp-midashi-issue-gikai', n=len(qs)))}", self.issue_hani(theme), slug)
+                          f"## {E(D.bun('mcp-midashi-issue-gikai', n=len(qs)))}", hani, slug)
+
+    def issue_hani_bunya(self, theme):
+        """総合計画の分野の論点の、読んだ題の範囲の文（docs/design.md 4節。2026-11-28）。数はデータから数える。"""
+        D = self.D
+        dai = ym.dai(theme)
+        ym_ = sorted(q.split("_")[1][:6] for q, _ in dai)
+        a, z = (D.bun("nengetsu", nen=int(x[:4]), tsuki=int(x[4:])) for x in (ym_[0], ym_[-1]))
+        out = [D.bun("mcp-issue-hani-bunya", keikaku=S(self.bu["kk"]["name"]), bunya=S(self.note[theme][0]["theme"]),
+                     n=len(dai), kikan=E(a if a == z else D.bun("kikan", a=a, z=z)))]
+        nashi = ym.nashi_dai(theme, self.yomi_rows)
+        if nashi:
+            out.append(E(D.bun("mcp-issue-hani-bunya-nashi", n=len(nashi))))
+        return out
 
     def mokuteki(self, a):
         """つながりの記録の相手1つ（Page.ronten の mokuteki の1つ）→ 項目。相手の名前のあとに、issue があれば ID を付ける。"""
@@ -1006,7 +1029,9 @@ class Tsukuru:
             items.append(f"{E(D.kotoba('資料の一覧の表 namae と、shiryo のページ'))}：{self.bunsho_kagi(kk['id'])}"
                          f"　{E(D.bun('page', n=pp))}　{E(keys.source_url(inp, t[0]))}")
             blocks.append(([f"## {S(x['midashi'])}"], items))
+            blocks += self.field_ronten(fid)
             blocks += self.kensho_bunya(fid)
+            blocks += self.field_event(fid)
         else:
             name = next(n for i, n in m["wadai"] if i == fid)
             title = self.wadai_kagi(name)
@@ -1015,6 +1040,75 @@ class Tsukuru:
         blocks.append(([f"## {E(D.bun('bunya-midashi-dai', n=len(dai)))}", E(D.bun("bunya-dai-setsumei"))],
                        [self.field_dai(fid, k) for k in dai]))
         return Outou(title, intro, blocks)
+
+    def field_ronten(self, fid):
+        """field に分野の番号：論点を基本施策ごとに並べたブロックの並び（docs/design.md 4節の field の8。2026-11-28）。"""
+        D = self.D
+        kei = S(self.bu["kk"]["name"])
+        D.dasanai("事項の表 kihon")
+        yonda, secs = bb.ronten_ichiran(self.bu, fid, self.note, self.bunya_ronten)
+        midashi = f"## {E(D.bun('mcp-midashi-ronten'))}"
+        if not yonda:
+            out = []
+            for _, t, ps in secs:
+                head = [f"### {S(bt.Theme(self.inp, t).namae[0])}"]
+                if not out:
+                    head = [midashi, E(D.bun("mcp-ronten-bunya-yomanai"))] + head
+                out.append((head, ["- " + self.kagi_ji(E(P), "issue", slug) for P, slug in ps]))
+            return out
+        out = []
+        for kind, mi, rs in secs:
+            if kind == "kihon":
+                jishin, subs = rs[0], rs[1:]
+                head = [f"### {S(mi[0] + mi[1])}"]
+                items = [self.kihon_item(jishin)] if jishin else []
+                for mt, xs in subs:
+                    if not mt:
+                        items += [self.ronten_item(r) for r in xs]
+                out.append((head, items))
+                out += [([f"#### {E(mt)}", E(D.bun("ronten-matome-setsumei"))], [self.ronten_item(r) for r in xs])
+                        for mt, xs in subs if mt and xs]
+            elif kind == "nashi":
+                head = [f"### {E(D.bun('ronten-kihon-nashi', keikaku=kei))}"]
+                for mt, xs in rs:
+                    if mt:
+                        out.append((head + [f"#### {E(mt)}", E(D.bun("ronten-matome-setsumei"))],
+                                    [self.ronten_item(r) for r in xs]))
+                    else:
+                        out.append((head + ([f"#### {E(D.bun('ronten-matome-nashi'))}"] if len(rs) > 1 else []),
+                                    [self.ronten_item(r) for r in xs]))
+                    head = []
+            elif kind == "theme":
+                out.append(([f"### {E(D.bun('ronten-theme-ronten'))}", E(D.bun("ronten-theme-ronten-setsumei"))],
+                            [self.ronten_item(r) + "　" + D.bun("ronten-theme-mei", theme=S(self.theme_namae(r)))
+                             for r in rs]))
+            else:
+                out.append(([f"### {E(mi)}", E(D.bun("ronten-matome-setsumei"))], [self.ronten_item(r) for r in rs]))
+        out[0] = ([midashi, D.bun("mcp-ronten-setsumei-bunya", keikaku=kei)] + out[0][0], out[0][1])
+        return out
+
+    def theme_namae(self, r):
+        """事項の行の theme の列の、分野でない最初のテーマの名前（テーマの定義の字）。"""
+        t = next(t for t in jiko.themes_of(r) if not jiko.is_bunya(t))
+        return bt.Theme(self.inp, t).namae[0]
+
+    def kihon_item(self, r):
+        """基本施策そのものの事項の行 → field の応答の、論点の項目の行（docs/design.md 4節の field の8）。"""
+        D = self.D
+        if r["aru"]:
+            return f"- {self.kagi_ji(E(r['name']), 'issue', r['id'])}　{E(D.bun('ronten-kihon-jishin'))}"
+        return f"- {E(r['name'])}　（{E(D.bun('ronten-mada'))}）"
+
+    def field_event(self, fid):
+        """field に分野の番号：質問が取り上げた出来事のブロック（theme の応答と同じ形。2026-11-28）。"""
+        D = self.D
+        th = jiko.bunya_theme(fid)
+        ev = [(k, r, qs) for k, (r, qs, _) in self.event.items() if r["theme"] == th]
+        if not ev:
+            return []
+        return [([f"## {E(D.kotoba('資料と出来事の名前の表 shu が「出来事」'))}", E(D.bun("mcp-dekigoto-setsumei"))],
+                 [f"- {self.event_kagi(k)}　{E(D.bun('mcp-dekigoto-kazu', n=len([q for q in qs if q['theme'] == th])))}"
+                  for k, r, qs in ev])]
 
     def field_dai(self, fid, k):
         """題1つ → 項目。日付と題、その分野（話題）の読み、ほかに付いた分野と話題、論点（tools/bunya.py の ronten_of_dai）、会議録の URL。"""
@@ -1211,8 +1305,15 @@ class Tsukuru:
         fa_erabu = list(dict.fromkeys(k for th in themes for k in self.shisetsu_ichiran(th, bt.Theme(self.inp, th))))
         b_erabu = list(self.by)
         hyo_erabu = [f"{p['bunsho']} {p['n']}" for p in self.t["bubun"] if p["shu"] == sj.HYO]
-        is_namae = {slug: P for T, _ in self.note.values() for P, slug, _, _ in T["topics"]}
+        is_namae, is_th = {}, {}
+        for th, (T, _) in self.note.items():
+            for P, slug, _, _ in T["topics"]:
+                is_namae.setdefault(slug, P)
+                is_th.setdefault(slug, th)
         is_erabu = list(is_namae)
+        # 引数の説明に並べるのは、テーマの論点と出来事だけ。総合計画の分野の論点と出来事の ID は、field の応答にある（2026-11-28）
+        is_setsumei = [k for k in is_erabu if not jiko.is_bunya(is_th[k])]
+        ev_setsumei = [k for k in self.event if not jiko.is_bunya(self.event[k][0]["theme"])]
         fi_erabu = list(self.bu["bunya"]) + [i for i, _ in self.bu["wadai"]]
         fi_mei = {i: n for i, n in self.bu["wadai"]}
         rv_erabu = list(self.ks["tori"])
@@ -1235,7 +1336,7 @@ class Tsukuru:
                     "mcp-hikisu-theme", erabu=namae_tsuki(th_erabu, lambda k: S(bt.Theme(self.inp, k).namae[0]))))))]),
             "issue": (owari(E(D.bun("mcp-tool-issue"))), [
                 dict(name="issue", type="string", required=True, erabu=is_erabu, description=owari(E(D.bun(
-                    "mcp-hikisu-issue", erabu=namae_tsuki(is_erabu, lambda k: E(is_namae[k]))))))]),
+                    "mcp-hikisu-issue", erabu=namae_tsuki(is_setsumei, lambda k: E(is_namae[k]))))))]),
             "item": (owari(E(D.bun("mcp-tool-suji"))), [
                 dict(name="item", type="string", required=True, erabu=id_erabu, description=owari(E(D.bun(
                     "mcp-hikisu-id", erabu=namae_tsuki(id_erabu, lambda k: E(self.teigi[k]["name"])))))),
@@ -1248,7 +1349,7 @@ class Tsukuru:
                     "mcp-hikisu-key", erabu=namae_tsuki(fa_erabu, lambda k: S(self.ref[k]["name"]))))))]),
             "event": (owari(E(D.bun("mcp-tool-event"))), [
                 dict(name="event", type="string", required=True, erabu=list(self.event), description=owari(E(D.bun(
-                    "mcp-hikisu-event", erabu=namae_tsuki(list(self.event), self.event_kagi_namae)))))]),
+                    "mcp-hikisu-event", erabu=namae_tsuki(ev_setsumei, self.event_kagi_namae)))))]),
             "field": (owari(D.bun("mcp-tool-field", keikaku=S(self.bu["kk"]["name"]))), [
                 dict(name="field", type="string", required=False, erabu=fi_erabu,
                      description=owari(fi_desc), kensa=fi_desc)]),
@@ -1309,6 +1410,23 @@ def read_notes(inp):
         path = os.path.join(NOTE_DIR, "note-" + theme + ".tsv")
         if os.path.exists(path):
             out[theme] = bn.jiko_ni_suru(inp, bn.read_teigi(path, theme), theme)
+    return out
+
+
+def read_bunya_notes(inp, kk=None):
+    """総合計画の分野のテーマ（事項の表に行がある分野。SCHEMA.md 7.9。2026-11-28）の論点の表。論点の仮の表（teigi/note-*.tsv）は
+    置かず、事項の表から作る（build_note.jiko_ni_suru）。テーマの名前は、分野の番号と名前（入力の字）。
+    → テーマ → 表。並びは分野の番号の順。"""
+    kk = bu.keikaku(inp) if kk is None else kk
+    B = {jiko.bunya_theme(x["no"]): x for h in kk["hashira"] for x in h["bunya"]}
+    rows = jiko.read()
+    out = {}
+    for th in jiko.theme_jun(rows):
+        if jiko.is_bunya(th):
+            x = B[th]
+            T = dict(theme=x["no"] + x["name"], setsumei=x["name"], topics=[], junbi=[], words=[], units=[], chu=[],
+                     bunya=x["no"])
+            out[th] = bn.jiko_ni_suru(inp, T, th, rows)
     return out
 
 
@@ -1398,10 +1516,11 @@ def konkyo_problems(inp, tk, tables, rows, namae=None, yomi_qs=None):
     return problems
 
 
-def build(inp, tables, kotoba, read_problems=(), design=None, skill=None, notes=None, konkyo_rows=None):
+def build(inp, tables, kotoba, read_problems=(), design=None, skill=None, notes=None, konkyo_rows=None, bunya_notes=None):
     """検査を通れば、応答の JSON（辞書）と件数を返す。当たれば Stop。
 
     tables は tools/build_theme.py の read_tables で読んだもの。notes は read_notes で読んだもの（None なら読む）。
+    bunya_notes は read_bunya_notes で読んだもの（None なら読む）。
     konkyo_rows は taio/konkyo.tsv の行（None なら読む）。
     """
     D = design or bs.read_design()
@@ -1454,7 +1573,9 @@ def build(inp, tables, kotoba, read_problems=(), design=None, skill=None, notes=
         problems += tk._hk[theme].problems
     # (h) 論点：試作のページと同じ集め方と検査（tools/build_note.py の collect）
     tk.note = {}
-    for theme, T in notes.items():
+    # 総合計画の分野のテーマ（SCHEMA.md 7.9。2026-11-28）の論点も、同じ集め方と検査で作る。theme の応答には出さない
+    bunya_notes = read_bunya_notes(inp) if bunya_notes is None else bunya_notes
+    for theme, T in list(notes.items()) + list(bunya_notes.items()):
         model, more, _ = bn.collect(inp, T, theme)
         problems += more
         tk.note[theme] = (T, bn.Page(inp, T, model))
@@ -1467,6 +1588,7 @@ def build(inp, tables, kotoba, read_problems=(), design=None, skill=None, notes=
     except ym.YomiError as e:
         raise Stop([("(i) 質問が取り上げた資料", str(e))])
     yomi_rows = ym.read() if os.path.exists(ym.PATH) else []
+    tk.yomi_rows = yomi_rows
     for q, qths in yomi_qs.items():
         for th in qths:
             tk.yomi_q.setdefault(th, []).append(q)

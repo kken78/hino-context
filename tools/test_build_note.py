@@ -330,9 +330,24 @@ class TestReal(unittest.TestCase):
         確定済みの質問の4を除いた数）。"""
         _, info = self.build(self.inp)
         self.assertEqual(len(info["counts"]), 57)
-        self.assertEqual([(n, k) for _, n, k in info["counts"][:4]], [(13, 9), (9, 6), (8, 9), (6, 8)])
-        self.assertEqual(info["questions"], 66)
+        # 総合計画の分野の読み取り（2026-11-28）で、新こども園の整備費用と財源（hiyo）に、分野の読み取りの質問が3件加わった
+        # （前は (13, 9)）
+        self.assertEqual([(n, k) for _, n, k in info["counts"][:4]], [(13, 12), (9, 6), (8, 9), (6, 8)])
+        # 分野の読み取りの質問が、幼保の論点（分野の読み取りの候補を入れた論点）に7件加わった（前は 66。2026-11-28）
+        self.assertEqual(info["questions"], 73)
         self.assertEqual(info["paras"].mismatched, [])
+
+    def test_kihon_nokori(self):
+        """基本施策そのものの行には、同じ質問で、その分野で読んだ、ほかの論点の行にある段落を除いた段落だけを残す
+        （SCHEMA.md 7.9。2026-11-28）。段落が残らない行は除く。ほかのテーマで読んだ行の段落は、除かない。"""
+        S = "0000000001_20250310_0002"
+        g = lambda j, h, th="b25", q="iq:0000000001_20250310_0001": dict(question=q, n="1", theme=th, jiko=j, hani=h,  # noqa: E731
+                                                                         yomi="一致", chu="", point=j)
+        rows = [g("k", f"sp:{S}/1-4"), g("x", f"sp:{S}/2-3"), g("k", f"sp:{S}/5"), g("y", f"sp:{S}/5"),
+                g("z", f"sp:{S}/4", th="kokyo")]
+        out = bn.kihon_nokori(rows, {"k"}, "b25")
+        self.assertEqual([(r["jiko"], r["hani"]) for r in out],
+                         [("k", f"sp:{S}/1,sp:{S}/4"), ("x", f"sp:{S}/2-3"), ("y", f"sp:{S}/5"), ("z", f"sp:{S}/4")])
 
     def test_kakutei_yusen(self):
         """同じ質問と論点に、入力の確定済みの対応の記録と、読み取りの行があるときは、確定済みの記録だけを出す

@@ -164,7 +164,7 @@ class TestReal(unittest.TestCase):
     def pages(self):
         if not hasattr(self.__class__, "_pages"):
             out = {}
-            for theme, T in bm.read_notes(self.inp).items():
+            for theme, T in list(bm.read_notes(self.inp).items()) + list(bm.read_bunya_notes(self.inp).items()):
                 model, _, _ = bn.collect(self.inp, T, theme)
                 out[theme] = (T, bn.Page(self.inp, T, model))
             self.__class__._pages = out
@@ -203,8 +203,8 @@ class TestReal(unittest.TestCase):
         k = ("0000005483_20200914_0202", "3")
         self.assertEqual(ip[k]["title"], "図書館サービス")
         self.assertNotIn("入所の調整", [p for p, _, _ in br.get(k, [])])
-        # 2回めの読み取り（2026-11-28）の前は178
-        self.assertEqual(len(br), 233)
+        # 2回めの読み取り（2026-11-28）の前は178、総合計画の分野の読み取り（2026-11-28）の前は233
+        self.assertEqual(len(br), 855)
 
     def test_page(self):
         page, info = bb.build(self.inp, D, bn.read_kotoba(), datetime.date(2026, 11, 28))

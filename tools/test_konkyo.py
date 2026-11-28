@@ -134,8 +134,11 @@ class TestRepo(unittest.TestCase):
         self.assertEqual([r["yomi"] for r in rows[:6]], ["入力の確定済み"] * 6)
         self.assertEqual({r["yomi"] for r in rows[6:]}, {"一致", "1回だけ"})
         # 2回めの読み取り（2026-11-28）のあと。前は、幼保171行、介護34行、公共施設104行、地域のあり方56行の371行
-        self.assertEqual([r["theme"] for r in rows[6:]], ["hoiku"] * 207 + ["kaigo"] * 41 + ["kokyo"] * 116 + ["chiiki"] * 70)
-        self.assertEqual(len(rows), 440)
+        # 総合計画の分野の読み取りの行（2026-11-28。1239行）は、4つのテーマの行のあとに、分野の番号の順に並ぶ
+        self.assertEqual([r["theme"] for r in rows[6:440]], ["hoiku"] * 207 + ["kaigo"] * 41 + ["kokyo"] * 116 + ["chiiki"] * 70)
+        self.assertTrue(all(konkyo.jiko.is_bunya(r["theme"]) and r["n"] for r in rows[440:]))
+        self.assertTrue(all(r["n"] == "" for r in rows[:440]))
+        self.assertEqual(len(rows), 1679)
         # 資料の日付が質問の日より後の行は、ID を付けない（2026-11-28）
         u = {(t, n): (ids, c) for t, n, ids, c in konkyo.uchiwake(rows, konkyo.ym.read_namae())}
         self.assertEqual(u[("hoiku", "計画")], ({"pt:youho/honpen-202503": 4, "pt:youho/honpen": 0}, 1))
