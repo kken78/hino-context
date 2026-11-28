@@ -137,21 +137,24 @@ class TestRepo(unittest.TestCase):
         # 2回めの読み取り（2026-11-28）のあと。前は、幼保171行、介護34行、公共施設104行、地域のあり方56行の371行
         # 総合計画の分野の読み取りの行（2026-11-28。1239行）は、4つのテーマの行のあとに、分野の番号の順に並ぶ
         self.assertEqual([r["theme"] for r in rows[7:441]], ["hoiku"] * 207 + ["kaigo"] * 41 + ["kokyo"] * 116 + ["chiiki"] * 70)
-        self.assertTrue(all(konkyo.jiko.is_bunya(r["theme"]) and r["n"] for r in rows[441:]))
+        self.assertTrue(all(konkyo.jiko.is_bunya(r["theme"]) and r["n"] for r in rows[441:1680]))
+        # 議案への質疑の読み取りの行（2026-11-28。tools/shitsugi.py）は、一般質問の読み取りの行のあと。n は議案の番号
+        self.assertTrue(all(r["question"].startswith("sq:") and r["n"] for r in rows[1680:]))
         self.assertTrue(all(r["n"] == "" for r in rows[:441]))
-        self.assertEqual(len(rows), 1680)
+        self.assertEqual(len(rows), 2478)     # 議案への質疑の読み取りの前は 1680
         # 資料の日付が質問の日より後の行は、ID を付けない（2026-11-28）
         u = {(t, n): (ids, c) for t, n, ids, c in konkyo.uchiwake(rows, konkyo.ym.read_namae())}
         self.assertEqual(u[("hoiku", "計画")], ({"pt:youho/honpen-202503": 4, "pt:youho/honpen": 0}, 1))
-        self.assertEqual(u[("hoiku", "計画（案）")], ({"doc:jigyo-youhosaihen-keikakuan-202411": 13}, 7))
-        self.assertEqual(sum(c for (t, _), (_, c) in u.items() if t == "hoiku"), 36)
-        self.assertEqual(u[("kaigo", "第9期の計画")], ({"pt:kaigo9/honpen": 6}, 0))
-        self.assertEqual(u[("kaigo", "アンケート調査")], ({"doc:jigyo-kaigo-chosa-r7": 0}, 3))
+        # 議案への質疑の読み取り（2026-11-28）の行が1つ加わった（2024年11月8日より前の質疑なので、ID を付けない）
+        self.assertEqual(u[("hoiku", "計画（案）")], ({"doc:jigyo-youhosaihen-keikakuan-202411": 13}, 8))
+        self.assertEqual(sum(c for (t, _), (_, c) in u.items() if t == "hoiku"), 44)   # 議案への質疑の読み取りの前は 36
+        self.assertEqual(u[("kaigo", "第9期の計画")], ({"pt:kaigo9/honpen": 11}, 1))     # 議案への質疑の読み取りの前は 6、0
+        self.assertEqual(u[("kaigo", "アンケート調査")], ({"doc:jigyo-kaigo-chosa-r7": 0}, 4))     # 議案への質疑の読み取りの前は 3
         # 公共施設の再編と地域のあり方（2026-11-28）。公共施設等総合管理計画は改定のあとの版だけなので、前の質問には ID を付けない
-        self.assertEqual(u[("kokyo", "公共施設等総合管理計画")], ({"pt:kokyo-kanri/honpen": 6}, 5))
+        self.assertEqual(u[("kokyo", "公共施設等総合管理計画")], ({"pt:kokyo-kanri/honpen": 6}, 6))     # 議案への質疑の読み取りの前は 5
         self.assertEqual(u[("kokyo", "総合計画")], ({"plan:sogo6": 1}, 4))
-        self.assertEqual(u[("chiiki", "自治会活動に関するアンケート調査")], ({"doc:chiiki-jichikai-chosa": 3}, 0))
-        self.assertEqual(u[("kokyo", "学校施設の長寿命化計画")], ({}, 7))
+        self.assertEqual(u[("chiiki", "自治会活動に関するアンケート調査")], ({"doc:chiiki-jichikai-chosa": 4}, 0))     # 議案への質疑の読み取りの前は 3
+        self.assertEqual(u[("kokyo", "学校施設の長寿命化計画")], ({}, 9))     # 議案への質疑の読み取りの前は 7
         # 資料の一覧の表に足した「いま、私たちができること 2025」（令和８年２月。2026-11-28）。前の読み取りの2026年3月10日の
         # 質問の行も、この資料に結び付く
         self.assertEqual(u[("chiiki", "いま、私たちができること2025")], ({"doc:chiiki-jichikai-forum-shiryo": 2}, 0))

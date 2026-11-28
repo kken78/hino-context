@@ -138,7 +138,13 @@ class TestRepo(unittest.TestCase):
         bunya = ["b02", "b03", "b04", "b05", "b06", "b07", "b08", "b09", "b10", "b11", "b12", "b13", "b14", "b15", "b16",
                  "b17", "b19", "b20", "b21", "b22", "b23", "b24", "b25", "b26", "b27", "b28", "b29", "b31", "b33", "b34"]
         self.assertEqual(ym.themes(), ["hoiku", "kaigo", "kokyo", "chiiki"] + bunya)
-        self.assertEqual(len(rows), 7143)
+        # 議案への質疑の読み取りの行（2026-11-28。tools/shitsugi.py）は、一般質問の行のあとに置く。一般質問の行は前と同じ
+        self.assertEqual(len(rows), 12352)
+        sq = rows[7143:]
+        self.assertTrue(all(r["question"].startswith("sq:") and r["n"] for r in sq))
+        self.assertEqual((len(sq), sum(r["yomi"] == "一致" for r in sq)), (5209, 3256))
+        rows = rows[:7143]
+        self.assertTrue(all(r["question"].startswith("iq:") for r in rows))
         bu_rows = [r for r in rows if ym.jiko.is_bunya(r["theme"])]
         self.assertEqual((len(bu_rows), sum(r["yomi"] == "一致" for r in bu_rows)), (5730, 2953))
         self.assertTrue(all(r["n"] for r in bu_rows))

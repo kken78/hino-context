@@ -168,7 +168,7 @@ class Namae:
             return S(key), ""
         if kind == "sp":
             kubun = self.kubun(g[0])
-            hi = keys.sid_date(g[0])
+            hi = inputs.hatsugen_hi(g[0])     # sid が日付で始まらない発言は、会議録の索引の日（2026-11-28）
             name = self.D.bun("kaigiroku-kubun", hi=bs.hi_str(self.D, hi) if hi else "", kubun=E(kubun or ""))
             text = self.inp.statement_text(g[0])
             p = shogo.para_of_quote(text, quote) if text and quote else None

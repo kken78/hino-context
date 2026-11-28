@@ -19,6 +19,7 @@ theme は、質問があるテーマ（定義の順の最初）。
 （teigi/konkyo-namae.tsv）の名前か、その表に無い名前（読み手が発言の言葉で書いた名前）。資料の ID にするのは、資料の日付が
 質問の日より前か同じ日の資料のうち、いちばん新しいものだけ（tools/yomi.py の aite_of）。名前ごとに、資料の ID ごとの
 結び付いた行の数と、結び付かなかった行の数を出す。
+議案への質疑の読み取りの行（tools/shitsugi.py）は、一般質問の読み取りの行のあとに置く。
 読み取りの結果には、候補の名前と扱いの対応の表（teigi/kouho.tsv）で「資料を取り上げた部分にする」とした候補の段落を、
 入れる先の資料の名前の段落として入れる（tools/yomi.py の yomi_ireta）。
 """
@@ -204,6 +205,9 @@ def main(argv=None):
         for th in ym.themes():
             rows += ym.konkyo_rows(ym.yomi_ireta(th, namae_rows=namae)[0], ym.of_theme(namae, th), hiduke, th,
                                    ym.read_chu(th))
+        # 議案への質疑の読み取りの行（tools/shitsugi.py。SCHEMA.md 7.10。2026-11-28）は、一般質問の読み取りの行のあと
+        import shitsugi as st
+        rows += st.tsukuru(inp, namae=namae, hiduke=hiduke)["konkyo"]
     except (inputs.InputError, ym.YomiError, ValueError) as e:
         print(f"止めた：lock と入力、または表を読めない\n{e}", file=sys.stderr)
         return 1

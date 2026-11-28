@@ -27,6 +27,7 @@ import keys  # noqa: E402
 import kisai as ks  # noqa: E402
 import ronten  # noqa: E402
 import ronten_kisai as rk  # noqa: E402
+import shitsugi as st  # noqa: E402
 import shogo  # noqa: E402
 import yomi as ym  # noqa: E402
 import yosan as ys  # noqa: E402
@@ -468,7 +469,9 @@ def collect(inp, teigi, theme):
         if not srcs or any(not named(s)[0] for s in srcs[:2]):
             problems.append(("(b) 出典の無い記述", f"過程の記録 {theme} step {r['step']}：資料が無いか、名前が作れない（{r['sources']}）"))
     for r in ta + yomi:
-        if not r["hani"] or not qhead_parts(qsrc.get(r["question"], ""))[1]:
+        # 議案への質疑の読み取りの行（n に議案の番号。SCHEMA.md 7.10）の題は、議案の番号と題（tools/shitsugi.py の dai）
+        sq_dai = r["question"].startswith("sq:") and r.get("n") and st.dai(inp, r["question"], r["n"])
+        if not r["hani"] or not (sq_dai or qhead_parts(qsrc.get(r["question"], ""))[1]):
             problems.append(("(b) 出典の無い記述", f"問いと事項の対応 {r['question']} / {r['point']}：範囲か問いの題が無い"))
     # 目的と手段（SCHEMA.md 7.9）：入力のつながりの記録のうち、両端が事項の表にある行。引用と出典を、ほかと同じく検査する
     moku = jiko.mokuteki_gyo(inp, jiko.read()) if teigi.get("jiko") else []
@@ -520,12 +523,14 @@ def qhead_parts(src):
 
 
 def qdate(q):
-    return keys.sid_date(keys.sid_of(q))
+    """質問の日（inputs.hatsugen_hi。sid が日付で始まらない質疑の区切りは、会議録の索引の発言の日。2026-11-28）。"""
+    return inputs.hatsugen_hi(keys.sid_of(q))
 
 
 def qhead(q, who, dai):
     kind = "議案への質疑" if q.startswith("sq:") else "一般質問"
-    return f"{keys.ymd(qdate(q))}　{kind}（{S(who)}）{S_kagi(dai)}"
+    # 議案への質疑の読み取りの質問は、発言者の名前を出さない（who が空。2026-11-28）
+    return f"{keys.ymd(qdate(q))}　{kind}" + (f"（{S(who)}）" if who else "　") + S_kagi(dai)
 
 
 def yomi_go(D, yomi):
@@ -657,6 +662,14 @@ def kakunin_go(D, q):
     return D.kotoba("質問と事項の対応の表 question") if q["mikakunin"] else D.bun("shitsumon-kakutei")
 
 
+def shitsugi_ji_go(D, q):
+    """議案への質疑の読み取りの質問（Page.ronten の qs の1つ）で、読み手が段落の字は別の議案の話と書いた部分があるときの文
+    （docs/design.md 4節。2026-11-28）。無ければ空。MCP の応答（tools/build_mcp.py）も使う。"""
+    if not q.get("ji"):
+        return ""
+    return D.bun("shitsugi-ji", gian=q["gian"], ji="、".join(q["ji"]))
+
+
 class Page:
     def __init__(self, inp, teigi, model, D=None):
         if D is None:
@@ -783,18 +796,23 @@ class Page:
         # 生成AIの2回の読み取りの行（SCHEMA.md 7.10）。質問ごとに段落をまとめ、段落ごとに一致か1回だけかを持つ。
         # 同じ質問と論点に、入力の確定済みの対応の記録があるときは、確定済みの記録だけを出す（SCHEMA.md 7.10。案）
         kakutei = {r["question"] for r in ta}
-        yq = {}
+        yq, ji = {}, {}
         for r in self.m.get("yomi", []):
             if r["point"] == P and r["question"] not in kakutei:
+                # 議案への質疑の読み取りの行は、区切りと議案ごとに1つの質問にする（SCHEMA.md 7.10。2026-11-28）
+                k = (r["question"], r["n"] if r["question"].startswith("sq:") else "")
                 for p in keys.paras_of(r["hani"]):
-                    d = yq.setdefault(r["question"], {})
+                    d = yq.setdefault(k, {})
                     d[p] = ym.yomi_awase(d.get(p), r["yomi"])     # 2つのテーマの読み取りの行（SCHEMA.md 7.10）
-        for q, fl in yq.items():
-            who = qhead_parts(self.m["qsrc"].get(q, ""))[0]
+                ji.setdefault(k, []).extend(x for x in st.ji_of_chu(r.get("chu", "")) if x not in ji.get(k, []))
+        for (q, n), fl in yq.items():
             paras = [(sid, i, inputs.paragraphs(self.inp.statement_text(sid))[i - 1]) for sid, i in sorted(fl)]
-            dai = self.dai(q, set(fl))
+            if n:
+                who, dai = "", st.dai(self.inp, q, n)
+            else:
+                who, dai = qhead_parts(self.m["qsrc"].get(q, ""))[0], self.dai(q, set(fl))
             qs.append(dict(question=q, date=qdate(q), sitsugi=q.startswith("sq:"), who=who, dai=dai, paras=paras,
-                           mikakunin=True, yomi=fl))
+                           mikakunin=True, yomi=fl, gian=n, ji=ji.get((q, n), [])))
         qs.sort(key=lambda x: x["date"], reverse=True)
         slugs = {p: k for p, k, _, _ in self.t["topics"]}
         aite = {}
@@ -846,7 +864,8 @@ class Page:
                     body.append(f"<div class='spk'>{S(inp.speaker(sid))}</div>")
                 yl = f"<span class='m'>（{E(self.yomi_go(r['yomi'][(sid, i)]))}）</span>" if r["mikakunin"] else ""
                 body.append(f"<div class='para'>{S(para)}　<a href='{E(keys.search_url(sid, i))}' target='_blank'>会議録</a>{yl}{self.chu('sp:' + sid, para)}</div>")
-            blocks.append(f"<div class='qa'><h3>{qhead(q, r['who'], r['dai'])}</h3><p class='m'>{E(self.kakunin_go(r))}</p>"
+            jg = f"<p class='m'>{E(shitsugi_ji_go(D, r))}</p>" if r.get("ji") else ""
+            blocks.append(f"<div class='qa'><h3>{qhead(q, r['who'], r['dai'])}</h3><p class='m'>{E(self.kakunin_go(r))}</p>{jg}"
                           f"<details><summary>{E(short)}に関する部分を表示（{len(ps)}か所）</summary>"
                           f"{''.join(body)}</details><p class='m'><a href='{E(keys.source_url(inp, q))}' target='_blank'>"
                           f"会議録でこの質問の全体を見る</a></p></div>")

@@ -4,8 +4,8 @@
     "files": []
   },
   "hino-council-search": {
-    "sha": "3f794e7c93be7a8a5844a01c89b817b196ad1bef",
-    "files": ["public/data/index-manifest.json", "public/data/index/*.json", "data/ippan.tsv"]
+    "sha": "62f4ed809c204c48133ca153f6dab76b5a903162",
+    "files": ["public/data/index-manifest.json", "public/data/index/*.json", "data/ippan.tsv", "data/shitsugi.tsv", "public/data/gian.json"]
   },
   "shiga-hino-plans": {
     "sha": "ae24c58d6b0d1cf1bf994d072b232652a5ae6451",
