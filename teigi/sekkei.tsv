@@ -2,7 +2,7 @@ shu	name	hyo	chu
 mono	課題	teigi/jiko.tsv	4つのテーマ（幼保、介護、公共施設の再編、地域のあり方）と、総合計画の30の分野（基本施策62と、作業者がまとめた論点の案1122。2026-11-28。案）。公共施設の再編と地域のあり方に共通の事項が3つある。行は案と決定
 mono	取り組み	teigi/jiko.tsv;入力:shiga-hino-plans/data/plans/senryaku2.json	4つのテーマ（幼保、介護、公共施設の再編、地域のあり方）と、総合計画の30の分野（基本施策62と、作業者がまとめた論点の案1122。2026-11-28。案）。公共施設の再編と地域のあり方に共通の事項が3つある。行は案と決定。総合戦略の取り組み（40）は、事項の表に入れず、入力の総合戦略の取り組みを ID（node:senryaku2/<key>）で指す（SCHEMA.md 7.12）
 mono	対象の属性と値	teigi/suji.tsv;teigi/atai.tsv	幼保だけ
-mono	資料と、資料の中の場所	teigi/bunsho.tsv;teigi/bubun.tsv	
+mono	資料と、資料の中の場所	teigi/bunsho.tsv;teigi/bubun.tsv;teigi/keikaku-betsumei.tsv	第6次日野町総合計画の分野ごとの関連する個別計画の名前は、入力の sogo6.json から毎回読み、入力の計画と資料の一覧の表に名前で結ぶ。総合計画の字と入力の計画の名前が違うものだけ、計画の名前の別名の表（9行）に持つ（SCHEMA.md 7.15。2026-11-28）
 mono	過程の出来事	入力:hino-ronten/records/katei.tsv	
 mono	施設・地区・組織	入力:hino-ronten/ref/shisetsu.tsv	地区と組織は読んでいない
 mono	問い・質疑・報告	入力:hino-ronten/ref/themes.tsv;taio/yomi-hoiku/taba.json;taio/yomi-kaigo/taba.json;taio/yomi-kokyo/taba.json;taio/yomi-chiiki/taba.json;入力:hino-council-search/data/ippan.tsv;taio/yomi-b02/taba.json	テーマの定義にある問いと質疑と、生成AIの2回の読み取りで読んだ一般質問（幼保41。テーマの定義の外の29を含む。介護22。テーマの定義の外の17を含む。公共施設の再編39。テーマの定義の外の23を含む。地域のあり方29。テーマの定義の外の9を含む。2つのテーマで読んだ質問が12ある）。一般質問の台帳の題の全部（964）は、総合計画の分野を付ける単位（SCHEMA.md 7.11）。総合計画の30の分野で、2人の読み手とも中心の分野とした題（711。質問681）を、段落まで読んだ（taio/yomi-b<分野>/。2026-11-28）
