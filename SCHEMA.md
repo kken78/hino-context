@@ -12,6 +12,7 @@
 - shiga-hino-plans の計画の JSON（data/plans/*.json）からは、計画の読み取り（7.13。2026-11-28）のために、meta（name、period_note、posted）と、sources の pdf_page_offset、kpi_grid と targets のブロック（指標の表）も読み、検収の台帳（data/audit_log/*.tsv）を読む（2026-11-28 に lock の files に `data/audit_log/*.tsv` を足した）。
 - hino-town-docs からは、総合戦略の施策検証結果報告書（令和7年度）（hyoka-r7-senryaku-kensho）の施策検証シートの表と検収の台帳（data/struct/senryaku-sheet.tsv、senryaku-kpi.tsv、senryaku-bun.tsv、audit/senryaku.tsv。DOCS_SCHEMA.md §13.17）を読み（2026-11-28 に lock の files に足した。7.12）、data/text と data/text_raw からは、同じ報告書の「２．検証方法」の文を照合する（検証結果の説明の表。7.12）。shiga-hino-plans の data/plans/senryaku2.json（第2期 日野町くらし安心ひとづくり総合戦略）からは、取り組みの tab（torikumi）の、基本目標（heading の字）、取り組みの方向（groups の name）、取り組みの番号・名前・担当課（items の no、name、dept）と key を読み、本編の文字（data/text/senryaku2/honpen.txt と data/text_raw の同じ名前）で、取り組みの名前と担当課があるページを探す（7.12）。shiga-hino-plans の2つは lock の files に入っている。hino-town-docs の版は 56604b1 に上げた（2026-11-28）。
 - hino-town-docs の版を 8bdfba2 に上げた（2026-11-28）。日野町人材育成基本方針（jinji-ikusei-hoshin。令和３年４月。20ページ。区分 jinji）の文字（data/text、data/text_raw）を、資料の段落と事項の対応（7.13）で読むためである。56604b1 からの違いは、この資料の台帳の1行と、文字と OCR の下書きのファイルだけ（ほかの資料の文字は変わっていない）。lock の files は変えていない。
+- 予算の事業と事項の対応（7.16。2026-11-28）のために、lock の files に、hino-town-docs の補正予算の表（data/struct/hosei-kai.tsv、hosei-maru.tsv、hosei-jiko.tsv、hosei-shiryo.tsv）と検収の台帳（data/struct/audit/hosei-r*.tsv。DOCS_SCHEMA.md §13.6）、shiga-hino-plans の当初予算の附表（data/fuhyo/*.json。読むのは fuhyo-r<数>.json で、検査用の見本 _fuhyotest.json は読まない。PLAN_SCHEMA.md §9）、hino-ronten の年度をまたぐ同じ附表の事業の台帳（links/fuhyo-years.tsv。status が confirmed の行だけ）を足した。入力の版は変えていない（どのファイルも、lock の版にあることを確認した）。実施計画（data/plans/jisshi.json）と附表の検収の台帳（data/audit_log/jisshi.tsv、fuhyo-r*.tsv）は、いまの files で読める。
 - hino-ronten から読むのは、題材の定義（ref/themes.tsv）、施設の参照表（ref/shisetsu.tsv）、系列の表（ref/lineage.tsv）、事柄の記録（records/kotogara.tsv）、過程の記録（records/katei.tsv）、問いと事項の対応（records/taio.tsv）、施設の記録（records/shisetsu.tsv）、計画の章立て（ref/taikei.tsv）、つながりの記録（records/tsunagari.tsv。2つは 2026-11-27 に追加。tools/jiko.py が読む）、構造にしていない記載（records/kisai.tsv。2026-11-28 に追加。7.14）である。records の表は、status が confirmed の行だけを使う。題材の定義と施設の参照表には status の列が無く、依頼者が決めた行だけが入っている（施設の参照表は 2026-10-27 と 2026-11-05 に依頼者が確定した。hino-ronten DESIGN.md ADR-23）。
 - 過程の記録の確定済みの行のうち、ページと MCP の応答を作る検査で止まる10行（kaigo の step 2・4・5・6・9・12 と chiiki の step 8 は from が空、kaigo の step 8 と chiiki の step 6・10 は sources に議案の ID（gi:）がある）は、出さない（2026-11-27。4つのテーマを MCP に出すときの指示。入力は読むだけなので、行を直さない）。出さない行と理由は tools/ronten.py の1か所に書き、行がその理由に当たらなくなったら、ページと応答を作らずに止まる。出さずに済ませるか、行の出し方を決めるかは、依頼者が決める。
 - 系列の表（ref/lineage.tsv。hino-ronten LINK_SCHEMA.md §8）にも status の列は無い。このリポジトリでは、題材の定義の kind「系列」の value（series）から、計画の ID（plan の列。空の行は除く）を引くためだけに使う（7.7）。
@@ -30,6 +31,9 @@
 | plan | 計画 | `plan:<id>` | `plan:youho` | shiga-hino-plans `data/plans/<id>.json` |
 | gi | 議案 | `gi:<会議id>/<議案番号>` | `gi:0000008942/議第115号` | hino-council-search `public/data/gian.json` |
 | node | 計画の事業 | `node:<id>/<key>` | `node:jisshi/e008` | shiga-hino-plans `data/plans/<id>.json` の programs の key |
+| hj | 補正予算の概要の主な内容の行（一般会計の○の行と、特別会計・企業会計の行） | `hj:<回の id>/<key>` | `hj:r7-ippan-04/m003` | hino-town-docs `data/struct/hosei-maru.tsv` の kai と key（hino-ronten LINK_SCHEMA §2 と同じ形。7.16） |
+| hz | 補正予算の概要の繰越明許費・債務負担行為・地方債の事項 | `hz:<回の id>/<key>` | `hz:r7-ippan-05/z001` | hino-town-docs `data/struct/hosei-jiko.tsv` の kai と key（7.16） |
+| fh | 当初予算の附表の事業 | `fh:<附表の id>/<key>` | `fh:fuhyo-r8/b010` | shiga-hino-plans `data/fuhyo/<附表の id>.json` の items の key（hino-ronten の links と同じ形。7.16） |
 | fa | 施設 | `fa:<英小文字・数字・ハイフン>` | `fa:minamihizusa-yo` | hino-ronten `ref/shisetsu.tsv` の key |
 
 - sid は `<会議id 10桁>_<名前>_<連番4桁>` の形で、`/`・`,`・`:`・空白を含まない。段落の ID は、最後の `/` で sid と段落に分ける。
@@ -1008,6 +1012,70 @@ docs/hoshin.md 4.4 で、hino-ronten の町の資料の記載（kisai）の保�
 まだ決めていない点：
 
 - 総合計画の画像から読み取った字を、確認の記録なしに出す範囲。いまは、field の分野の構成（基本施策の名前と、関連する個別計画と、指標の表）は文を添えて出し、論点の記述（7.13 の段落）は出さない。
+
+### 7.16 予算の事業と事項の対応 `taio/yosan.tsv`
+
+docs/hoshin.md 4.2 の関係「取り組みに、予算の事業が当たる」（4.4 の「附表・実施計画・議案の台帳（links）」の行き先）を、生成AIの2回の読み取りで付ける（CLAUDE.md 守ることの7）。予算の事業は、入力の構造化した表の行で、事項にしない（事項の表に行を足さない）。足す前の比較は、作業者の作業の場所の /home/claude/an/hikaku-yosan.md（2026-11-28。5つの論点のうち4つで、論点の応答に出る行が増える）。
+
+入力にすでにあるもの（`python3 -B tools/nyuryoku.py` で `チョイソコ`、`認定こども園整備事業`、`自治体DX`、`LED`、`防災行政無線`、`node:jisshi`、`hj:r`、`hz:r`、`fh:fuhyo` を検索した。2026-11-28）：
+
+- hino-town-docs（data/struct/）：補正予算の回（hosei-kai.tsv）、主な内容の行（hosei-maru.tsv 387）、繰越明許費・債務負担行為・地方債の事項（hosei-jiko.tsv 203）。検収の台帳（audit/hosei-r3〜r8.tsv）で590行とも ✓（主な内容の行は name と amount、事項は kind・kubun・kaikei・name・amount を照合した印）。事業と論点の対応は持たない（DOCS_SCHEMA.md §13.1）。
+- shiga-hino-plans：実施計画（data/plans/jisshi.json。令和8〜10年度の版の事業176。検収の台帳 data/audit_log/jisshi.tsv の対象は概算事業費と実施計画年度で、事業の名前と説明の字は対象でない）、当初予算の附表（data/fuhyo/fuhyo-r3〜r8.json。事業1,031。検収の台帳 data/audit_log/fuhyo-r*.tsv の対象は予算額・款・担当課・区分で、名前・概要・内訳の字は対象でない）。附表の PDF は、hino-town-docs の yosan-r<数>-fuhyo と、sha256 とページの数が同じ（ツールが確認する）。
+- hino-ronten：年度をまたぐ同じ附表の事業の台帳（links/fuhyo-years.tsv。確定818）、附表と実施計画の台帳（links/fuhyo.tsv）、○の行と附表の台帳（links/hosei-fuhyo.tsv）。この表では、年度の台帳だけを、読み手に渡す附表の事業をまとめるために使う（下の「附表のまとまり」）。事柄の記録（records/kotogara.tsv）には、実施計画 e008 と令和8年度の附表 b010 の行（新こども園の整備費用と財源）がある。
+- このリポジトリ：数値と内容の表（teigi/atai.tsv）に、新こども園の整備の予算の値が9行ある（item で引ける）。論点との対応は持たない。
+- 整理：オントロジーの観点では、予算の事業という物は入力にあり（行のキーも入力が付けている）、事項との関係だけが無い。セマンティックの観点では、額が何の額か（補正予算の概要の額、繰越明許費の額、附表の予算額、実施計画の概算事業費）は、入力の表の種類で決まり、額の検収も入力が済ませている。このリポジトリで足すのは、関係の表と、読み取りの結果と、出し方。
+
+予算の事業（読み手に渡した事業）：
+
+| 種類 | 表の jigyo の ID | 入力 |
+| --- | --- | --- |
+| 補正予算の概要の主な内容の行（一般会計の○の行、特別会計・企業会計の行） | `hj:<回の id>/<key>` | hino-town-docs data/struct/hosei-maru.tsv |
+| 繰越明許費・債務負担行為・地方債の事項 | `hz:<回の id>/<key>` | hino-town-docs data/struct/hosei-jiko.tsv |
+| 総合計画 実施計画の事業（令和8〜10年度の版） | `node:jisshi/<key>` | shiga-hino-plans data/plans/jisshi.json |
+| 当初予算の附表の事業（令和3〜8年度） | `fh:<附表の id>/<key>` | shiga-hino-plans data/fuhyo/fuhyo-r*.json |
+
+- 補正予算の行は、検収の台帳で ✓ の行だけを読む。✓ でない行があるか、行の資料が回と資料のページの対応（hosei-shiryo.tsv）に無ければ止める。
+- 附表のまとまり：附表の事業は、年度の台帳の確定の行でつながる事業の組の中で、名前・概要（desc）・内訳（details）の字が同じ事業を1つのまとまり（読み取りの材料の中だけの ID `fu-<4桁>`）にして、1回だけ読ませた（附表の事業1,031 → まとまり630）。表には、まとまりの中の年度ごとの事業（fh）に開いて持つ。出すときに、年度ごとの予算額、区分、ページが違うためである。fu の番号は材料の中の番号で、表には書かない。
+- 実施計画の事業のページは、出典が1ページならそのページ、2ページ以上なら、事業の名前がもとの資料から取り出した文字にあるページ（1つに決まらなければ止める）。PDF のページは、出典のページに pdf_page_offset を足す（`pt:jisshi/honpen/<ページ>`）。
+- 附表の事業のページは、hino-town-docs の資料のページ（`doc:yosan-r<数>-fuhyo/<ページ>`。附表の JSON の page は PDF のページ）で指す。附表の PDF と hino-town-docs の資料の sha256 とページの数が違えば止める。補正予算の行のページは、行の doc と page（`doc:<doc>/<page>`）。
+
+表 `taio/yosan.tsv`（事業と事項の組ごと、読みの言葉ごとに1行）：
+
+| 列 | 中身 |
+| --- | --- |
+| jigyo | 予算の事業の ID（上の表。附表は fh） |
+| jiko | 事項の ID（事項の表 7.9 の行。基本施策そのものの行は使わない） |
+| yomi | `一致`、`1回だけ` |
+| chu | 1回だけの行の読み手、迷いの印を付けた読み手 |
+
+- 行は、ツール（tools/yosan.py）が読み取りの結果から作る。手で書かない。2回とも付けた組を `一致`、片方だけが付けた組を、その読み手の `1回だけ` の行にする。当たる論点が無いとした事業は、表に行を持たない（読んだことは taba.json で分かる）。附表のまとまりの行は、まとまりの中の年度ごとの事業（fh）の行にする（同じ yomi と chu）。
+- 行の並びは、束の順（補正予算、実施計画、附表。束の中は事業の順で、附表はまとまりの中の年度の順）、事項の表の順。
+- 2026-11-28 の行は2762（一致2289、1回だけ473）。種類ごとに、附表1824（一致1518、1回だけ306）、補正予算の主な内容446（一般会計400、特別会計・企業会計46）、繰越明許費103、債務負担行為7、地方債80、実施計画302。事業1410、事項541。
+
+読み取りの結果 `taio/yomi-yosan/`：
+
+- 読み手（a と b）と束ごとのファイルのまま置く（`<読み手>-<束の番号2桁>.tsv`。中身は変えない）。束は29（補正予算1〜12、実施計画13〜16、附表17〜29）。列は jigyo、jiko（事項の ID か「無い」）、name（事項の名前）、mayoi（迷いがあれば 1）、riyu。読み方の決まりは SKILL.md 4.10。
+- `taba.json` は、束の並び（束ごとに、番号、種類、事業の ID の並び、読み手に渡した事業の字の sha256、附表の束はまとまりごとの年度ごとの事業の ID の並び）。ツールは、入力の lock の版で事業の字を作り直し（読み手に渡した材料を作ったときと同じ決まり。tools/yosan.py の zairyo）、束の番号・種類・事業の並び・まとまりの中身・sha256 が同じであることを確認する。違えば止まる。
+- 読み手は、全部の分野の論点の一覧（事項の表の行から、基本施策そのものの行を除いたもの）から選んだ。実施計画の事業も、事業の分野に限らず選んだ（作業者への指示の決定1。2026-11-28）。
+- taio/yomi-yosan/ は、テーマの読み取りの結果として読まない（tools/yomi.py の YOSAN。KISAI などと同じ扱い）。
+
+出し方（docs/design.md 4節）：
+
+- 論点の応答（issue）と試作のページの論点のページの「町の資料の記述」のあとに、節を足す。事業を種類ごとに分け（附表、補正予算の主な内容、特別会計・企業会計、繰越明許費、債務負担行為、地方債、実施計画の順）、種類の中は対象の年度の新しい順（補正予算は、同じ年度では新しい回から）。種類の違う額を、同じ並びに混ぜない。額の合計や差は出さない（CLAUDE.md 守ることの2）。
+- 事業ごとに、名前、年度と回（実施計画は実施計画年度）、区分（附表の新規・拡充、補正予算の事項の追加・変更・廃止）、額（入力の字と単位のまま。種類の言葉を添える）、説明の字（入力の字のまま）、読みの言葉、もとの資料の名前とページと URL。
+- 説明の字（補正予算の主な内容の説明と内訳、附表の概要と内訳、実施計画の事業の概要）と、附表と実施計画の事業の名前は、入力の検収の対象でないので、出す前に、§3 の決まりで、そのページのもとの資料から取り出した文字と照合する。照合できない説明の字は出さず、そのことの文を出す（2026-11-28 は、入力の事業1797のうち4つの説明の字。どれも表に行がある事業）。名前が照合できなければ、ページと応答を作らずに止まる。
+- 額の検収の印：補正予算の行は、上のとおり ✓ の行だけを読む。附表と実施計画の額は、入力の検収の台帳の行（附表は label が「<名前>/予算額」、実施計画は「<名前>/概算事業費」。同じ資料に同じ名前の事業が2つ以上あるときは「<名前>(同じ名前の<N>件目)/…」。値と出典の字も同じ行）が ✓ かを確認し、✓ でない額には、そのことの文を出す（2026-11-28 は、出す事業の全部が ✓）。
+- 同じ事業が、その論点の確定済みの記録（町の資料の記述のうち、生成AIの読み取りでない行。hino-ronten の事柄の記録と構造にしていない記載）にもあるときは、確定済みの記録だけを出す（tools/yosan.py の kakutei_ni_aru。資料のページが同じで、記録の引用に、事業の名前か説明の字（§3 の正規化）が入っているとき）。出さなかった事業の数の文を出す。2026-11-28 は6（新こども園の整備費用と財源の実施計画 e008 と令和8年度の附表 b010、介護の2つの論点の実施計画の事業4）。
+- 論点の issue を作る条件（7.9）に、この表に出す行があることを足す（2026-11-28 は、これで新しくできた issue は無い）。
+- 1回めの応答（質問ごとの部分の前まで）が2つ以上の応答に分かれる論点は、種類ごとに、対象の年度ごとに最初の3つ（tools/build_mcp.py の YOSAN_SAISHO）までを出し、残りを続きの応答で返す（町の資料の記述の続きと同じ扱い）。
+
+検査（tools/yosan.py --kensa。tools/kensa.py に入っている）：作り直した行が taio/yosan.tsv と同じであること。束の記録と、作り直した材料が同じであること。読み手の行の形（読み手に渡した形の検査と同じ決まり：jigyo が束の事業にあること、全部の事業に行があること、jiko が「無い」か選べる事項で、name がその事項の名前と同じであること、「無い」と事項の行が同じ事業に無いこと、mayoi と riyu の形）。表の行の jigyo が入力の事業にあり、jiko が事項の表にあって基本施策そのものの行でないこと、yomi が決めた字であること。どれかが合わないと止まる。
+
+まだ決めていない点：
+
+- 数値と内容の表（6.2）の、新こども園の整備の予算の値（yosan-hosei、kurikoshi など）と、この表の行の関係。いまは別々に持ち、issue には両方とも出る（数値と内容の表の値は item）。
+- 実施計画の事業の、令和8〜10年度より前の実施計画（令和3〜5年度から令和7〜9年度）の事業。入力に事業の表が無いので読んでいない。
+- 迷いの印の付いた「無い」の行（論点より広い範囲の事業など）を、依頼者が見るかどうか。
 
 ## 8. まだ決めていない物
 

@@ -306,12 +306,27 @@ class TestReal(unittest.TestCase):
         self.assertEqual([(n, k) for _, n, k in info["counts"]][:13],
                          [(15, 5), (9, 4), (17, 4), (6, 3), (2, 0), (3, 0), (14, 0), (2, 0),
                           (25, 1), (42, 1), (0, 4), (21, 1), (2, 3)])
-        self.assertEqual(len(info["counts"]), 109)
+        self.assertEqual(len(info["counts"]), 115)       # 予算の資料の事業だけがある論点 6 が加わった（2026-11-28）
         # 構造にしていない記載（SCHEMA.md 7.14。2026-11-28）を読む前は [(13, 5), (9, 4), (8, 4), (6, 3), (2, 0), (3, 0),
         # (12, 0), (2, 0), (0, 1), (0, 1), (0, 4), (0, 1), (0, 3)]
         self.assertEqual(info["questions"], 7)
         self.assertEqual(info["quotes"].mismatched, [])
         self.assertEqual(info["paras"].mismatched, [])
+
+    def test_yosan(self):
+        """予算の資料の事業（SCHEMA.md 7.16。2026-11-28）：hiyo の論点のページに、町の資料の記述のあとに出す。確定済みの記録にある
+        実施計画 e008 と令和8年度の附表 b010 は出さず、その数の文を出す。種類ごとの見出しの下に、補正予算の主な内容の2つ。"""
+        page, _ = self.build(self.inp)
+        sec = page[page.index("<section id='hiyo'"):]
+        sec = sec[:sec.index("</section>")]
+        D = bn.Page(self.inp, self.teigi, {"qsrc": {}}).D
+        h = sec[sec.index(f"<h2>{D.bun('mcp-midashi-issue-yosan')}</h2>"):sec.index("<h2>これまでの説明と答弁")]
+        self.assertIn(D.bun("yosan-kakutei", n=2), h)
+        self.assertIn(f"<h3>{bn.yosan_shurui(D, 'maru')}</h3>", h)
+        self.assertEqual(h.count("19000"), 1)
+        self.assertEqual(h.count("36000"), 1)
+        self.assertNotIn("3000000", h)
+        self.assertLess(sec.index("町の資料の記述"), sec.index(D.bun("mcp-midashi-issue-yosan")))
 
     def test_ippan_dai(self):
         """テーマの定義に無い質問の題は、付いた段落の発言を turns か、題の発言の範囲に含む問いの題名だけ（2026-11-28）。"""
@@ -404,16 +419,16 @@ class TestReal(unittest.TestCase):
         生成AIの2回の読み取りの行を入れると、全部に記録がある（2026-11-28。候補から11を足して48。さらに2を足して50。
         2回めの読み取りの候補から7を足して57）。"""
         # 計画の読み取りの候補を論点に入れたあと（2026-11-28）は 126。生成AIの2回の読み取りの行を入れない形でも、計画の記述が
-        # ある論点は記録がある（13 → 109）
+        # ある論点は記録がある（13 → 109）。予算の資料の事業（SCHEMA.md 7.16。2026-11-28）が付いた論点も記録がある（109 → 115）
         self.assertEqual(sum(r["aru"] for r in self.teigi["jiko"]), 126)
         T = self.teigi0
         self.assertEqual(len(T["jiko"]), 126)
-        self.assertEqual(sum(r["aru"] for r in T["jiko"]), 109)
+        self.assertEqual(sum(r["aru"] for r in T["jiko"]), 115)
         for P in ("子育て環境の未来に向けての提言", "日野町幼児教育保育施設再編整備計画（案）", "日野町認定こども園整備基本構想"):
             self.assertNotIn(P, [x[0] for x in T["topics"]])
         page, _ = self.build(self.inp, T)
         top = page[page.index("<section id='top'"):page.index("</section>")]
-        self.assertEqual(top.count("議会での質問と町の資料の記述は、まだ入れていません</td>"), 17)   # 2026-11-28 の計画の読み取りの前は 44
+        self.assertEqual(top.count("議会での質問と町の資料の記述は、まだ入れていません</td>"), 11)   # 2026-11-28 の計画の読み取りの前は 44。予算の資料の事業を入れる前は 17
         self.assertIn("<th colspan='4'>日野町幼児教育保育施設再編整備計画の章立てに入らない論点</th>", top)
         # 資料の外のまとまり（事項の表の matome）は、章立てに入らない論点の中で、まとまりの名前の見出しと、誰が決めたかの文を
         # 付けてまとめる（2026-11-28）。依頼者が決めたまとまり（園の安全）と、生成AIの案のまとまりで、文が違う

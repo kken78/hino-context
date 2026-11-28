@@ -29,6 +29,7 @@ import ronten  # noqa: E402
 import ronten_kisai as rk  # noqa: E402
 import shogo  # noqa: E402
 import yomi as ym  # noqa: E402
+import yosan as ys  # noqa: E402
 
 TEIGI_COLUMNS = ["kind", "key", "name", "short", "setsumei"]
 TEIGI_KINDS = ("テーマ", "論点", "準備中", "抜き出しの語", "単位", "注")
@@ -179,6 +180,10 @@ def jiko_ni_suru(inp, teigi, theme, rows=None, shudai=None, matome=None):
     aru |= {r["point"] for r in teigi["shudai"]}
     teigi["kisai"] = ks.of_jiko(inp, rows)     # 生成AIが資料を2回読んで付けた記述（SCHEMA.md 7.13。2026-11-28）
     aru |= {x["point"] for x in teigi["kisai"]}
+    # 生成AIが予算の資料の事業の字を2回読んで付けた事業（2026-11-28）。事項の name → 事業の並び
+    yo = ys.of_jiko(inp, {r["id"] for r in rows})
+    teigi["yosan"] = {by[j]["name"]: xs for j, xs in yo.items()}
+    aru |= set(teigi["yosan"])
     # matome は、このテーマの論点の一覧でのまとまりの名前にする（見出しごとにまとまりが違う行。SCHEMA.md 7.9。2026-11-28）
     teigi["jiko"] = [dict(r, aru=r["name"] in aru, matome=jiko.matome_of(r, theme)) for r in rows]
     teigi["matome"] = {m["matome"]: m for m in (jiko.read_matome() if matome is None else matome) if m["theme"] == theme}
@@ -394,6 +399,7 @@ def collect(inp, teigi, theme):
     points |= {x["point"] for x in kisai}
     if teigi.get("jiko"):
         points |= {r["about"] for r in ronten.kisai(inp)}      # 構造にしていない記載（SCHEMA.md 7.14）
+        points |= set(teigi.get("yosan") or {})                 # 生成AIが付けた、予算の資料の事業（SCHEMA.md 7.16）
     hoka_src = {}
     for r in inp.ronten_tsv(ronten.THEMES):
         if r["kind"] in ("問い", "質疑"):
@@ -489,7 +495,17 @@ def collect(inp, teigi, theme):
         cres = shogo.check_quotes(inp, [dict(where=where, source=c["moto"], quote=f) for f in frs])
         for m in cres.mismatched:
             problems.append(("(a) 引用がもとの資料に無い", f"{m['where']}：{m['reason']}（{m['source']}）「{m['quote']}」"))
-    return dict(ko=ko, katei=katei, ta=ta, qsrc=qsrc, mokuteki=moku, yomi=yomi, kisai=kisai), problems, (res, pres)
+    # SCHEMA.md 7.16 の事業：名前を検収していない事業（実施計画と附表）の名前が、もとの資料の文字と照合できなければ止める
+    yosan = teigi.get("yosan") or {} if teigi.get("jiko") else {}
+    for P, xs in yosan.items():
+        for x in xs:
+            if "name" in x["nashi"]:
+                problems.append(("(a) 引用がもとの資料に無い", f"予算の事業と事項の対応の表 {x['id']} / {P}：事業の名前「{x['name']}」が、"
+                                 f"もとの資料の文字に無い（{x['source']}）"))
+            n, u = named(x["source"])
+            if not (n and u):
+                problems.append(("(b) 出典の無い記述", f"予算の事業と事項の対応の表 {x['id']}：資料「{x['source']}」の名前か url が作れない"))
+    return dict(ko=ko, katei=katei, ta=ta, qsrc=qsrc, mokuteki=moku, yomi=yomi, kisai=kisai, yosan=yosan), problems, (res, pres)
 
 
 # ---- ページ ----
@@ -559,6 +575,79 @@ def kisai_go(D, yomi):
     if yomi == ks.IKKAI:
         return D.kotoba("資料の段落と事項の対応の表 yomi が「1回だけ」")
     raise ValueError(f"yomi が違う（{yomi}）")
+
+
+def yosan_shurui(D, shu):
+    """SCHEMA.md 7.16 の事業の種類（tools/yosan.py の SHU）→ 種類の言葉（docs/design.md 3節）。"""
+    if shu == "fuhyo":
+        return D.kotoba("予算の事業と事項の対応の表 jigyo が「fh:」")
+    if shu == "maru":
+        return D.kotoba("予算の事業と事項の対応の表 jigyo が「hj:」で、補正予算の主な内容の kind が「maru」")
+    if shu == "toku":
+        return D.kotoba("予算の事業と事項の対応の表 jigyo が「hj:」で、補正予算の主な内容の kind が「toku」")
+    if shu == "kurikoshi":
+        return D.kotoba("予算の事業と事項の対応の表 jigyo が「hz:」で、補正予算の事項の kind が「kurikoshi」")
+    if shu == "saimu":
+        return D.kotoba("予算の事業と事項の対応の表 jigyo が「hz:」で、補正予算の事項の kind が「saimu」")
+    if shu == "chihosai":
+        return D.kotoba("予算の事業と事項の対応の表 jigyo が「hz:」で、補正予算の事項の kind が「chihosai」")
+    if shu == "jisshi":
+        return D.kotoba("予算の事業と事項の対応の表 jigyo が「node:jisshi/」")
+    raise ValueError(f"SCHEMA.md 7.16 の事業の種類が違う（{shu}）")
+
+
+def yosan_yomi_go(D, yomi):
+    """予算の事業と事項の対応の表の yomi → 言葉（docs/design.md 3節）。"""
+    D.dasanai("予算の事業と事項の対応の表 chu")
+    if yomi == ys.ICCHI:
+        return D.kotoba("予算の事業と事項の対応の表 yomi が「一致」")
+    if yomi == ys.IKKAI:
+        return D.kotoba("予算の事業と事項の対応の表 yomi が「1回だけ」")
+    raise ValueError(f"yomi が違う（{yomi}）")
+
+
+def yosan_gyo(D, x):
+    """SCHEMA.md 7.16 の事業1つ（tools/yosan.py の of_jiko の1つ）→ (名前の HTML, 名前の下の行の HTML の並び)（docs/design.md 4節）。
+    額と説明は入力の字のまま。もとの資料の文字と照合できなかった説明の字は出さず、そのことの文を出す。"""
+    shurui = E(yosan_shurui(D, x["shu"]))
+    if x["shu"] == "jisshi":
+        out = [D.bun("yosan-nendo-jisshi", nendo=S(x["nendo_ji"]))]
+    elif x["shu"] == "fuhyo":
+        out = [D.bun("yosan-nendo-fuhyo", nendo=S(x["nendo_ji"]))]
+    else:
+        out = [D.bun("yosan-nendo-kai", nendo=E(str(x["fy"])), kai=S(x["nendo_ji"]))]
+    if x["kubun"]:
+        out.append(D.bun("yosan-kubun", kubun=S(x["kubun"])))
+    if x["gaku"] == "":
+        out.append(D.bun("yosan-gaku-nashi", shurui=shurui))
+    elif x["shu"] == "jisshi":
+        out.append(D.bun("yosan-gaku-ran", ran=S(x["label"]), gaku=S(x["gaku"]), tani=S(x["tani"]), shurui=shurui))
+    elif x["shu"] == "fuhyo":
+        out.append(D.bun("yosan-gaku-yosangaku", gaku=S(x["gaku"]), tani=S(x["tani"]), shurui=shurui))
+    else:
+        out.append(D.bun("yosan-gaku", gaku=S(x["gaku"]), tani=S(x["tani"]), shurui=shurui))
+    nashi = False
+    for i, (ran, t) in enumerate(x["setsumei"]):
+        if i in x["nashi"]:
+            nashi = True
+        elif ran == "desc":
+            out.append(f"「{S(t)}」")
+        else:
+            out.append(D.bun("yosan-uchiwake", ji=S(t)))
+    if nashi:
+        out.append(E(D.bun("yosan-shogo-nashi")))
+    if not x["kakunin"]:
+        out.append(E(D.bun("yosan-kakunin-nashi")))
+    out.append(E(yosan_yomi_go(D, x["yomi"])))
+    return S(x["name"]), out
+
+
+def yosan_setsumei(D, short, R):
+    """論点の、SCHEMA.md 7.16 の事業の見出しの下の文の並び（HTML。docs/design.md 4節）。"""
+    out = [E(D.bun("yosan-setsumei", short=E(short))), E(D.bun("yosan-kensho"))]
+    if R["yosan_kakutei"]:
+        out.append(E(D.bun("yosan-kakutei", n=R["yosan_kakutei"])))
+    return out
 
 
 def kakunin_go(D, q):
@@ -716,7 +805,11 @@ class Page:
         moku = [dict(gawa=g, name=n, slug=slugs.get(n, ""),
                      rows=sorted(rs, key=lambda r: (r["source_date"], r["source"]), reverse=True))
                 for (g, n), rs in aite.items()]
-        return dict(ko=ko, docs=docs, tome=tome, jisseki=any(x["kind"] == "実績" for x in ko), qs=qs, mokuteki=moku)
+        # SCHEMA.md 7.16 の事業。確定済みの記録（町の資料の記述）にある事業は出さず、数だけを持つ
+        yx = self.m.get("yosan", {}).get(P, [])
+        ydasu = [x for x in yx if not ys.kakutei_ni_aru(x, docs)]
+        return dict(ko=ko, docs=docs, tome=tome, jisseki=any(x["kind"] == "実績" for x in ko), qs=qs, mokuteki=moku,
+                    yosan=ys.narabe(ydasu), yosan_kakutei=len(yx) - len(ydasu))
 
     def dai(self, q, paras):
         """質問の題（dai_of）。paras は、出すものに付いた段落（発言の sid と段落の番号の組）の集まり。"""
@@ -773,6 +866,7 @@ class Page:
 <p class='lead'>「{th}」のうち、{E(setsumei)}について、町の資料と議会の会議録の記述を集めたページです。意見や評価は加えていません。各項目のリンクから、もとの資料を確認できます。</p>
 <div class='nav'><b>同じテーマのほかのページ</b>：{sib}　<a href='#top'>テーマのページへ戻る</a></div>
 <h2>町の資料の記述（新しい順）</h2>{sec1}
+{self.yosan_html(R, short)}
 <h2>これまでの説明と答弁（新しい順）</h2>
 <table><tr><th>時期</th><th>区分</th><th>内容</th><th>もとの資料</th></tr>{rows2}</table>{jis}
 {sec3}{sec_m}
@@ -781,6 +875,21 @@ class Page:
 <p class='m'>{keisai}</p>
 </section>"""
         return h, len(ko), len(ta), [(r["question"], {(sid, i) for sid, i, _ in r["paras"]}) for r in ta]
+
+    def yosan_html(self, R, short):
+        """SCHEMA.md 7.16 の事業の節（docs/design.md 4節）。出す事業が無ければ空（確定済みの記録にある事業だけのときは、
+        見出しと、そのことの文）。"""
+        D = self.D
+        if not R["yosan"] and not R["yosan_kakutei"]:
+            return ""
+        h = [f"<h2>{E(D.bun('mcp-midashi-issue-yosan'))}</h2>"] + [f"<p class='m'>{t}</p>" for t in yosan_setsumei(D, short, R)]
+        for shu, xs in R["yosan"]:
+            h.append(f"<h3>{E(yosan_shurui(D, shu))}</h3>")
+            for x in xs:
+                name, gyo = yosan_gyo(D, x)
+                link = f"<a href='{E(keys.source_url(self.inp, x['source']))}' target='_blank'>{S(self.srcname(x['source']))}</a>"
+                h.append(f"<div class='now'><div>{name}</div><div class='m'>{'<br>'.join(gyo)}</div><div class='m'>{link}</div></div>")
+        return "".join(h)
 
     def yomi_go(self, yomi):
         return yomi_go(self.D, yomi)

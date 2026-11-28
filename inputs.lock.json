@@ -10,17 +10,19 @@
   "shiga-hino-plans": {
     "sha": "ae24c58d6b0d1cf1bf994d072b232652a5ae6451",
     "files": ["data/plans/*.json", "data/sources_index.tsv", "data/text/*/*.txt", "data/text_raw/*/*.txt",
-              "data/audit_log/*.tsv"]
+              "data/audit_log/*.tsv", "data/fuhyo/*.json"]
   },
   "hino-town-docs": {
     "sha": "f64ce29da9eb4b8aec13a049b7eb7025fd7b6ec1",
     "files": ["data/sources.tsv", "data/text/*.txt", "data/text_raw/*.txt", "data/struct/senryaku-sheet.tsv",
-              "data/struct/senryaku-kpi.tsv", "data/struct/senryaku-bun.tsv", "data/struct/audit/senryaku.tsv"]
+              "data/struct/senryaku-kpi.tsv", "data/struct/senryaku-bun.tsv", "data/struct/audit/senryaku.tsv",
+              "data/struct/hosei-kai.tsv", "data/struct/hosei-maru.tsv", "data/struct/hosei-jiko.tsv",
+              "data/struct/hosei-shiryo.tsv", "data/struct/audit/hosei-r*.tsv"]
   },
   "hino-ronten": {
     "sha": "1c34ba0d1a39fe701f2d0086f1d0e2542cc55137",
     "files": ["ref/themes.tsv", "ref/shisetsu.tsv", "ref/lineage.tsv", "records/kotogara.tsv", "records/katei.tsv",
               "records/taio.tsv", "records/shisetsu.tsv", "ref/taikei.tsv", "records/tsunagari.tsv",
-              "records/kisai.tsv"]
+              "records/kisai.tsv", "links/fuhyo-years.tsv"]
   }
 }

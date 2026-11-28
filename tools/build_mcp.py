@@ -56,6 +56,7 @@ import ronten_kisai as rk  # noqa: E402
 import shogo  # noqa: E402
 import suji as sj  # noqa: E402
 import yomi as ym  # noqa: E402
+import yosan as ys  # noqa: E402
 
 OUT_PATH = os.path.join(inputs.ROOT, "mcp", "data", "outou.json")
 SRC_PATH = os.path.abspath(__file__)
@@ -64,6 +65,7 @@ SKILL_SETSU = "## 1. "              # SKILL.md の、出すときの規約の節
 NAME = "hino-context"
 VERSION = "0.1.0"                    # データのもとのコミットと日付は入れない（作るたびに変わると、検査で比較できない）
 JOGEN = 6000                         # 1回の応答の文字数の上限（目安）
+YOSAN_SAISHO = 3                     # 論点の、SCHEMA.md 7.16 の事業（mcp-midashi-issue-yosan）が1回めの応答に入りきらないとき、種類と対象の年度ごとに1回めに出す数（2026-11-28）
 SHIRYO_SAISHO = 3                    # 論点の資料の記述（mcp-midashi-issue-shiryo）が1回めの応答に入りきらないとき、資料ごとに1回めに出す数（2026-11-28）
 TSUNAGARI_ICHIRAN = 3                # theme と field のまとまりの見出しに添える、同じ題の数の多いまとまりの数（docs/design.md 4節。2026-11-28。案）
 A, B = bn.A, bn.B
@@ -958,23 +960,44 @@ class Tsukuru:
         matome_blocks = self.issue_matome(slug, theme)
 
         def tsukuru(gentei):
-            # gentei：資料の記述（mcp-midashi-issue-shiryo）を、資料ごとに最初の SHIRYO_SAISHO つまでにし、残りを続きの応答で返す（docs/design.md 4節）
+            # gentei：資料の記述（mcp-midashi-issue-shiryo）を、資料ごとに最初の SHIRYO_SAISHO つまでにし、残りを続きの応答で返す（docs/design.md 4節）。
+            # SCHEMA.md 7.16 の事業（mcp-midashi-issue-yosan）も、種類と対象の年度ごとに最初の YOSAN_SAISHO つまでにし、残りを続きの応答で返す
             items, nokori, kazu = [], [], {}
             for x, it in ditems:
                 b = x.get("bunsho") or sj.bunsho_of(x["source"]) or x["source"]
                 kazu[b] = kazu.get(b, 0) + 1
                 (items if not gentei or kazu[b] <= SHIRYO_SAISHO else nokori).append(it)
+            ymae, yato = [], []
+            for shu, xs in R["yosan"]:
+                a, z = ys.saisho(xs, YOSAN_SAISHO) if gentei else (xs, [])
+                ymae.append((shu, a))
+                if z:
+                    yato.append((shu, z))
+            ynokori = sum(len(z) for _, z in yato)
+            tsuzuki_blocks = []
+            if nokori:
+                tsuzuki_blocks.append(([f"## {E(D.bun('mcp-midashi-issue-shiryo-tsuzuki'))}"], nokori, True))
+            if yato:
+                # 種類の見出しは、項目の1つとして置く（続きの応答は、ブロックごとに新しい応答から始めるため、1つのブロックにする）
+                tsuzuki_blocks.append(([f"## {E(D.bun('mcp-midashi-issue-yosan-tsuzuki'))}"],
+                                       [it for shu, z in yato for it in [f"### {E(bn.yosan_shurui(D, shu))}"]
+                                        + [self.yosan_item(x) for x in z]], True))
 
             def blocks_of(bango):
                 its = list(items) or [E(D.bun("mcp-issue-shiryo-nashi"))]
                 if nokori:
                     its.append(self.kagi_ji(E(D.bun("mcp-issue-shiryo-tsuzuki", n=len(nokori), m=SHIRYO_SAISHO)),
                                             TSUZUKI, str(bango[0])))
-                return [(head, its)] + ato_blocks
-            mae = (blocks_of, [([f"## {E(D.bun('mcp-midashi-issue-shiryo-tsuzuki'))}"], nokori, True)] if nokori else [])
+                yb = self.yosan_blocks(R, short, ymae)
+                if ynokori:
+                    n = bango[1 if nokori else 0]
+                    yb[-1][1].append(self.kagi_ji(E(D.bun("mcp-issue-yosan-tsuzuki", n=ynokori, m=YOSAN_SAISHO)),
+                                                  TSUZUKI, str(n)))
+                return [(head, its)] + yb + ato_blocks
+            mae = (blocks_of, tsuzuki_blocks)
             return self.gikai(self.kagi_ji(E(P), "issue", slug), intro, None, qs, short, lambda q: pg,
                               f"## {E(D.bun('mcp-midashi-issue-gikai', n=len(qs)))}", hani, slug,
-                              ato=matome_blocks, mae=mae), bool(nokori)
+                              ato=matome_blocks, mae=mae), bool(nokori or ynokori)
         o, _ = tsukuru(False)
         n = len(o.pages(D))
         # 1回めの応答（質問ごとの部分の前まで）が2つ以上の応答に分かれるときだけ、資料の記述を分ける（2026-11-28）
@@ -983,6 +1006,29 @@ class Tsukuru:
             if wake:
                 return o2
         return o
+
+    def yosan_item(self, x):
+        """SCHEMA.md 7.16 の事業1つ → 項目（docs/design.md 4節）。"""
+        D = self.D
+        name, gyo = bn.yosan_gyo(D, x)
+        nm, url = self.moto(x["source"])
+        lines = [f"- {name}"] + [f"  - {g}" for g in gyo]
+        lines.append(f"  - {E(D.kotoba('資料の一覧の表 namae と、shiryo のページ'))}：{nm}" + (f"　{E(url)}" if url else ""))
+        return "\n".join(lines)
+
+    def yosan_blocks(self, R, short, shu_xs):
+        """論点の、SCHEMA.md 7.16 の事業のブロックの並び（見出しと説明の文、種類ごとのブロック）。出す事業も、確定済みの記録にある事業も無ければ空。"""
+        D = self.D
+        if not R["yosan"] and not R["yosan_kakutei"]:
+            return []
+        head = [f"## {E(D.bun('mcp-midashi-issue-yosan'))}"] + bn.yosan_setsumei(D, short, R)
+        out = []
+        for shu, xs in shu_xs:
+            out.append(([f"### {E(bn.yosan_shurui(D, shu))}"], [self.yosan_item(x) for x in xs]))
+        if not out:
+            return [(head, [E(D.bun("yosan-kakutei-dake"))])]
+        out[0] = (head + out[0][0], out[0][1])
+        return out
 
     def theme_ji(self, th):
         """テーマの名前（HTML）。総合計画の分野のテーマは、分野の番号と名前（入力の字）。"""
