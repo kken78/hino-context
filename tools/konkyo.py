@@ -38,7 +38,7 @@ import suji as sj  # noqa: E402
 import yomi as ym  # noqa: E402
 
 PATH = os.path.join(inputs.ROOT, "taio", "konkyo.tsv")
-COLS = ["question", "theme", "aite", "hani", "yomi", "chu"]
+COLS = ["question", "n", "theme", "aite", "hani", "yomi", "chu"]
 YOMI = ("一致", "1回だけ", "入力の確定済み")
 NYURYOKU = "入力の確定済み"     # 生成AIが読んだのではなく、hino-ronten の確定済みの記録から、このツールが作った行
 
@@ -98,7 +98,7 @@ def tsukuru(inp, bunsho, names, namae=None, hiduke=None):
         if hit:
             nm = ym.of_theme(namae, hit)
             moto = next(r["namae"] for r in nm if P in ym.namae_of(r))
-            rows.append(dict(question=t["question"], theme=hit, aite=ym.aite_of(nm, hiduke)(P, t["question"]),
+            rows.append(dict(question=t["question"], n="", theme=hit, aite=ym.aite_of(nm, hiduke)(P, t["question"]),
                              hani=t["hani"], yomi=NYURYOKU,
                              chu=f"入力：records/taio.tsv の point「{P}」（確定済み）。資料と出来事の名前の表の {hit} の"
                                  f"「{moto}」の行から"))
@@ -114,7 +114,7 @@ def tsukuru(inp, bunsho, names, namae=None, hiduke=None):
                           + "、".join(sorted(rs)) + "）")
             continue
         ref = sorted(rs)[0]
-        rows.append(dict(question=t["question"], theme=(ths or [""])[0], aite=b.pop(), hani=t["hani"], yomi=NYURYOKU,
+        rows.append(dict(question=t["question"], n="", theme=(ths or [""])[0], aite=b.pop(), hani=t["hani"], yomi=NYURYOKU,
                          chu=f"入力：records/taio.tsv の point「{P}」（確定済み）。資料の ID は records/tsunagari.tsv の "
                              f"{rs[ref]}「{ref}」（確定済み）から"))
     rows.sort(key=lambda r: (r["aite"], r["question"]))

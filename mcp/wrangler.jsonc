@@ -1,5 +1,7 @@
 // hino-context の MCP サーバー。Cloudflare の Workers Builds では、Root directory を mcp にして、
-// npx wrangler deploy で公開する（docs/mcp.md）。バインディング（KV、D1、Durable Objects など）は使わない。
+// npx wrangler deploy で公開する（docs/mcp.md）。バインディングは、静的なアセット（ASSETS）だけを使う（KV、D1、Durable Objects などは使わない）。
+// 応答の文は、build の command（scripts/bunkatsu.mjs）が data/outou.json から public/o/ に1つずつ書き出し、静的なアセットとして置く
+// （2026-11-28。応答の文を全部プログラムに束ねると、Workers の大きさの上限を超えるため）。
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "hino-context",
@@ -8,6 +10,9 @@
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
   "observability": { "enabled": true },
+  "build": { "command": "node scripts/bunkatsu.mjs" },
+  // run_worker_first：どの要求もプログラムが受ける。応答の文のファイルは、プログラムがバインディングで読むだけで、URL では返さない。
+  "assets": { "directory": "./public", "binding": "ASSETS", "run_worker_first": true },
   // プレビューの URL は使わない。画面でオフにしても、公開のたびに workers_dev の設定に合わせて戻るため、ここに書く。
   "preview_urls": false
 }

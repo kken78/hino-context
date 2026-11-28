@@ -26,6 +26,7 @@ import build_theme as bt  # noqa: E402
 import bunya as bu  # noqa: E402
 import kensho as ks  # noqa: E402
 import inputs  # noqa: E402
+import jiko  # noqa: E402
 import keys  # noqa: E402
 
 OUT = os.path.join(inputs.ROOT, "build", "bunya", "index.html")
@@ -59,6 +60,48 @@ def yomi_go(D, r):
     return f"{y}　{c}"
 
 
+def ronten_ichiran(m, fid, notes, ronten):
+    """分野の論点を基本施策ごとに並べたもの（docs/design.md 4節の field の8。2026-11-28）。MCP の応答（field）と試作のページが使う。
+    notes は、テーマ → (論点の表, build_note.Page)（分野のテーマを含む）。ronten は、題 → 論点の (名前, ID, テーマ) の並び。
+    → (読んだ分野か, 節の並び)。読んだ分野（事項の表に、その分野のテーマの行がある分野）の節は (種類, 見出し, 行の並び) で、
+    種類は "kihon"（見出しは基本施策の (番号, 名前)。行の並びの最初は、基本施策そのものの行（無ければ None）。続いて、
+    その基本施策に入る論点の行を、まとまり（matome）が空の行、まとまりごとの行の順に (まとまり, 行) で並べる）、
+    "nashi"（基本施策に入れていない論点。(まとまり, 行) の並び。まとまりを先に、空のものをあとに）、
+    "theme"（テーマの読み取りで作った事項で、この分野のテーマも付いたもの。行の並び）、"hoka"（ほかの分野にかかわる話題。行の並び）。
+    読んでいない分野の節は ("yomanai", テーマの ID, [(名前, ID)])。題の一覧の題に付いた論点の名前と ID の組は、テーマの順。"""
+    th = jiko.bunya_theme(fid)
+    if th not in notes:
+        out = {}
+        for k in m["by"].get(fid, []):
+            for P, slug, t in ronten.get(k, []):
+                if not jiko.is_bunya(t) and slug not in [s for _, s in out.get(t, [])]:
+                    out.setdefault(t, []).append((P, slug))
+        jun = {t: {slug: i for i, (_, slug, _, _) in enumerate(notes[t][0]["topics"])} for t in out}
+        return False, [("yomanai", t, sorted(out[t], key=lambda x: jun[t].get(x[1], 0))) for t in notes if t in out]
+    T = notes[th][0]
+    rows = T["jiko"]
+    own = [r for r in rows if all(jiko.is_bunya(t) for t in jiko.themes_of(r))]
+    hoka = [r for r in own if r["matome"] == jiko.HOKA]
+    own = [r for r in own if r["matome"] != jiko.HOKA]
+    x = m["bunya"][fid]
+    out = []
+    for no, name in x["shisaku"]:
+        k = fid + no
+        jishin = next((r for r in own if r["id"] in T["kihon"] and jiko.kihon_of(r) == [k]), None)
+        rs = [r for r in own if k in jiko.kihon_of(r) and r is not jishin]
+        out.append(("kihon", (no, name), [jishin] + bn.nashi_wake(rs)))
+    mine = {fid + no for no, _ in x["shisaku"]}
+    nashi = [r for r in own if not mine & set(jiko.kihon_of(r))]
+    if nashi:
+        out.append(("nashi", None, bn.nashi_wake(nashi, True)))
+    th_rows = [r for r in rows if not all(jiko.is_bunya(t) for t in jiko.themes_of(r))]
+    if th_rows:
+        out.append(("theme", None, th_rows))
+    if hoka:
+        out.append(("hoka", jiko.HOKA, hoka))
+    return True, out
+
+
 def page_id(m, fid):
     """分野の番号か話題の ID → ページの中の場所の ID（英字と数字）。"""
     if fid in m["bunya"]:
@@ -66,8 +109,75 @@ def page_id(m, fid):
     return fid
 
 
-def render(D, m, ronten, today):
-    """ページの HTML（資料からの文の印を付けたまま）。ronten は題 → 論点の (名前, ID, テーマ) の並び。"""
+def ronten_link(P, slug, th):
+    """論点の名前。テーマの論点は、論点の試作のページ（build/note/<テーマ>.html）へのリンクにする。総合計画の分野の論点は、
+    論点の試作のページを作っていないので、名前だけを出す（2026-11-28）。"""
+    if jiko.is_bunya(th):
+        return E(P)
+    return f"<a href='../note/{E(th)}.html#{E(slug)}'>{E(P)}</a>"
+
+
+def ronten_html(D, m, fid, notes, ronten):
+    """分野のページの論点（MCP の field の応答と同じ中身。ID は出さない。docs/design.md 4節の field の8）。"""
+    kei = S(m["kk"]["name"])
+    D.dasanai("事項の表 kihon")
+    yonda, secs = ronten_ichiran(m, fid, notes, ronten)
+    out = [f"<h2>{E(D.bun('mcp-midashi-ronten'))}</h2>"]
+    jiko_th = {}
+    for th, (T, _) in notes.items():
+        for _, slug, _, _ in T["topics"]:
+            jiko_th.setdefault(slug, th)
+
+    def li(r, ato=""):
+        name = ronten_link(r["name"], r["id"], jiko_th.get(r["id"], "")) if r["aru"] else E(r["name"])
+        mada = "" if r["aru"] else f"（{E(D.bun('ronten-mada'))}）"
+        return f"<li>{name}{mada}{ato}</li>"
+    if not yonda:
+        out.append(f"<p class='m'>{E(D.bun('mcp-ronten-bunya-yomanai'))}</p>")
+        for _, t, ps in secs:
+            out.append(f"<h3>{S(bt.Theme(m['inp'], t).namae[0])}</h3><ul>"
+                       + "".join(f"<li>{ronten_link(P, slug, t)}</li>" for P, slug in ps) + "</ul>")
+        return "".join(out)
+    out.append(f"<p class='m'>{D.bun('mcp-ronten-setsumei-bunya', keikaku=kei)}</p>")
+    for kind, mi, rs in secs:
+        if kind == "kihon":
+            jishin, subs = rs[0], rs[1:]
+            out.append(f"<h3>{S(mi[0] + mi[1])}</h3><ul>")
+            if jishin:
+                out.append(li(jishin, f"　<span class='m'>{E(D.bun('ronten-kihon-jishin'))}</span>" if jishin["aru"] else ""))
+            out += [li(r) for mt, xs in subs if not mt for r in xs]
+            out.append("</ul>")
+            for mt, xs in subs:
+                if mt and xs:
+                    out.append(f"<h4>{E(mt)}</h4><p class='m'>{E(D.bun('ronten-matome-setsumei'))}</p><ul>"
+                               + "".join(li(r) for r in xs) + "</ul>")
+        elif kind == "nashi":
+            out.append(f"<h3>{E(D.bun('ronten-kihon-nashi', keikaku=kei))}</h3>")
+            for mt, xs in rs:
+                if mt:
+                    out.append(f"<h4>{E(mt)}</h4><p class='m'>{E(D.bun('ronten-matome-setsumei'))}</p>")
+                elif len(rs) > 1:
+                    out.append(f"<h4>{E(D.bun('ronten-matome-nashi'))}</h4>")
+                out.append("<ul>" + "".join(li(r) for r in xs) + "</ul>")
+        elif kind == "theme":
+            out.append(f"<h3>{E(D.bun('ronten-theme-ronten'))}</h3><p class='m'>{E(D.bun('ronten-theme-ronten-setsumei'))}</p><ul>"
+                       + "".join(li(r, "　" + D.bun("ronten-theme-mei", theme=S(theme_namae(m, r)))) for r in rs) + "</ul>")
+        else:
+            out.append(f"<h3>{E(mi)}</h3><p class='m'>{E(D.bun('ronten-matome-setsumei'))}</p><ul>"
+                       + "".join(li(r) for r in rs) + "</ul>")
+    return "".join(out)
+
+
+def theme_namae(m, r):
+    """事項の行の theme の列の、分野でない最初のテーマの名前（テーマの定義の字）。"""
+    t = next(t for t in jiko.themes_of(r) if not jiko.is_bunya(t))
+    return bt.Theme(m["inp"], t).namae[0]
+
+
+def render(D, m, ronten, today, notes=None):
+    """ページの HTML（資料からの文の印を付けたまま）。ronten は題 → 論点の (名前, ID, テーマ) の並び。
+    notes は、テーマ → (論点の表, build_note.Page)（分野のテーマを含む）。"""
+    notes = notes or {}
     kk = m["kk"]
     kei = S(kk["name"])
 
@@ -108,6 +218,7 @@ def render(D, m, ronten, today):
                         + "</ul>")
             body.append(f"<p class='m'>{E(D.kotoba('資料の一覧の表 namae と、shiryo のページ'))}："
                         f"<a href='{E(keys.source_url(m['inp'], t[0]))}' target='_blank'>{kei}　{E(D.bun('page', n=pp))}</a></p>")
+            body.append(ronten_html(D, m, fid, notes, ronten))
             body.append(kensho_html(D, m, fid))
         else:
             body.append(f"<p class='m'>{E(D.bun('bunya-wadai-setsumei'))}</p>")
@@ -123,8 +234,7 @@ def render(D, m, ronten, today):
                 li.append(D.bun("bunya-hoka", hoka="、".join(link(y["bunya"] or m["m2id"][y["wadai"]]) for y in hoka)))
             ron = ronten.get(k)
             if ron:
-                li.append(D.bun("bunya-ronten", ronten="、".join(
-                    f"<a href='../note/{E(th)}.html#{E(s)}'>{E(P)}</a>" for P, s, th in ron)))
+                li.append(D.bun("bunya-ronten", ronten="、".join(ronten_link(P, s, th) for P, s, th in ron)))
             sid, p = bu.start_of(r)
             li.append(f"<a href='{E(keys.search_url(sid, p))}' target='_blank'>{E(D.bun('bunya-link'))}</a>")
             body.append("<li>" + "<br>".join(li) + "</li>")
@@ -219,7 +329,7 @@ def bu_page(t):
     return int(t[0].rsplit("/", 1)[1])
 
 
-def build(inp, D, kotoba, today, notes=None):
+def build(inp, D, kotoba, today, notes=None, bunya_notes=None):
     """検査を通れば、ページ（印を消した HTML）と件数を返す。当たれば Stop。notes は tools/build_mcp.py の read_notes で
     読んだもの（None なら読む）。"""
     import build_mcp
@@ -228,8 +338,9 @@ def build(inp, D, kotoba, today, notes=None):
     m, more = yomu(inp)
     problems += [("(a) 分野", x) for x in more]
     notes = build_mcp.read_notes(inp) if notes is None else notes
+    bunya_notes = build_mcp.read_bunya_notes(inp) if bunya_notes is None else bunya_notes
     pages = {}
-    for theme, T in notes.items():
+    for theme, T in list(notes.items()) + list(bunya_notes.items()):
         model, more, _ = bn.collect(inp, T, theme)
         problems += more
         pages[theme] = (T, bn.Page(inp, T, model, D))
@@ -243,7 +354,7 @@ def build(inp, D, kotoba, today, notes=None):
         raise Stop([("(k) 施策検証", bs.mondai_str(x)) for x in more])
     m["namae"] = bt.Namae(D, inp, {r["bunsho"]: r for r in tables["bunsho"]})
     ronten = bu.ronten_of_dai(inp, pages)
-    page = render(D, m, ronten, today)
+    page = render(D, m, ronten, today, pages)
     problems = bn.kotoba_problems(page, *kotoba)
     if problems:
         raise Stop(problems)

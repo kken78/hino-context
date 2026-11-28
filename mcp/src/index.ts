@@ -1,12 +1,13 @@
 // hino-context の MCP サーバー（Cloudflare Workers。docs/mcp.md）。
 // 行うことは3つだけ：ツールの一覧を返す、呼ばれたツールと引数に該当する応答を data/outou.json から引いて返す、
-// 該当するものが無いときに data/outou.json の定型文を返す。
+// 該当するものが無いときに data/outou.json の定型文を返す。data/outou.json は、scripts/bunkatsu.mjs が、目次（dist/mokuji.json）と、
+// 応答の文のファイル（静的なアセットの o/<番号>.txt）に分けている（2026-11-28。docs/mcp.md 5節）。
 // 応答の文、言葉、決まりは、tools/build_mcp.py が作った JSON にあり、ここには書かない。
 // 要求ごとに新しいサーバーを作る（createMcpHandler）。セッションと Durable Objects は使わない。
 import { McpServer } from "@modelcontextprotocol/server";
 import { createMcpHandler } from "agents/mcp/server";
 import { z } from "zod";
-import json from "../data/outou.json";
+import json from "../dist/mokuji.json";
 
 type Hikisu = { name: string; type: "string" | "integer"; required: boolean; description: string };
 type Tool = { name: string; description: string; args: Hikisu[] };
@@ -19,10 +20,13 @@ type Data = {
   tools: Tool[];
   nai: Record<string, string>;
   outou: Record<string, Record<string, number>>;
-  bun: string[];
+  kazu: number;
 };
+type Env = { ASSETS: Fetcher };
 
 const data = json as unknown as Data;
+// 静的なアセットのバインディング。どの要求でも同じものなので、要求を受けたときに入れる
+let assets: Fetcher | undefined;
 
 function schema(a: Hikisu) {
   const s = (a.type === "integer" ? z.number().int() : z.string()).describe(a.description);
@@ -41,9 +45,13 @@ function kagi(tool: Tool, args: Record<string, unknown>): string {
   return out.join("&");
 }
 
-function hiku(tool: Tool, args: Record<string, unknown>): string {
+async function hiku(tool: Tool, args: Record<string, unknown>): Promise<string> {
   const i = data.outou[tool.name]?.[kagi(tool, args)];
-  return i === undefined ? data.nai[tool.name] : data.bun[i];
+  if (i === undefined) return data.nai[tool.name];
+  if (!assets || !(i >= 0 && i < data.kazu)) throw new Error("応答の文のファイルを読めない");
+  const r = await assets.fetch(new Request(`https://assets.local/o/${i}.txt`));
+  if (!r.ok) throw new Error(`応答の文のファイルを読めない（${r.status}）`);
+  return await r.text();
 }
 
 function createServer() {
@@ -56,7 +64,7 @@ function createServer() {
     server.registerTool(
       tool.name,
       { description: tool.description, inputSchema: z.object(shape), annotations: { readOnlyHint: true } },
-      async (args: Record<string, unknown>) => ({ content: [{ type: "text" as const, text: hiku(tool, args) }] }),
+      async (args: Record<string, unknown>) => ({ content: [{ type: "text" as const, text: await hiku(tool, args) }] }),
     );
   }
   return server;
@@ -65,10 +73,11 @@ function createServer() {
 const mcp = createMcpHandler(createServer, { route: "/mcp" });
 
 export default {
-  fetch(request: Request, env: unknown, ctx: ExecutionContext) {
+  fetch(request: Request, env: Env, ctx: ExecutionContext) {
+    assets = env.ASSETS;
     if (new URL(request.url).pathname === "/") {
       return new Response(data.top, { headers: { "content-type": "text/plain; charset=utf-8" } });
     }
     return mcp(request, env, ctx);
   },
-} satisfies ExportedHandler;
+} satisfies ExportedHandler<Env>;
