@@ -424,9 +424,12 @@ def collect(inp, teigi, theme):
                   source=r["source"], quote=r["quote"]) for r in ko]
     qrows += [dict(where=f"過程の記録 {theme} step {r['step']}", source=r["sources"].split(",")[0],
                    quote=r["quote"]) for r in katei]
-    qrows += [dict(where=f"資料の段落と事項の対応の表 {x['source']} {x['hani']} / {x['jiko']}", source=x["source"],
-                   quote=x["quote"]) for x in kisai]
     res = shogo.check_quotes(inp, qrows)
+    kres = shogo.check_quotes(inp, [dict(where=f"資料の段落と事項の対応の表 {x['source']} {x['hani']} / {x['jiko']}",
+                                         source=x["source"], quote=x["quote"]) for x in kisai], page_bango=False)
+    res.total += kres.total
+    res.matched += kres.matched
+    res.mismatched += kres.mismatched
     pres = shogo.check_paras(inp, [dict(where=f"問いと事項の対応 {r['question']} / {r['point']}", hani=r["hani"])
                                    for r in ta])
     pres2 = shogo.check_paras(inp, [dict(where=f"質問と事項の対応の表 {r['question']} / {r['jiko']}", hani=r["hani"])
@@ -451,7 +454,8 @@ def collect(inp, teigi, theme):
             problems.append(("(b) 出典の無い記述", f"事柄の記録 {r['point']}：資料「{r['source']}」の名前か url が作れない"))
     for x in kisai:
         n, u = named(x["source"])
-        if not (n and u and x["source_date"]):
+        # 日付は資料の一覧の表の hiduke。空の資料（chu に理由がある。SCHEMA.md 7.1）は、日付が無いことの文を出す（2026-11-28）
+        if not (n and u and (x["source_date"] or x.get("bunsho") in ks.bunsho_ids())):
             problems.append(("(b) 出典の無い記述", f"資料の段落と事項の対応の表 {x['source']}：資料の名前か url か日付が作れない"))
     for r in katei:
         srcs = [s for s in r["sources"].split(",") if s]
@@ -517,6 +521,36 @@ def yomi_go(D, yomi):
     raise ValueError(f"yomi が違う（{yomi}）")
 
 
+def shihyo_gyo(D, hyo):
+    """指標の表（tools/kisai.py の shihyo_of の並び）→ 指標ごとの文（HTML の断片）の並び（docs/design.md 4節。2026-11-28）。
+    指標の名前、値、単位、時点は入力の字のまま。数値は計算しない。検収の台帳の確認の印があるかを添える。"""
+    out = []
+
+    def jiten(a):
+        return D.bun("kisai-shihyo-jiten", asof=S(a)) if a else ""
+    for b in hyo:
+        out.append(D.bun("kisai-shihyo-shutten", source=S(b["source"])))
+        for it in b["items"]:
+            if b["type"] == "kpi_grid":
+                t = D.bun("kisai-shihyo-kpi", label=S(it["label"]), value=S(it["value"]), unit=S(it["unit"]),
+                          jiten=jiten(it["asof"]))
+            else:
+                t = D.bun("kisai-shihyo-target", label=S(it["label"]), base=S(it["base"]), target=S(it["target"]),
+                          unit=S(it["unit"]), base_jiten=jiten(it["base_asof"]), target_jiten=jiten(it["target_asof"]))
+            k = D.bun("kisai-shihyo-kakunin-ari") if it["kakunin"] else D.bun("kisai-shihyo-kakunin-nashi")
+            out.append(t + "　" + E(k))
+    return out
+
+
+def wariate_bun(D, docs, by):
+    """町の資料の記述のうち、読む分野を作成者が決めた計画の記述があれば、その計画の名前を挙げた文（HTML の断片）。無ければ空
+    （docs/design.md 4節。2026-11-28）。by は、資料の一覧の表の ID → 行。"""
+    ks = list(dict.fromkeys(x["bunsho"] for x in docs if x.get("wariate")))
+    if not ks:
+        return ""
+    return D.bun("kisai-wariate", keikaku="、".join(S(by[k]["namae"]) if k in by else E(k) for k in ks))
+
+
 def kisai_go(D, yomi):
     """資料の段落と事項の対応の表の yomi → 言葉（docs/design.md 3節）。MCP の応答（tools/build_mcp.py）も使う。"""
     D.dasanai("資料の段落と事項の対応の表 chu")
@@ -541,6 +575,24 @@ class Page:
             D = build_suji.read_design()
         self.inp, self.t, self.m, self.D = inp, teigi, model, D
         self.pat = re.compile("|".join(re.escape(w) for w in teigi["words"])) if teigi["words"] else None
+
+    def bunsho_by(self):
+        """資料の一覧の表の ID → 行。"""
+        if not hasattr(self, "_bunsho_by"):
+            self._bunsho_by = {r["bunsho"]: r for r in ks.bunsho_rows()}
+        return self._bunsho_by
+
+    def hiduke_ji(self, x):
+        """記述の資料の日付の字。資料の一覧の表に日付が無い資料（生成AIが付けた計画の記述）は、そのことの文。"""
+        return f"{keys.ymd(x['source_date'])}の資料" if x["source_date"] else E(self.D.bun("kisai-hiduke-nashi"))
+
+    def inyo_html(self, x):
+        """町の資料の記述の、資料の文の部分。指標の表の段落で、計画ライブラリの指標の表とページで結べるものは、表の字
+        （docs/design.md 4節。2026-11-28）。"""
+        if x.get("hyo"):
+            return (f"<span class='m'>{E(self.D.bun('kisai-shihyo-setsumei'))}</span><br>"
+                    + "<br>".join(shihyo_gyo(self.D, x["hyo"])))
+        return f"「{S(x['quote'])}」"
 
     def srcname(self, key):
         return keys.source_name(self.inp, key.split("「")[0])
@@ -674,12 +726,14 @@ class Page:
         inp, T, qsrc = self.inp, self.t, self.m["qsrc"]
         R = self.ronten(P)
         ko, docs = R["ko"], R["docs"]
-        sec1 = "".join(f"<div class='now'><div>「{S(x['quote'])}」</div>{self.iken(x)}<div class='m'>{keys.ymd(x['source_date'])}の資料　"
+        sec1 = "".join(f"<div class='now'><div>{self.inyo_html(x)}</div>{self.iken(x)}<div class='m'>{self.hiduke_ji(x)}　"
                        f"{self.link(x)}{'　' + self.atai(x) if self.atai(x) else ''}"
                        f"{'　' + E(self.kisai_go(x['yomi'])) if x.get('yomi') else ''}</div></div>" for x in docs) \
             or "<p class='m'>町の資料の記述は、まだ整理できていません。</p>"
         if any(x.get("yomi") for x in docs):
-            sec1 = f"<p class='m'>{E(self.D.bun('kisai-yomi-setsumei', short=short))}</p>" + sec1
+            wa = wariate_bun(self.D, docs, self.bunsho_by())
+            sec1 = f"<p class='m'>{E(self.D.bun('kisai-yomi-setsumei', short=short))}</p>" \
+                + (f"<p class='m'>{wa}</p>" if wa else "") + sec1
         rows2 = "".join(f"<tr><td class='nw'>{keys.ymd(x['source_date'])}</td><td class='nw'>{self.doko(x)}</td>"
                         f"<td>「{S(x['quote'])}」{self.iken(x)}{'<br><span class=m>' + self.atai(x) + '</span>' if self.atai(x) else ''}{self.chu(x['source'], x['quote'])}</td>"
                         f"<td>{self.link(x)}</td></tr>" for x in ko)

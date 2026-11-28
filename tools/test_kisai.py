@@ -12,8 +12,15 @@ import kisai as ks  # noqa: E402
 P = "doc:jinji-ikusei-hoshin/3"
 
 
-def gyo(yomite, point, hani, mayoi="", kouho="", shiryo=P):
-    return dict(shiryo=shiryo, hani=hani, point=point, kouho=kouho, mayoi=mayoi, riyu="", yomite=yomite, gyo=2)
+def gyo(yomite, point, hani, mayoi="", kouho="", shiryo=P, hyo="", theme="b33"):
+    return dict(shiryo=shiryo, hani=hani, point=point, kouho=kouho, mayoi=mayoi, riyu="", yomite=yomite, gyo=2, hyo=hyo,
+                theme=theme, ki=0)
+
+
+def taba1(shiryo=P, danraku=8, hyo=0, theme="b33"):
+    """束1つの並び（tools/kisai.py の read_taba の形）。"""
+    return [dict(theme=theme, ki="t", pages=[dict(shiryo=shiryo, danraku=danraku, sha256="", hyo=hyo)],
+                 files={}, keikaku=False)]
 
 
 class TestDanraku(unittest.TestCase):
@@ -54,10 +61,31 @@ class TestParts(unittest.TestCase):
             ks.bangou("3 - 5")
 
     def test_bunsho_of(self):
-        self.assertEqual(ks.bunsho_of("doc:jinji-ikusei-hoshin/14"), "doc:jinji-ikusei-hoshin")
-        self.assertEqual(ks.bunsho_of("pt:sogo6/honpen-05/24"), "plan:sogo6")
-        self.assertEqual(ks.bunsho_of("pt:kaigo9/honpen/40"), "pt:kaigo9/honpen")
-        self.assertIsNone(ks.bunsho_of("doc:x"))
+        ids = {"pt:kaigo9/honpen", "plan:koutsu"}
+        self.assertEqual(ks.bunsho_of("doc:jinji-ikusei-hoshin/14", ids), "doc:jinji-ikusei-hoshin")
+        self.assertEqual(ks.bunsho_of("pt:sogo6/honpen-05/24", ids), "plan:sogo6")
+        self.assertEqual(ks.bunsho_of("pt:kaigo9/honpen/40", ids), "pt:kaigo9/honpen")
+        # 資料の一覧の表に、ファイルの行が無く計画の行がある計画は、計画の行（SCHEMA.md 7.1。2026-11-28）
+        self.assertEqual(ks.bunsho_of("pt:koutsu/honpen/46", ids), "plan:koutsu")
+        self.assertEqual(ks.bunsho_of("pt:bunkazai/hino-bunkazaikeikaku_ppt/3", ids), "pt:bunkazai/hino-bunkazaikeikaku_ppt")
+        self.assertIsNone(ks.bunsho_of("doc:x", ids))
+
+    def test_theme(self):
+        # 計画の読み取りの分野の番号と、読んだテーマ（4つのテーマの中心の分野は、テーマ）
+        self.assertEqual([ks.theme_of_bunya(b) for b in ("01", "18", "25", "30", "32", "33")],
+                         ["hoiku", "kaigo", "b25", "chiiki", "kokyo", "b33"])
+        self.assertEqual([ks.bunya_of_theme(t) for t in ("hoiku", "b09", "b25", "kokyo", "b33")], ["①", "⑨", "㉕", "㉜", "㉝"])
+
+    def test_wariate(self):
+        taba = [dict(theme="b20", ki="20-1", pages=[dict(shiryo="pt:kankyo/honpen/3"), dict(shiryo="pt:bunbetsu/honpen/2")],
+                     files={}, keikaku=True)]
+        rows = [dict(plan="kankyo", bunya="⑳", riyu="作業者の案")]
+        # bunbetsu は関連する個別計画に結び付いているので、割り当ての表に無くてよい
+        self.assertEqual(ks.check_wariate(rows, taba, {"⑳": {"bunbetsu"}}), [])
+        # 割り当ての表にも関連する個別計画にも無い計画、読んでいない組、関連する個別計画にある組は、止まる
+        self.assertEqual(len(ks.check_wariate([], taba, {})), 2)
+        self.assertEqual(len(ks.check_wariate(rows + [dict(plan="midori", bunya="⑳", riyu="x")], taba, {"⑳": {"bunbetsu"}})), 1)
+        self.assertEqual(len(ks.check_wariate(rows, taba, {"⑳": {"bunbetsu", "kankyo"}})), 1)
 
     def test_kakunin(self):
         # 総合計画の段落は、字を確認した記録が無い間は出さない
@@ -66,7 +94,7 @@ class TestParts(unittest.TestCase):
 
     def test_make_rows(self):
         jiko_rows = [dict(id="b33-07", theme="b33", name="職員研修とOJT"), dict(id="b33-09", theme="b33", name="人事評価")]
-        taba = [dict(shiryo=P, danraku=8, sha256="")]
+        taba = taba1()
         yomi = [gyo("a", "職員研修とOJT", "3-5"), gyo("b", "職員研修とOJT", "4-6", mayoi="1"),
                 gyo("a", "人事評価", "2"), gyo("b", "", "1", kouho="候補")]
         rows = ks.make_rows(yomi, taba, jiko_rows, ["doc:jinji-ikusei-hoshin"])
@@ -75,12 +103,25 @@ class TestParts(unittest.TestCase):
             ("b33-07", "3", "1回だけ", "読み手 a だけが付けた。迷いの印：読み手 b"),
             ("b33-07", "6", "1回だけ", "読み手 b だけが付けた。迷いの印：読み手 b"),
             ("b33-09", "2", "1回だけ", "読み手 a だけが付けた")])
-        self.assertEqual(ks.kouho(yomi), {"候補": [("b", P, "1", "", "")]})
+        self.assertEqual(ks.kouho(yomi), {("b33", "候補"): [("b", P, "1", "", "")]})
+
+    def test_hyo(self):
+        # 指標の表の段落：その段落を付けた読み手の行が、どれも hyo が 1 の段落だけを、hyo が 1 の行に分ける（SCHEMA.md 7.13）
+        jiko_rows = [dict(id="b25-04", theme="b25", name="公共交通の利用者数の目標")]
+        Q = "pt:koutsu/honpen/46"
+        yomi = [gyo("a", "公共交通の利用者数の目標", "2-5", shiryo=Q, hyo="1", theme="b25"),
+                gyo("b", "公共交通の利用者数の目標", "1-3", shiryo=Q, theme="b25")]
+        rows = ks.make_rows(yomi, taba1(Q, 40, 2, "b25"), jiko_rows, [])
+        self.assertEqual(len(rows), 3)
+        d = {(r["hani"], r["yomi"]): r["hyo"] for r in rows}
+        self.assertEqual(d[("2-3", "一致")], "")          # 読み手 b が表でない行で付けた
+        self.assertEqual(d[("4-5", "1回だけ")], "1")      # 読み手 a の表の行だけ
+        self.assertEqual(d[("1", "1回だけ")], "")
 
     def test_kouho(self):
         # 候補の段落は、資料の段落の候補の名前と扱いの対応の表の入れる先の事項の段落として、point の行と合わせる（SCHEMA.md 7.13）
         jiko_rows = [dict(id="b33-07", theme="b33", name="職員研修とOJT"), dict(id="b33-72", theme="b33", name="対話の場の設定")]
-        taba = [dict(shiryo=P, danraku=8, sha256="")]
+        taba = taba1()
         kr = [dict(theme="b33", namae="対話の場の設定", atsukai="事項に入れる", saki="b33-72", chu=""),
               dict(theme="b33", namae="対話の場", atsukai="事項に入れる", saki="b33-72", chu="")]
         yomi = [gyo("a", "", "3-4", kouho="対話の場の設定", mayoi="1"), gyo("b", "", "4", kouho="対話の場"),
@@ -97,7 +138,7 @@ class TestParts(unittest.TestCase):
         self.assertEqual(len(bad), 3)
 
     def test_check_yomi(self):
-        taba = [dict(shiryo=P, danraku=8, sha256="")]
+        taba = taba1()
         bad = ks.check_yomi([gyo("a", "職員研修とOJT", "3-9"), gyo("a", "無い論点", "1"),
                              gyo("a", "職員研修とOJT", "1", kouho="候補"), gyo("b", "x", "1", shiryo="doc:y/1")],
                             taba, {"職員研修とOJT"})
@@ -112,23 +153,39 @@ class TestReal(unittest.TestCase):
         taba = ks.read_taba()
         self.assertEqual(ks.check_taba(inp, taba), [])
         jiko_rows = jiko.read()
-        names = {r["name"] for r in jiko.of_theme(jiko_rows, ks.THEME)}
-        yomi = ks.read_yomi()
+        themes = {t["theme"] for t in taba}
+        names = {th: {r["name"] for r in jiko.of_theme(jiko_rows, th)} for th in themes}
+        yomi = ks.read_yomi(taba)
         self.assertEqual(ks.check_yomi(yomi, taba, names), [])
-        with open(os.path.join(inputs.ROOT, "teigi", "bunsho.tsv"), encoding="utf-8") as f:
-            import suji as sj
-            bunsho = [r["bunsho"] for r in sj.read_bunsho(f.read())[0]]
+        brows = ks.bunsho_rows()
+        bunsho = [r["bunsho"] for r in brows]
         kr = ks.read_kouho()
-        self.assertEqual(ks.check_kouho(kr, yomi, {r["id"] for r in jiko.of_theme(jiko_rows, ks.THEME)}), [])
+        self.assertEqual(ks.check_kouho(kr, yomi, {th: {r["id"] for r in jiko.of_theme(jiko_rows, th)} for th in themes}), [])
+        self.assertEqual(ks.check_wariate(ks.read_wariate(), taba, ks.kanren_plans(inp, brows)), [])
         rows = ks.make_rows(yomi, taba, jiko_rows, bunsho, kr)
         with open(ks.PATH, encoding="utf-8") as f:
             self.assertEqual(ks.dumps(rows), f.read())
-        # 出す記述の字は、もとの資料の文字と照合して合う（§3）。総合計画の行は出さない
-        out, dasanai = ks.kijutsu(inp, rows, ks.bunsho_hiduke())
+        # 出す記述の字は、もとの資料の文字と照合して合う（§3。ページ番号の除去はしない）。総合計画の行は出さない
+        out, dasanai = ks.kijutsu(inp, rows, ks.bunsho_hiduke(), ks.wariate_set())
         self.assertEqual(dasanai, sum(r["shiryo"].startswith("pt:sogo6/") for r in rows))
         import shogo
-        res = shogo.check_quotes(inp, [dict(where="", source=x["source"], quote=x["quote"]) for x in out])
+        res = shogo.check_quotes(inp, [dict(where="", source=x["source"], quote=x["quote"]) for x in out], page_bango=False)
         self.assertEqual(res.mismatched, [])
+        # 2026-11-28 の数
+        self.assertEqual((len(rows), sum(r["hyo"] == "1" for r in rows)), (5176, 146))
+
+    def test_shihyo(self):
+        # 地域公共交通計画の46ページ（印刷の42ページ）の指標の表。数値は JSON の数の字のまま
+        inp = inputs.Inputs()
+        hs = ks.shihyo_of(inp, "pt:koutsu/honpen/46")
+        self.assertEqual([h["type"] for h in hs], ["kpi_grid", "targets"])
+        kpi = {it["label"]: it for it in hs[0]["items"]}
+        self.assertEqual(kpi["地域公共交通空白地率"]["value"], "3.0")
+        self.assertTrue(kpi["地域公共交通空白地率"]["kakunin"])
+        t = hs[1]["items"][0]
+        self.assertEqual((t["label"], t["base"], t["target"], t["unit"]), ("近江鉄道線日野駅の利用者数", "312948", "328000", "人/年"))
+        self.assertEqual(ks.shihyo_of(inp, "pt:koutsu/honpen/45"), [])
+        self.assertEqual(ks.shihyo_of(inp, "doc:jinji-ikusei-hoshin/3"), [])
 
 
 if __name__ == "__main__":

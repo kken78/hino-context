@@ -302,9 +302,11 @@ class TestReal(unittest.TestCase):
 
     def test_counts(self):
         _, info = self.build(self.inp, self.teigi0)
-        self.assertEqual([(n, k) for _, n, k in info["counts"]],
+        # 計画の読み取り（SCHEMA.md 7.13。2026-11-28）で、町の資料の記述だけがある論点 96 が加わった（記録の数と質問は 0）
+        self.assertEqual([(n, k) for _, n, k in info["counts"]][:13],
                          [(15, 5), (9, 4), (17, 4), (6, 3), (2, 0), (3, 0), (14, 0), (2, 0),
                           (25, 1), (42, 1), (0, 4), (21, 1), (2, 3)])
+        self.assertEqual(len(info["counts"]), 109)
         # 構造にしていない記載（SCHEMA.md 7.14。2026-11-28）を読む前は [(13, 5), (9, 4), (8, 4), (6, 3), (2, 0), (3, 0),
         # (12, 0), (2, 0), (0, 1), (0, 1), (0, 4), (0, 1), (0, 3)]
         self.assertEqual(info["questions"], 7)
@@ -331,7 +333,8 @@ class TestReal(unittest.TestCase):
         2回めの読み取り（2026-11-28。35問）のあとは57の論点で、質問は66（確定済み7と、読んだ76のうち論点に付いた63から、
         確定済みの質問の4を除いた数）。"""
         _, info = self.build(self.inp)
-        self.assertEqual(len(info["counts"]), 57)
+        # 計画の読み取りの候補を論点に入れたあと（2026-11-28）は 126
+        self.assertEqual(len(info["counts"]), 126)
         # 総合計画の分野の読み取り（2026-11-28）で、新こども園の整備費用と財源（hiyo）に、分野の読み取りの質問が3件加わった
         # （前は (13, 9)）
         # 構造にしていない記載（SCHEMA.md 7.14。2026-11-28）で、記述が (13, 12) → (15, 12)、(8, 9) → (17, 9)
@@ -400,15 +403,17 @@ class TestReal(unittest.TestCase):
         種類と、まだ入れていないことの文を出す。資料の3つ（提言、計画（案）、基本構想）は論点にしない。
         生成AIの2回の読み取りの行を入れると、全部に記録がある（2026-11-28。候補から11を足して48。さらに2を足して50。
         2回めの読み取りの候補から7を足して57）。"""
-        self.assertEqual(sum(r["aru"] for r in self.teigi["jiko"]), 57)
+        # 計画の読み取りの候補を論点に入れたあと（2026-11-28）は 126。生成AIの2回の読み取りの行を入れない形でも、計画の記述が
+        # ある論点は記録がある（13 → 109）
+        self.assertEqual(sum(r["aru"] for r in self.teigi["jiko"]), 126)
         T = self.teigi0
-        self.assertEqual(len(T["jiko"]), 57)
-        self.assertEqual(sum(r["aru"] for r in T["jiko"]), 13)
+        self.assertEqual(len(T["jiko"]), 126)
+        self.assertEqual(sum(r["aru"] for r in T["jiko"]), 109)
         for P in ("子育て環境の未来に向けての提言", "日野町幼児教育保育施設再編整備計画（案）", "日野町認定こども園整備基本構想"):
             self.assertNotIn(P, [x[0] for x in T["topics"]])
         page, _ = self.build(self.inp, T)
         top = page[page.index("<section id='top'"):page.index("</section>")]
-        self.assertEqual(top.count("議会での質問と町の資料の記述は、まだ入れていません</td>"), 44)
+        self.assertEqual(top.count("議会での質問と町の資料の記述は、まだ入れていません</td>"), 17)   # 2026-11-28 の計画の読み取りの前は 44
         self.assertIn("<th colspan='4'>日野町幼児教育保育施設再編整備計画の章立てに入らない論点</th>", top)
         # 資料の外のまとまり（事項の表の matome）は、章立てに入らない論点の中で、まとまりの名前の見出しと、誰が決めたかの文を
         # 付けてまとめる（2026-11-28）。依頼者が決めたまとまり（園の安全）と、生成AIの案のまとまりで、文が違う
@@ -420,12 +425,13 @@ class TestReal(unittest.TestCase):
         self.assertLess(top.index("章立てに入らない論点</th>"), a)
         self.assertLess(a, m)
         for P in ("園の施設の修繕と安全対策", "園での感染症対策", "園児の安全対策"):
-            self.assertGreater(top.index(f"<td>{P}</td>"), m)
+            self.assertIn(P, top[m:])      # 計画の読み取り（2026-11-28）で記述が付き、論点の名前はリンクになった
         self.assertIn(f"<p class='m'>{D.bun('ronten-kazu-setsumei')}</p>", top)
         # 「ほかの分野にかかわる話題」のまとまりは、最後に置く（2026-11-28）
         h = top.index(f"<tr><th colspan='4'>{bn.jiko.HOKA}</th></tr>")
-        self.assertGreater(h, top.index("<td>園児の安全対策</td>"))
-        self.assertGreater(top.index("<td>子育て施策の情報発信</td>"), h)
+        # 計画の読み取り（2026-11-28）で記述が付いた論点の名前は、リンクになっている
+        self.assertGreater(h, top.index("園児の安全対策"))
+        self.assertGreater(top.index("子育て施策の情報発信", h), h)
         self.assertGreater(top.index("<td>園児の制服・帽子の統一</td>"), m)
         self.assertLess(top.index("３ 計画の期間"), top.index("７ 日野町の幼児教育・保育をめぐる課題"))
         # 目的と手段（両端が事項の表にある、入力の確定済みの組）
