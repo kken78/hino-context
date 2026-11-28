@@ -303,8 +303,10 @@ class TestReal(unittest.TestCase):
     def test_counts(self):
         _, info = self.build(self.inp, self.teigi0)
         self.assertEqual([(n, k) for _, n, k in info["counts"]],
-                         [(13, 5), (9, 4), (8, 4), (6, 3), (2, 0), (3, 0), (12, 0), (2, 0),
-                          (0, 1), (0, 1), (0, 4), (0, 1), (0, 3)])
+                         [(15, 5), (9, 4), (17, 4), (6, 3), (2, 0), (3, 0), (14, 0), (2, 0),
+                          (25, 1), (42, 1), (0, 4), (21, 1), (2, 3)])
+        # 構造にしていない記載（SCHEMA.md 7.14。2026-11-28）を読む前は [(13, 5), (9, 4), (8, 4), (6, 3), (2, 0), (3, 0),
+        # (12, 0), (2, 0), (0, 1), (0, 1), (0, 4), (0, 1), (0, 3)]
         self.assertEqual(info["questions"], 7)
         self.assertEqual(info["quotes"].mismatched, [])
         self.assertEqual(info["paras"].mismatched, [])
@@ -332,7 +334,8 @@ class TestReal(unittest.TestCase):
         self.assertEqual(len(info["counts"]), 57)
         # 総合計画の分野の読み取り（2026-11-28）で、新こども園の整備費用と財源（hiyo）に、分野の読み取りの質問が3件加わった
         # （前は (13, 9)）
-        self.assertEqual([(n, k) for _, n, k in info["counts"][:4]], [(13, 12), (9, 6), (8, 9), (6, 8)])
+        # 構造にしていない記載（SCHEMA.md 7.14。2026-11-28）で、記述が (13, 12) → (15, 12)、(8, 9) → (17, 9)
+        self.assertEqual([(n, k) for _, n, k in info["counts"][:4]], [(15, 12), (9, 6), (17, 9), (6, 8)])
         # 分野の読み取りの質問が、幼保の論点（分野の読み取りの候補を入れた論点）に7件加わった（前は 66。2026-11-28）
         self.assertEqual(info["questions"], 73)
         self.assertEqual(info["paras"].mismatched, [])

@@ -26,6 +26,7 @@ import jiko  # noqa: E402
 import keys  # noqa: E402
 import kisai as ks  # noqa: E402
 import ronten  # noqa: E402
+import ronten_kisai as rk  # noqa: E402
 import shogo  # noqa: E402
 import yomi as ym  # noqa: E402
 
@@ -168,6 +169,7 @@ def jiko_ni_suru(inp, teigi, theme, rows=None, shudai=None, matome=None):
     qs = {r["value"] for r in trows if r["kind"] in ("問い", "質疑")}
     names = {r["name"] for r in rows}
     aru = {r["point"] for r in ronten.kotogara(inp, names)} | (ronten.taio_points(inp, qs) & names)
+    aru |= {r["about"] for r in ronten.kisai(inp)} & names      # 構造にしていない記載（SCHEMA.md 7.14。2026-11-28）
     teigi["shudai"] = shudai_of(theme, rows, shudai)    # 生成AIの2回の読み取りの行（SCHEMA.md 7.10）
     teigi["kihon"] = set()
     if jiko.is_bunya(theme):
@@ -390,6 +392,8 @@ def collect(inp, teigi, theme):
     points |= {r["point"] for r in yomi}
     kisai = teigi.get("kisai") or [] if teigi.get("jiko") else []
     points |= {x["point"] for x in kisai}
+    if teigi.get("jiko"):
+        points |= {r["about"] for r in ronten.kisai(inp)}      # 構造にしていない記載（SCHEMA.md 7.14）
     hoka_src = {}
     for r in inp.ronten_tsv(ronten.THEMES):
         if r["kind"] in ("問い", "質疑"):
@@ -402,17 +406,20 @@ def collect(inp, teigi, theme):
     for P, *_ in teigi["topics"]:
         if P not in points:
             problems.append(("定義", f"論点「{P}」が、hino-ronten の題材 {theme} の事柄に無く、"
-                                     "その題材の質問・質疑との確定済みの対応の記録も無い"))
+                                     "その題材の質問・質疑との確定済みの対応の記録も、確定済みの記載も無い"))
     names = [t[0] for t in teigi["topics"]]
     ko = ronten.kotogara(inp, set(names))
+    # 構造にしていない記載（確定済み）のうち、about が論点の名前のもの。事柄の記録と同じ形で、同じ所に出す。同じ論点、資料、
+    # 引用の事柄の記録があるものは除く（SCHEMA.md 7.14。2026-11-28）
+    ko = ko + rk.jiko_kiroku(inp, set(names), ko)[0]
     katei = ronten.katei(inp, theme)
     _, more = ronten.katei_dasanai(inp, theme)      # 出さない過程の記録の行が、理由の条件に当たるか（SCHEMA.md §1）
     problems += [("(b) 出典の無い記述", m) for m in more]
     ta = ronten.taio(inp, set(names), set(qsrc))
 
     # (a) 引用と段落
-    qrows = [dict(where=f"事柄の記録 {r['point']} / {r['source']}", source=r["source"], quote=r["quote"])
-             for r in ko]
+    qrows = [dict(where=f"{'構造にしていない記載' if r.get('daicho') == 'kisai' else '事柄の記録'} {r['point']} / {r['source']}",
+                  source=r["source"], quote=r["quote"]) for r in ko]
     qrows += [dict(where=f"過程の記録 {theme} step {r['step']}", source=r["sources"].split(",")[0],
                    quote=r["quote"]) for r in katei]
     qrows += [dict(where=f"資料の段落と事項の対応の表 {x['source']} {x['hani']} / {x['jiko']}", source=x["source"],

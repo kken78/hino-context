@@ -127,8 +127,9 @@ class TestReal(unittest.TestCase):
         self.assertEqual(sorted(k for k in o["theme"] if re.fullmatch(r"theme=[a-z]+", k)),
                          ["theme=chiiki", "theme=hoiku", "theme=kaigo", "theme=kokyo"])
         issue = [k for k in o["issue"] if "page" not in k and ":" not in k and not re.fullmatch(r"issue=b[0-9]{2}-.+", k)]
-        # 幼保57、介護45、公共施設56、地域のあり方41（共通の事項4は、公共施設で作る。2回めの読み取りのあと。2026-11-28）
-        self.assertEqual(len(issue), 199)
+        # 幼保57、介護47、公共施設56、地域のあり方41（共通の事項4は、公共施設で作る。2回めの読み取りのあと。2026-11-28）。
+        # 介護の2（課題2 地域包括ケアシステムの明確化、日常生活圏域の設定）は、構造にしていない記載（SCHEMA.md 7.14）でできた
+        self.assertEqual(len(issue), 201)
         # まとまりの ID（見出しの ID とまとまりの名前を「:」でつないだ字。2026-11-28）も issue で引く
         self.assertEqual(sum(1 for k in o["issue"] if "page" not in k and ":" in k), 268)   # 2026-11-28 に資料の段落の候補のまとまり3を足した
         self.assertIn("b33-k1:職員の育成と人事評価", d["tools"][1]["args"][0]["erabu"])
@@ -393,7 +394,7 @@ class TestReal(unittest.TestCase):
         t = self.bun("document", "document=doc:koho-no771-08")
         lines = t.split("\n")
         self.assertEqual(lines[2], D.bun("mcp-shiryo-hani"))                # 名前のすぐあと
-        self.assertEqual(lines[3], D.bun("mcp-shiryo-kazu", hyo=3, atai=10, teigi=1, kara=0, e=0, q=0))
+        self.assertEqual(lines[3], D.bun("mcp-shiryo-kazu", hyo=3, atai=10, teigi=1, kara=0, e=0, q=0, kiroku=0))
         self.assertIn(D.bun("mcp-hani"), self.bun("theme", ""))
         self.assertNotIn(D.bun("mcp-hani-nai"), self.bun("theme", ""))
 
@@ -414,6 +415,22 @@ class TestReal(unittest.TestCase):
         self.assertEqual({k for k, _ in c.exception.problems}, {"(e) デザインシステムとの対応"})
 
     # ---- 論点（issue） ----
+
+    def test_kiroku(self):
+        """hino-ronten の構造にしていない記載（SCHEMA.md 7.14。2026-11-28）：資料と出来事に当たる行を document と event に出す。"""
+        t = self.bun("event", "event=kaigo-dai10ki-sakutei")
+        self.assertIn("## " + D.bun("mcp-midashi-event-kiroku"), t)
+        self.assertIn("「人口構成、社会情勢など、さまざまな変化に柔軟に対応するため、３年ごとに見直しを行っています。」", t)
+        self.assertLess(t.index(D.bun("mcp-midashi-event-kiroku")), t.index("## " + D.bun("mcp-midashi-event-konkyo", n=4)))
+        t = self.bun("document", "document=doc:jigyo-shinkodomoen-kousou")
+        self.assertIn("この資料について記している記述 13 件", t)
+        self.assertIn("## " + D.bun("mcp-midashi-shiryo-kiroku"), t)
+        # 版ごとの行：行の資料の版だけに出す
+        self.assertIn("この資料について記している記述 1 件", self.bun("document", "document=pt:youho/honpen"))
+        self.assertIn("この資料について記している記述 0 件",
+                      self.bun("document", "document=doc:jigyo-youhosaihen-keikakuan-202411"))
+        # 事項に当たる行で、論点の issue ができた（介護の日常生活圏域の設定）
+        self.assertIn("「日常生活圏域は、地域の特性に応じたサービス提供", self.bun("issue", "issue=kaigo31"))
 
     def issue_pages(self, slug):
         o = self.data["outou"]["issue"]
@@ -641,7 +658,7 @@ class TestReal(unittest.TestCase):
         notes = bm.read_notes(self.inp)
         self.assertEqual(list(notes), ["chiiki", "hoiku", "kaigo", "kokyo"])          # テーマの定義の順
         self.assertEqual({th: len(T["topics"]) for th, T in notes.items()},
-                         dict(hoiku=57, kaigo=45, kokyo=56, chiiki=45))          # 2回めの読み取りのあと（2026-11-28）
+                         dict(hoiku=57, kaigo=47, kokyo=56, chiiki=45))          # 構造にしていない記載を読んだあと（2026-11-28）
         self.assertEqual({th: len(T["junbi"]) for th, T in notes.items()}, dict(hoiku=0, kaigo=0, kokyo=0, chiiki=0))
         slugs = [slug for T in notes.values() for _, slug, _, _ in T["topics"]]
         # ID がテーマをまたいで重なるのは、公共施設の再編と地域のあり方に共通の事項の4つだけ（2026-11-28。kokyo38 は2回めの
@@ -870,7 +887,7 @@ class TestReal(unittest.TestCase):
         for nm in names:
             self.assertNotIn(nm, soto)
         self.assertNotIn("議員）", alltext)
-        t = self.bun("issue", "issue=yochi")
+        t = self.bun("issue", "issue=yochi&page=2")    # 構造にしていない記載（SCHEMA.md 7.14）で、1回めの応答が長くなった
         i = t.index("「園舎、園庭、駐車場を含め、8,000平米から１万平米程度を想定しているとの答弁でした。」")
         self.assertIn("  - " + D.bun("mcp-issue-jiki-kubun", jiki="2025年3月24日", kubun="議会での議員の発言"), t[i:i + 200])
         self.assertIn("（議会での答弁）", alltext)

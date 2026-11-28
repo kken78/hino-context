@@ -5,6 +5,7 @@ lock の SHA の hino-ronten から読む。records の表は、status が confi
 THEMES = "ref/themes.tsv"
 LINEAGE = "ref/lineage.tsv"
 KOTOGARA = "records/kotogara.tsv"
+KISAI = "records/kisai.tsv"
 KATEI = "records/katei.tsv"
 TAIO = "records/taio.tsv"
 CONFIRMED = "confirmed"
@@ -27,6 +28,11 @@ def _confirmed(inp, path):
 def kotogara(inp, points):
     """事柄の記録のうち、point が points のどれかの行。"""
     return [r for r in _confirmed(inp, KOTOGARA) if r["point"] in points]
+
+
+def kisai(inp):
+    """構造にしていない記載（records/kisai.tsv）のうち、確定済みの行（入力の順。SCHEMA.md 7.14）。"""
+    return _confirmed(inp, KISAI)
 
 
 # 過程の記録のうち、ページと MCP の応答の検査で止まるため、出さない行（SCHEMA.md §1。2026-11-27 の指示）。
