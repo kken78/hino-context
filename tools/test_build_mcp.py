@@ -89,6 +89,12 @@ class TestReal(unittest.TestCase):
     def bun(self, tool, k):
         return self.data["bun"][self.data["outou"][tool][k]]
 
+    def review_pages(self, k):
+        """review の応答の全部（1回めから順に）。"""
+        o = self.data["outou"]["review"]
+        n = sum(1 for x in o if x.startswith(f"review={k}&page="))
+        return [self.data["bun"][o[f"review={k}&page={i}"]] for i in range(1, n + 1)] or [self.data["bun"][o[f"review={k}"]]]
+
     def test_shape(self):
         d = self.data
         self.assertEqual((d["name"], d["version"]), ("hino-context", bm.VERSION))
@@ -154,8 +160,9 @@ class TestReal(unittest.TestCase):
         self.assertEqual(sum(1 for k in o["item"] if re.fullmatch(r"item=[a-z0-9-]+", k)), 27)
         self.assertEqual(sum(1 for k in o["facility"] if "page" not in k), 13)
         # 2026-11-28 に2つと、施策検証結果報告書（令和7年度）と、「いま、私たちができること 2025」と、日野町人材育成基本方針を足した
-        # 計画の読み取り（2026-11-28）で、読んだ計画の資料 33 を足した
-        self.assertEqual(sum(1 for k in o["document"] if re.fullmatch(r"document=[^&]+", k)), 64)
+        # 計画の読み取り（2026-11-28）で、読んだ計画の資料 33 を足した。施策検証の令和3〜6年度（2026-11-28）で、
+        # 施策検証結果報告書（令和３年度）を足した
+        self.assertEqual(sum(1 for k in o["document"] if re.fullmatch(r"document=[^&]+", k)), 65)
         self.assertEqual(sum(1 for k in o["document"] if re.fullmatch(r"document=[^&]+&table=[0-9]+", k)), 17)
         # 続きの1は、続きを付けない組と同じ
         for v in o.values():
@@ -1095,34 +1102,78 @@ class TestReal(unittest.TestCase):
         self.assertIn("- " + D.bun("kensho-nai", shisaku="(2)子どもが安心して生活できる仕組みづくり"), t)
         # 話題の応答には出さない
         self.assertNotIn(D.bun("kensho-midashi"), self.bun("field", "field=wadai-kokuho"))
-        # review：KPI は報告書の表のまま、文の欄は全部、検証結果の意味は報告書の字
-        r = "\n".join(self.data["bun"][i] for k, i in sorted(o["review"].items())
-                      if k.startswith("review=node:senryaku2/e008&page="))
+        # 前の年度の報告書の検証結果を、年度ごとに添える（2026-11-28。案）
+        t = "\n".join(self.data["bun"][i] for k, i in sorted(o["field"].items()) if k.startswith("field=⑤&page="))
+        self.assertIn("- 検証結果：B（46〜47ページ）\n- " + D.bun("kensho-mae", midashi="検証結果") + "\n  - 報告書（令和６年度）：B（46〜47ページ）"
+                      "\n  - 報告書（令和５年度）：", t)
+        self.assertIn("\n  - 報告書（令和３年度）：", t)
+        # review：報告書ごと（新しい年度から）。KPI は報告書の表のまま、文の欄は全部、検証結果の意味は報告書の字
+        pages = self.review_pages("node:senryaku2/e008")
+        r = "\n".join(pages)
         self.assertTrue(r.split("\n")[1] == "# " + e008)
-        self.assertIn("- 令和7年度　目標 52回　実績 30回　達成率 57.7%", r)          # 入力の tani を付ける
-        self.assertIn("- 基準値【R2】：3.7 回", r)
-        self.assertIn("## 内部検証（町が書いたもの）\n### 取り組み状況（46〜47ページ）\n", r)
-        self.assertIn(D.bun("kensho-hito"), r)          # 入力の検収の台帳に人の印が無い
-        self.assertIn("### 実施が困難なこと（46〜47ページ）\n- 「特にありません。」", r)
-        self.assertIn("    - 「Ｂ 実施できている １８点 ～ １３点」（8ページ）", r)
-        self.assertEqual(r.count("\n### コメント（46〜47ページ）\n"), 1)
-        self.assertEqual(sum(1 for x in r.split("\n") if x.startswith("- 「")), 10 + 6 + 12 + 1 + 1 + 5 + 3 + 7)
+        hon = [r.index(f"## 日野町くらし安心ひとづくり総合戦略（第２期）施策検証結果報告書（令和{n}年度）") for n in "７６５４３"]
+        self.assertEqual(hon, sorted(hon))
+        h = r.index("## " + D.bun("kensho-hikaku-midashi"))
+        self.assertTrue(hon[0] < h < hon[1])
+        # 1回めの応答に、いちばん新しい報告書。前の年度の報告書と、年度ごとの並びは、新しい応答から始める
+        self.assertIn("（令和７年度）（2026年10月）", pages[0])
+        for x in ("## " + D.bun("kensho-hikaku-midashi"), "施策検証結果報告書（令和６年度）（2025年10月）（document",
+                  "施策検証結果報告書（令和３年度）（2022年11月）（document"):
+            # 応答の頭の3行（試作の文、題、何回めか）と空の行のすぐあとに、見出しがある
+            self.assertTrue(any(p.split("\n")[4].startswith("## ") and x in p.split("\n")[4] for p in pages), x)
+        r7 = r[hon[0]:h]
+        self.assertIn("- 令和7年度　目標 52回　実績 30回　達成率 57.7%", r7)          # 入力の tani を付ける
+        self.assertIn("- 基準値【R2】：3.7 回", r7)
+        self.assertIn("### 内部検証（町が書いたもの）\n#### 取り組み状況（46〜47ページ）\n", r7)
+        self.assertIn(D.bun("kensho-hito"), r7)          # 入力の検収の台帳に人の印が無い
+        self.assertIn("#### 実施が困難なこと（46〜47ページ）\n- 「特にありません。」", r7)
+        self.assertIn("  - 「Ｂ 実施できている １８点 ～ １３点」（8ページ）", r)
+        self.assertEqual(r.count("\n#### コメント（46〜47ページ）\n"), 2)                 # 令和7年度と6年度
+        self.assertEqual(sum(1 for x in r7.split("\n") if x.startswith("- 「")), 10 + 6 + 12 + 1 + 1 + 5 + 3 + 7)
+        # 1ページの報告書は、ページを1つだけ添える。令和3年度の報告書には、KPIの達成度の欄が無い
+        r3 = r[hon[4]:]
+        self.assertIn("- 検証結果：", r3)
+        self.assertIn("（39ページ）", r3)
+        self.assertNotIn("39〜40ページ", r3)
+        self.assertNotIn("KPIの達成度【KPIが複数の場合は、平均点】：", r3)
+        # 目標値の行
+        self.assertIn("- 目標値【R7】：52 回", r[hon[1]:hon[2]])
+        # 指標ごとの年度ごとの並び：同じ字はまとめ、違う字は報告書ごとに分ける。計算しない
+        hk = r[h:hon[1]]
+        self.assertIn("  - 目標 37　実績 28　達成率 74.3%（報告書（令和７年度）の46ページ、報告書（令和４年度）の39ページ）\n"
+                      "  - 目標 37　実績 28　達成率 75.7%（報告書（令和５年度）の39ページ）", hk)
+        self.assertIn("  - 目標 8.7　実績 0.7　達成率 8.0%（報告書（令和５年度）の39ページ）", hk)
+        # 入力の検収で確認が済んでいないシートの列は、出さないことの言葉
+        r6 = r[hon[1]:hon[2]]
+        self.assertIn("KPIの達成度【KPIが複数の場合は、平均点】：" + D.kotoba("施策検証シートの検収の台帳 note の段1 で合わない列"), r6)
+        # 起票の2回の読みが違って空の欄は、空のまま、その旨の言葉（令和6年度の報告書の母子手帳交付時の面談実施率）
+        r = "\n".join(self.review_pages("node:senryaku2/e001"))
+        nikai = D.kotoba("施策検証シートの KPI の表 note、施策検証シートの項目の表 note に「2人の読みが違う」とある列")
+        self.assertIn(f"- 令和5年度　目標 {nikai}　実績 {nikai}　達成率 100%", r)
+        # 入力の検収で確認が済んでいない KPI の行は出さず、その数の文を出す（令和3年度の報告書の34ページ）
+        r = "\n".join(self.review_pages("node:senryaku2/e003"))
+        self.assertIn(D.bun("kensho-nashi-kpi", midashi="KPI（重要業績評価指標）", n=12), r)
         # 目標2・実績1で達成率100.0% の行も、字のまま（2026-11-28 の依頼者の決定）
-        r = self.bun("review", "review=node:senryaku2/e017")
+        r = "\n".join(self.review_pages("node:senryaku2/e017"))
         self.assertIn("目標 2　実績 1　達成率 100.0%", r)
         # 欄の見出しがシートによって違う欄は、そのシートの字
-        r = "\n".join(self.data["bun"][i] for k, i in sorted(o["review"].items())
-                      if k.startswith("review=node:senryaku2/e010&page="))
-        self.assertIn("### 実施できていないこと・困難なこと（50〜51ページ）\n", r)
-        self.assertNotIn("### 実施が困難なこと", r)
+        r = "\n".join(self.review_pages("node:senryaku2/e010"))
+        r7 = r[:r.index("## " + D.bun("kensho-hikaku-midashi"))]
+        self.assertIn("#### 実施できていないこと・困難なこと（50〜51ページ）\n", r7)
+        self.assertNotIn("#### 実施が困難なこと", r7)
+        # 令和3・4年度の報告書の④の1つめの見出しは「実施していること」
+        self.assertIn("#### 実施していること（41ページ）\n", r)
+        # 見出しの字がシートに無い欄（令和6年度の報告書の88ページ）
+        r = "\n".join(self.review_pages("node:senryaku2/e029"))
+        self.assertIn("#### 基本目標、基本的方向を踏まえて（88〜89ページ）\n" + D.bun("kensho-midashi-nai"), r)
         # 担当部署と取り組みの方向は、シートの字。本編と違うときは、本編の字も添える
-        r = self.bun("review", "review=node:senryaku2/e038")
+        r = "\n".join(self.review_pages("node:senryaku2/e038"))
         self.assertIn("- " + D.bun("kensho-tantou", tantou="R3：住民課、R4：交通環境政策課・建設計画課") + "\n  - "
                       + D.bun("kensho-tantou-honpen", tantou="交通環境政策課・建設計画課"), r)
-        r = self.bun("review", "review=node:senryaku2/e009")
+        r = "\n".join(self.review_pages("node:senryaku2/e009"))
         self.assertIn("取り組みの方向（施策検証シート）「子育てにやさしい風土づくり」\n  - "
                       + D.bun("kensho-houkou-honpen", houkou="生涯にわたる学びと活躍の推進"), r)
-        r = self.bun("review", "review=node:senryaku2/e008")
+        r = "\n".join(self.review_pages("node:senryaku2/e008"))
         self.assertNotIn(D.bun("kensho-tantou-honpen", tantou="図書館"), r)
 
     def test_repo_json(self):

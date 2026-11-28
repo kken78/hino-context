@@ -380,6 +380,7 @@ def kensho_html(D, m, fid):
     D.dasanai("施策検証シートの表 tasseido、kekka")
     D.dasanai("施策検証の欄の表 midashi")
     D.dasanai("施策検証シートの検収の台帳 reviewer")
+    mada = E(D.kotoba("施策検証シートの検収の台帳 note の段1 で合わない列"))
     yomi = {ks.ICCHI: D.kotoba("施策検証の取り組みと分野の対応の表 yomi が「一致」"),
             ks.IKKAI: D.kotoba("施策検証の取り組みと分野の対応の表 yomi が「1回だけ」")}
     sh = dict(x["shisaku"])
@@ -397,41 +398,59 @@ def kensho_html(D, m, fid):
 
     def pages(t):
         p = int(t["page"])
+        if K["maisu"][t["doc"]] == 1:
+            return E(D.bun("page", n=p))
         return E(D.bun("page", n=D.bun("kikan", a=p, z=p + 1)))
 
+    def ji(t, c):
+        return mada if c in t["_mada"] else S(t[c])
+
+    def aru(t, c):
+        return bool(t[c]) or c in t["_mada"]
+
     def ran(t, r):
-        return D.bun("hyo-kijutsu-ran", midashi=S(ks.kohos(K["ran"][r])[0]), atai=S(t[r])) + f"（{pages(t)}）"
+        return D.bun("hyo-kijutsu-ran", midashi=S(ks.kohos(K["ran"][r])[0]), atai=ji(t, r)) + f"（{pages(t)}）"
+
+    def hokoku(d):
+        return D.bun("kensho-hokoku", nendo=S(ks.hokoku_nendo(nm.by[f"doc:{d}"]["namae"])))
+
+    def mae(k):
+        out = [f"<li>{D.bun('hyo-kijutsu-ran', midashi=hokoku(d), atai=ji(t, 'kekka'))}（{pages(t)}）</li>"
+               for d in ks.DOCS[1:] for t in [K["sheet"][k].get(d)] if t is not None and aru(t, "kekka")]
+        if not out:
+            return ""
+        return (f"<li>{D.bun('kensho-mae', midashi=S(ks.kohos(K['ran']['kekka'])[0]))}<ul>" + "".join(out) + "</ul></li>")
     naka = [k for k in K["tori"] if K["naka"].get(k) == fid]
     hoka = [k for k in K["tori"] if K["naka"].get(k) != fid and any(r["bunya"] == fid for r in K["bunya"].get(k, []))]
     o = [f"<h2>{E(D.bun('kensho-midashi'))}</h2>", f"<p class='m'>{E(D.bun('kensho-setsumei'))}</p>",
          f"<p class='m'>{E(D.bun('kensho-mikakunin'))}</p>", f"<p class='m'>{E(D.bun('kensho-nendo'))}</p>"]
-    if any(not K["hito"].get(k) for k in naka + hoka):
+    if any(not all(K["hito"].get(k, {}).get(d) for d in ks.DOCS) for k in naka + hoka):
         o.append(f"<p class='m'>{E(D.bun('kensho-hito'))}</p>")
-    aru = {r["shisaku"] for rs in K["bunya"].values() for r in rs if r["bunya"] == fid}
-    nai = [f"<li>{D.bun('kensho-nai', shisaku=S(no + name))}</li>" for no, name in x["shisaku"] if no not in aru]
+    aru_s = {r["shisaku"] for rs in K["bunya"].values() for r in rs if r["bunya"] == fid}
+    nai = [f"<li>{D.bun('kensho-nai', shisaku=S(no + name))}</li>" for no, name in x["shisaku"] if no not in aru_s]
     if nai:
         o.append("<ul>" + "".join(nai) + "</ul>")
     for k in naka:
         t, sr = K["tori"][k], K["sr"][k]
-        li = [f"<li>{D.bun('kensho-tantou', tantou=S(t['tantou']))}"]
+        li = [f"<li>{D.bun('kensho-tantou', tantou=ji(t, 'tantou'))}"]
         hon = []
-        if not ks.onaji(t["tantou"], sr["dept"]):
+        if "tantou" not in t["_mada"] and not ks.onaji(t["tantou"], sr["dept"]):
             hon.append(D.bun("kensho-tantou-honpen", tantou=S(sr["dept"])))
         li.append("<br>".join([""] + [f"<span class='m'>{h}</span>" for h in hon]) + "</li>" if hon else "</li>")
-        li.append(f"<li>{D.bun('kensho-ichi', kihon_no=S(t['kihon_no']), kihon=S(t['kihon']), houkou=S(t['houkou']))}")
-        if not ks.onaji(t["houkou"], sr["houkou"]):
+        li.append(f"<li>{D.bun('kensho-ichi', kihon_no=S(t['kihon_no']), kihon=S(t['kihon']), houkou=ji(t, 'houkou'))}")
+        if "houkou" not in t["_mada"] and not ks.onaji(t["houkou"], sr["houkou"]):
             li.append(f"<br><span class='m'>{D.bun('kensho-houkou-honpen', houkou=S(sr['houkou']))}</span>")
             hon.append("")
         if hon:
             hn, hu = nm.shiryo(sr["honpen"])
             li.append(f"<br><span class='m'>{D.bun('kensho-honpen', shiryo=link(hn, hu))}</span>")
         li.append("</li>")
-        sn = f"{nm.bunsho(ks.SHIRYO)}　{pages(t)}"
+        sn = f"{nm.bunsho('doc:' + t['doc'])}　{pages(t)}"
         o.append(f"<h3>{namae(k)}</h3><ul>" + "".join(li)
                  + f"<li>{D.bun('kensho-shisaku', shisaku=shisaku(k))}</li>"
-                 f"<li>{ran(t, 'kekka')}</li><li>{ran(t, 'tasseido')}</li>"
-                 f"<li>{E(D.kotoba('資料の一覧の表 namae と、shiryo のページ'))}："
-                 f"{link(sn, keys.source_url(m['inp'], ks.SHIRYO + '/' + t['page']))}</li></ul>")
+                 f"<li>{ran(t, 'kekka')}</li>{mae(k)}" + (f"<li>{ran(t, 'tasseido')}</li>" if aru(t, "tasseido") else "")
+                 + f"<li>{E(D.kotoba('資料の一覧の表 namae と、shiryo のページ'))}："
+                 f"{link(sn, keys.source_url(m['inp'], 'doc:' + t['doc'] + '/' + t['page']))}</li></ul>")
     if hoka:
         o.append(f"<h3>{E(D.bun('kensho-hoka'))}</h3><ul>"
                  + "".join(f"<li>{namae(k)}　{D.bun('kensho-shisaku', shisaku=shisaku(k))}</li>" for k in hoka) + "</ul>")

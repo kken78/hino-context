@@ -1369,7 +1369,7 @@ class Tsukuru:
 
     # 施策検証結果報告書の記述（SCHEMA.md 7.12、docs/design.md 4節の field の7と review）
     def kensho_namae(self, k):
-        """torikumi → kensho-torikumi の文（入力のシートの番号と名前）。"""
+        """torikumi → kensho-torikumi の文（いちばん新しい報告書のシートの番号と名前）。"""
         t = self.ks["tori"][k]
         self.D.dasanai("施策検証シートの表 no、name、kihon_no、kihon")
         return self.D.bun("kensho-torikumi", no=S(t["no"]), name=S(t["name"]))
@@ -1393,39 +1393,54 @@ class Tsukuru:
         self.D.dasanai("施策検証の欄の表 midashi")
         return S(ks.kohos(self.ks["ran"][ran])[0])
 
+    def kensho_hokoku(self, doc):
+        """報告書の id → kensho-hokoku の文（年度の字は、資料の一覧の表の namae の字）。"""
+        return self.D.bun("kensho-hokoku", nendo=S(ks.hokoku_nendo(self.by[f"doc:{doc}"]["namae"])))
+
     def kensho_pages(self, t):
-        """入力のシートの行 → シートの2ページ（46〜47 など）。"""
+        """入力のシートの行 → シートのページ（シートが2ページの報告書は 46〜47、1ページなら 32）。"""
         D = self.D
         p = int(t["page"])
+        if self.ks["maisu"][t["doc"]] == 1:
+            return E(D.bun("page", n=p))
         return E(D.bun("page", n=D.bun("kikan", a=p, z=p + 1)))
 
     def kensho_sheet(self, t):
-        """入力のシートの行 → 報告書の名前と ID、シートの2ページ、URL の行。"""
+        """入力のシートの行 → 報告書の名前と ID、シートのページ、URL の行。"""
         D = self.D
-        return (f"{E(D.kotoba('資料の一覧の表 namae と、shiryo のページ'))}：{self.bunsho_kagi(ks.SHIRYO)}"
-                f"　{self.kensho_pages(t)}　{E(keys.source_url(self.inp, ks.SHIRYO + '/' + t['page']))}")
+        return (f"{E(D.kotoba('資料の一覧の表 namae と、shiryo のページ'))}：{self.bunsho_kagi('doc:' + t['doc'])}"
+                f"　{self.kensho_pages(t)}　{E(keys.source_url(self.inp, 'doc:' + t['doc'] + '/' + t['page']))}")
 
-    def kensho_hito(self, k):
-        """人の確認が済んでいない torikumi なら、kensho-hito の文の並び（docs/design.md 3節）。"""
+    def kensho_hito(self, k, docs=None):
+        """docs（報告書の id の並び。None なら5冊）に人の確認が済んでいないシートがある torikumi なら、kensho-hito の文の並び
+        （docs/design.md 3節）。"""
         self.D.dasanai("施策検証シートの検収の台帳 reviewer")
-        self.D.dasanai("施策検証シートの検収の台帳 checked が空")
-        return [] if self.ks["hito"].get(k) else [E(self.D.bun("kensho-hito"))]
+        h = self.ks["hito"].get(k, {})
+        return [] if all(h.get(d) for d in (docs or ks.DOCS)) else [E(self.D.bun("kensho-hito"))]
 
-    def kensho_ichi(self, k):
-        """担当部署と総合戦略での位置の行の並び。シートの字を出し、総合戦略の本編の字と違うときは、本編の字とそのページを
-        添える（SCHEMA.md 7.12）。"""
+    def kensho_mada(self):
+        """入力の検収で確認が済んでいないため出さない、シートの列の字の代わりの言葉。"""
+        return E(self.D.kotoba("施策検証シートの検収の台帳 note の段1 で合わない列"))
+
+    def kensho_ji(self, t, c):
+        """入力のシートの行と列 → 字（S）。入力の検収で確認が済んでいない列は、kensho_mada の言葉。"""
+        return self.kensho_mada() if c in t["_mada"] else S(t[c])
+
+    def kensho_ichi(self, k, t):
+        """入力のシートの行 → 担当部署と総合戦略での位置の行の並び。シートの字を出し、総合戦略の本編の字と違うときは、本編の
+        字とそのページを添える（SCHEMA.md 7.12）。入力の検収で確認が済んでいない列は、本編と比較しない。"""
         D = self.D
-        t, x = self.ks["tori"][k], self.ks["sr"][k]
+        x = self.ks["sr"][k]
         D.dasanai("施策検証シートの表 tantou")
         D.dasanai("施策検証シートの表 houkou")
         D.dasanai("施策検証シートの表 note、施策検証シートの KPI の表 note、施策検証シートの項目の表 note")
-        out = [f"- {D.bun('kensho-tantou', tantou=S(t['tantou']))}"]
+        out = [f"- {D.bun('kensho-tantou', tantou=self.kensho_ji(t, 'tantou'))}"]
         hon = False
-        if not ks.onaji(t["tantou"], x["dept"]):
+        if "tantou" not in t["_mada"] and not ks.onaji(t["tantou"], x["dept"]):
             out.append(f"  - {D.bun('kensho-tantou-honpen', tantou=S(x['dept']))}")
             hon = True
-        out.append(f"- {D.bun('kensho-ichi', kihon_no=S(t['kihon_no']), kihon=S(t['kihon']), houkou=S(t['houkou']))}")
-        if not ks.onaji(t["houkou"], x["houkou"]):
+        out.append(f"- {D.bun('kensho-ichi', kihon_no=S(t['kihon_no']), kihon=S(t['kihon']), houkou=self.kensho_ji(t, 'houkou'))}")
+        if "houkou" not in t["_mada"] and not ks.onaji(t["houkou"], x["houkou"]):
             out.append(f"  - {D.bun('kensho-houkou-honpen', houkou=S(x['houkou']))}")
             hon = True
         if hon:
@@ -1436,8 +1451,25 @@ class Tsukuru:
     def kensho_ran(self, t, ran):
         """入力のシートの列（tasseido か kekka）→ 欄の見出しの字とシートの字に、シートのページを添えたもの。"""
         self.D.dasanai("施策検証シートの表 tasseido、kekka")
-        return (self.D.bun("hyo-kijutsu-ran", midashi=self.kensho_midashi(ran), atai=S(t[ran]))
+        return (self.D.bun("hyo-kijutsu-ran", midashi=self.kensho_midashi(ran), atai=self.kensho_ji(t, ran))
                 + f"（{self.kensho_pages(t)}）")
+
+    def kensho_ran_aru(self, t, ran):
+        """シートに、その欄（tasseido か kekka）の字があるか、確認が済んでいないため出さない列か。令和3年度の報告書には、
+        KPIの達成度の欄が無い（入力の字が空）。"""
+        return bool(t[ran]) or ran in t["_mada"]
+
+    def kensho_mae(self, k):
+        """令和3〜6年度の報告書の、検証結果の行の並び（docs/design.md 4節の field の7。案）。"""
+        D = self.D
+        sh = self.ks["sheet"][k]
+        out = []
+        for d in ks.DOCS[1:]:
+            t = sh.get(d)
+            if t is not None and self.kensho_ran_aru(t, "kekka"):
+                out.append(f"  - {D.bun('hyo-kijutsu-ran', midashi=self.kensho_hokoku(d), atai=self.kensho_ji(t, 'kekka'))}"
+                           f"（{self.kensho_pages(t)}）")
+        return ([f"- {D.bun('kensho-mae', midashi=self.kensho_midashi('kekka'))}"] + out) if out else []
 
     def kensho_bunya(self, fid):
         """field に分野の番号：町の検証のブロックの並び（docs/design.md 4節の field の7）。"""
@@ -1461,75 +1493,145 @@ class Tsukuru:
         return [(head, items)] + ([(hh, hi)] if hi else [])
 
     def kensho_item(self, k, fid):
-        """field の町の検証で、中身を出す torikumi 1つ → 項目。"""
+        """field の町の検証で、中身を出す torikumi 1つ → 項目。中身は、いちばん新しい報告書のシートの字に、令和3〜6年度の報告書の
+        検証結果を添える。"""
         D, K = self.D, self.ks
         t = K["tori"][k]
-        lines = [f"### {self.kensho_kagi(k)}"] + self.kensho_ichi(k)
+        lines = [f"### {self.kensho_kagi(k)}"] + self.kensho_ichi(k, t)
         lines.append("- " + D.bun("kensho-shisaku", shisaku="、".join(
             self.kensho_shisaku(r) for r in K["bunya"][k] if r["bunya"] == fid)))
         lines.append("- " + self.kensho_ran(t, "kekka"))
-        lines.append("- " + self.kensho_ran(t, "tasseido"))
+        lines += self.kensho_mae(k)
+        if self.kensho_ran_aru(t, "tasseido"):
+            lines.append("- " + self.kensho_ran(t, "tasseido"))
         lines.append("- " + self.kensho_sheet(t))
         return "\n".join(lines)
 
-    def review(self, k):
-        """review に torikumi の ID：施策検証シートの記述（docs/design.md 4節の review）。"""
+    def kensho_kpi_gyo(self, r):
+        """入力の KPI の行 → 行の字（基準値の行と目標値の行は見出しの字と値、年度の行は年度の字と目標・実績・達成率）。"""
+        D = self.D
+        kara = E(D.kotoba("施策検証シートの KPI の表 mokuhyo、jisseki、tasseiritsu が空"))
+        nikai = E(D.kotoba("施策検証シートの KPI の表 note、施策検証シートの項目の表 note に「2人の読みが違う」とある列"))
+        D.dasanai("施策検証シートの KPI の表 shu")
+
+        def ji(c, tani=True):
+            if c in r["_chigau"]:
+                return nikai
+            v = ks.tani_tsuki(r[c], r["tani"]) if tani and c in ("mokuhyo", "jisseki") else r[c]
+            return S(v) if v else kara
+        if r["shu"] == "kijun":
+            return D.bun("hyo-kijutsu-ran", midashi=S(r["nendo"]), atai=ji("jisseki"))
+        if r["shu"] != ks.NENDO:
+            return D.bun("hyo-kijutsu-ran", midashi=S(r["nendo"]), atai=ji("mokuhyo"))
+        return f"{S(r['nendo'])}　" + "　".join(
+            D.bun("kensho-kpi-ran", midashi=self.kensho_midashi(c), atai=ji(c)) for c in ("mokuhyo", "jisseki", "tasseiritsu"))
+
+    def kensho_setsumei(self, k):
+        """review の、検証結果とKPIの達成度の説明のブロック（検証結果の説明の表の文。令和3〜6年度の報告書の同じページにも同じ
+        文があることは、tools/kensho.py が確認している）。"""
         D, K = self.D, self.ks
-        t = K["tori"][k]
-        bunya = "、".join(f"{self.field_kagi(r['bunya'])} {self.kensho_shisaku(r)}" for r in K["bunya"][k])
-        intro = ([E(D.bun("kensho-review-lead"))] + self.kensho_hito(k) + self.kensho_ichi(k)
-                 + ["- " + D.bun("kensho-bunya", bunya=bunya), E(D.bun("kensho-mikakunin")), "- " + self.kensho_sheet(t),
-                    E(D.bun("kensho-nendo"))])
 
         def page(key):
             return E(D.bun("page", n=sj.page_no(key)))
+        D.dasanai("検証結果の説明の表 inyo、tokoro")
+        items = []
+        for ran in ("tasseido", "kekka"):
+            items.append("\n".join([f"- {D.bun('kensho-setsumei-moto', midashi=self.kensho_midashi(ran))}"]
+                                   + [f"  - 「{S(r['inyo'])}」（{page(r['tokoro'])}）" for r in K["kekka"] if r["shu"] == ran]))
+        items.append(E(D.bun("kensho-setsumei-onaji", hokoku=self.kensho_hokoku(ks.DOC),
+                             hoka="、".join(self.kensho_hokoku(d) for d in ks.DOCS[1:]))))
+        return ([f"## {E(D.bun('kensho-setsumei-midashi'))}"], items)
+
+    def kensho_hokokusho(self, k, doc):
+        """review の、報告書1冊のシートのブロックの並び。"""
+        D, K = self.D, self.ks
+        t = K["sheet"][k][doc]
+        D.dasanai("施策検証シートの検収の台帳 checked が空")
+        nashi = K["nashi"].get(k, {}).get(doc, {})
+        lines = self.kensho_hito(k, [doc]) + self.kensho_ichi(k, t) + ["- " + self.kensho_sheet(t),
+                                                                     "- " + self.kensho_ran(t, "kekka")]
+        if self.kensho_ran_aru(t, "tasseido"):
+            lines.append("- " + self.kensho_ran(t, "tasseido"))
+        blocks = [([f"## {self.bunsho_kagi('doc:' + doc)}"], lines)]
         D.dasanai("施策検証シートの KPI の表 shihyo")
         D.dasanai("施策検証シートの KPI の表 nendo、mokuhyo、jisseki、tasseiritsu")
         D.dasanai("施策検証シートの KPI の表 tani")
-        D.dasanai("検証結果の説明の表 inyo、tokoro")
-        kara = E(D.kotoba("施策検証シートの KPI の表 mokuhyo、jisseki、tasseiritsu が空"))
-
-        def ran_ji(r, c):
-            v = ks.tani_tsuki(r[c], r["tani"]) if c in ("mokuhyo", "jisseki") else r[c]
-            return S(v) if v else kara
         items = []
-        for kijun, rows in K["kpi"].get(k, []):
-            r0 = kijun or rows[0]
-            lines = [f"### {D.bun('hyo-kijutsu-ran', midashi=self.kensho_midashi('shihyo'), atai=S(r0['shihyo']))}"
-                     f"（{E(D.bun('page', n=int(t['page'])))}）"]
-            if kijun:
-                lines.append(f"- {D.bun('hyo-kijutsu-ran', midashi=S(kijun['nendo']), atai=S(kijun['jisseki']))}")
-            for r in rows:
-                lines.append(f"- {S(r['nendo'])}　" + "　".join(
-                    D.bun("kensho-kpi-ran", midashi=self.kensho_midashi(c), atai=ran_ji(r, c))
-                    for c in ("mokuhyo", "jisseki", "tasseiritsu")))
-            items.append("\n".join(lines))
-
-        def setsumei(shu, ran):
-            return ([f"  - {D.bun('kensho-setsumei-moto', midashi=self.kensho_midashi(ran))}"]
-                    + [f"    - 「{S(r['inyo'])}」（{page(r['tokoro'])}）" for r in K["kekka"] if r["shu"] == shu])
-        items.append("\n".join(["- " + self.kensho_ran(t, "tasseido")] + setsumei("tasseido", "tasseido")))
-        blocks = [([f"## {self.kensho_midashi('kpi')}", E(D.bun("kensho-kpi-chu"))], items)]
+        for _, rows in K["kpi"].get(k, {}).get(doc, []):
+            items.append("\n".join(
+                [f"#### {D.bun('hyo-kijutsu-ran', midashi=self.kensho_midashi('shihyo'), atai=S(rows[0]['shihyo']))}"
+                 f"（{E(D.bun('page', n=int(t['page'])))}）"] + [f"- {self.kensho_kpi_gyo(r)}" for r in rows]))
+        if nashi.get("kpi"):
+            items.append(E(D.bun("kensho-nashi-kpi", midashi=self.kensho_midashi("kpi"), n=nashi["kpi"])))
+        blocks.append(([f"### {self.kensho_midashi('kpi')}", E(D.bun("kensho-kpi-chu"))], items))
         D.dasanai("施策検証シートの項目の表 line")
-        bun = {ran: (mi, rows) for ran, mi, rows in K["bun"].get(k, [])}
+        nikai = E(D.kotoba("施策検証シートの KPI の表 note、施策検証シートの項目の表 note に「2人の読みが違う」とある列"))
+        bun = {ran: (mi, rows, aru) for ran, mi, rows, aru in K["bun"].get(k, {}).get(doc, [])}
         pp = self.kensho_pages(t)
         dare = {"naibu": D.bun("kensho-dare", midashi=self.kensho_midashi("naibu"),
                                dare=E(D.kotoba("施策検証の欄の表 kubun が「naibu」"))),
                 "gaibu": D.bun("kensho-dare", midashi=self.kensho_midashi("gaibu"),
                                dare=E(D.kotoba("施策検証の欄の表 kubun が「gaibu」")))}
-        top = [f"## {dare['naibu']}"]
+
+        def ran_block(top, ran):
+            mi, rows, aru = bun[ran]
+            head = top + [f"#### {S(mi)}（{pp}）"] + ([] if aru else [E(D.bun("kensho-midashi-nai"))])
+            return (head, [f"- {nikai}" if "line" in r["_chigau"] else f"- 「{S(r['line'])}」" for r in rows])
+        top = [f"### {dare['naibu']}"]
         for ran in ks.NAIBU:
-            if ran not in bun:
-                continue
-            mi, rows = bun[ran]
-            blocks.append((top + [f"### {S(mi)}（{pp}）"], [f"- 「{S(r['line'])}」" for r in rows]))
-            top = []
-        blocks.append(([f"## {dare['gaibu']}"],
-                       ["\n".join(["- " + self.kensho_ran(t, "kekka")] + setsumei("kekka", "kekka"))]))
+            if ran in bun:
+                blocks.append(ran_block(top, ran))
+                top = []
+        top = [f"### {dare['gaibu']}"]
         for ran in ks.GAIBU:
             if ran in bun:
-                mi, rows = bun[ran]
-                blocks.append(([f"### {S(mi)}（{pp}）"], [f"- 「{S(r['line'])}」" for r in rows]))
+                blocks.append(ran_block(top, ran))
+                top = []
+        if nashi.get("bun"):
+            blocks.append(([], [E(D.bun("kensho-nashi-bun", n=nashi["bun"]))]))
+        return blocks
+
+    def kensho_hikaku(self, k):
+        """review の、指標ごとの年度ごとの目標と実績を、報告書ごとに並べたブロックの並び（SCHEMA.md 7.12）。"""
+        D, K = self.D, self.ks
+        sh = K["sheet"][k]
+        nikai = E(D.kotoba("施策検証シートの KPI の表 note、施策検証シートの項目の表 note に「2人の読みが違う」とある列"))
+        kara = E(D.kotoba("施策検証シートの KPI の表 mokuhyo、jisseki、tasseiritsu が空"))
+
+        def ji(r, c):
+            return nikai if c in r["_chigau"] else (S(r[c]) if r[c] else kara)
+        items = []
+        for x in K["hikaku"].get(k, []):
+            lines = [f"### {D.bun('hyo-kijutsu-ran', midashi=self.kensho_midashi('shihyo'), atai=S(x['shihyo']))}"]
+            for _, g in x["nendo"]:
+                lines.append(f"- {S(g[0][0]['nendo'])}")
+                for r, ds in g:
+                    atai = "　".join(D.bun("kensho-kpi-ran", midashi=self.kensho_midashi(c), atai=ji(r, c))
+                                    for c in ("mokuhyo", "jisseki", "tasseiritsu"))
+                    hokoku = "、".join(D.bun("kensho-hokoku-page", hokoku=self.kensho_hokoku(d),
+                                            page=E(D.bun("page", n=int(sh[d]["page"])))) for d in ds)
+                    lines.append(f"  - {D.bun('kensho-hikaku-gyo', atai=atai, hokoku=hokoku)}")
+            items.append("\n".join(lines))
+        if not items:
+            return []
+        return [([f"## {E(D.bun('kensho-hikaku-midashi'))}", E(D.bun("kensho-hikaku-setsumei"))], items, True)]
+
+    def review(self, k):
+        """review に torikumi の ID：5冊の施策検証シートの記述（docs/design.md 4節の review）。新しい年度から並べ、
+        令和3〜6年度の報告書と、指標の年度ごとの値の並びは、新しい応答から始める。"""
+        D, K = self.D, self.ks
+        docs = [d for d in ks.DOCS if d in K["sheet"][k]]
+        bunya = "、".join(f"{self.field_kagi(r['bunya'])} {self.kensho_shisaku(r)}" for r in K["bunya"][k])
+        intro = [E(D.bun("kensho-review-lead")), "- " + D.bun("kensho-bunya", bunya=bunya), E(D.bun("kensho-mikakunin")),
+                 E(D.bun("kensho-review-nendo", hokoku="、".join(self.kensho_hokoku(d) for d in docs), n=len(docs)))]
+        blocks = [self.kensho_setsumei(k)]
+        for i, d in enumerate(docs):
+            bs = self.kensho_hokokusho(k, d)
+            if i:
+                bs[0] = bs[0] + (True,)
+            blocks += bs
+            if i == 0:
+                blocks += self.kensho_hikaku(k)
         blocks.append(([], [E(D.bun("kensho-owari"))]))
         return Outou(self.kensho_kagi(k), intro, blocks)
 
@@ -1956,6 +2058,8 @@ def build(inp, tables, kotoba, read_problems=(), design=None, skill=None, notes=
     except (ks.KenshoError, bu.BunyaError, inputs.InputError) as e:
         raise Stop([("(k) 施策検証", str(e))])
     problems += [("(k) 施策検証", m) for m in more]
+    problems += [("(k) 施策検証", f"資料の一覧の表の doc:{d} の namae に、報告書の年度の字（「（令和…年度）」）が無い")
+                 for d in ks.DOCS if ks.hokoku_nendo(tk.by.get(f"doc:{d}", {}).get("namae")) is None]
     if problems:
         raise Stop(list(dict.fromkeys(problems)))
     tk.bunya_ronten = bu.ronten_of_dai(inp, tk.note)
