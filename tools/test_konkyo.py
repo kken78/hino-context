@@ -123,22 +123,23 @@ class TestRepo(unittest.TestCase):
             raise unittest.SkipTest("lock の版の入力が無い")
         self.assertEqual(konkyo.main(["--kensa"]), 0)
         rows = konkyo.read()
-        # はじめの6行は、入力の確定済みの記録から作った行。そのあとは、生成AIの2回の読み取りの行（幼保、介護の順。2026-11-28）
-        self.assertEqual([(r["question"], r["theme"], r["aite"]) for r in rows[:6]],
+        # はじめの7行は、入力の確定済みの記録から作った行（2026-11-28 に、名前の表の計画（案）の betsumei で1行増えた）。そのあとは、生成AIの2回の読み取りの行（幼保、介護の順。2026-11-28）
+        self.assertEqual([(r["question"], r["theme"], r["aite"]) for r in rows[:7]],
                          [("iq:0000008582_20250912_0350", "hoiku", "doc:jigyo-shinkodomoen-kousou"),
+                          ("iq:0000008397_20250310_0285", "hoiku", "doc:jigyo-youhosaihen-keikakuan-202411"),
                           ("iq:0000008397_20250310_0285", "hoiku", "doc:shingi-youho-teigen"),
                           ("sq:0000007861_20240307_0038", "kaigo", "pt:kaigo9/honpen"),
                           ("iq:0000008691_20251212_0210", "kaigo", "第10期の計画の策定"),
                           ("sq:0000008582_20250911_0033", "kaigo", "第10期の計画の策定"),
                           ("sq:0000008942_20260305_0170", "kaigo", "第10期の計画の策定")])
-        self.assertEqual([r["yomi"] for r in rows[:6]], ["入力の確定済み"] * 6)
-        self.assertEqual({r["yomi"] for r in rows[6:]}, {"一致", "1回だけ"})
+        self.assertEqual([r["yomi"] for r in rows[:7]], ["入力の確定済み"] * 7)
+        self.assertEqual({r["yomi"] for r in rows[7:]}, {"一致", "1回だけ"})
         # 2回めの読み取り（2026-11-28）のあと。前は、幼保171行、介護34行、公共施設104行、地域のあり方56行の371行
         # 総合計画の分野の読み取りの行（2026-11-28。1239行）は、4つのテーマの行のあとに、分野の番号の順に並ぶ
-        self.assertEqual([r["theme"] for r in rows[6:440]], ["hoiku"] * 207 + ["kaigo"] * 41 + ["kokyo"] * 116 + ["chiiki"] * 70)
-        self.assertTrue(all(konkyo.jiko.is_bunya(r["theme"]) and r["n"] for r in rows[440:]))
-        self.assertTrue(all(r["n"] == "" for r in rows[:440]))
-        self.assertEqual(len(rows), 1679)
+        self.assertEqual([r["theme"] for r in rows[7:441]], ["hoiku"] * 207 + ["kaigo"] * 41 + ["kokyo"] * 116 + ["chiiki"] * 70)
+        self.assertTrue(all(konkyo.jiko.is_bunya(r["theme"]) and r["n"] for r in rows[441:]))
+        self.assertTrue(all(r["n"] == "" for r in rows[:441]))
+        self.assertEqual(len(rows), 1680)
         # 資料の日付が質問の日より後の行は、ID を付けない（2026-11-28）
         u = {(t, n): (ids, c) for t, n, ids, c in konkyo.uchiwake(rows, konkyo.ym.read_namae())}
         self.assertEqual(u[("hoiku", "計画")], ({"pt:youho/honpen-202503": 4, "pt:youho/honpen": 0}, 1))

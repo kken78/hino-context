@@ -427,8 +427,25 @@ class TestReal(unittest.TestCase):
         self.assertIn("## " + D.bun("mcp-midashi-shiryo-kiroku"), t)
         # 版ごとの行：行の資料の版だけに出す
         self.assertIn("この資料について記している記述 1 件", self.bun("document", "document=pt:youho/honpen"))
-        self.assertIn("この資料について記している記述 0 件",
+        # 名前の表の betsumei（2026-11-28）で、計画（案）と提言に出す。提言は、行の日付で中間報告と最終報告に分ける
+        self.assertIn("この資料について記している記述 1 件",
                       self.bun("document", "document=doc:jigyo-youhosaihen-keikakuan-202411"))
+        self.assertIn("この資料について記している記述 8 件", self.bun("document", "document=doc:shingi-youho-teigen"))
+        self.assertIn("この資料について記している記述 21 件", self.bun("document", "document=doc:shingi-youho-chukan-r4"))
+        # 意見募集の結果の、提出された意見の行には、資料の欄の見出しの字を添える
+        t = "\n".join(self.issue_pages("hoiku06"))
+        self.assertGreater(t.count(D.bun("kiroku-iken", midashi="意見の内容")), 0)
+        i = t.index("「日野町における幼児教育保育環境は、豊かな自然、多様な住民")
+        self.assertIn("  - " + D.bun("kiroku-iken", midashi="意見の内容"), t[i:i + 200])
+        i = t.index("「町では、これまでも豊かな自然環境や多様な住民の方々との交流")
+        self.assertNotIn(D.bun("kiroku-iken", midashi="意見の内容"), t[i:i + 300].split("\n- ")[0])
+        # field：関連する個別計画と、指標と目標値（SCHEMA.md 7.15）
+        t = self.bun("field", "field=㉝")
+        self.assertIn("- 日野町人材育成基本方針\n  - " + D.bun("kanren-shiryo", shiryo="日野町人材育成基本方針（2021年4月）"
+                                                                    "（document：doc:jinji-ikusei-hoshin）"), t)
+        self.assertIn("- 派遣型研修 参加率(%)：基準値(R2見込み)：45　目標値(R7)：48　目標値(R12)：50", t)
+        self.assertNotIn("## " + D.bun("bunya-midashi-shihyo"), "\n".join(
+            self.data["bun"][i] for k, i in self.data["outou"]["field"].items() if k.startswith("field=㉜")))
         # 事項に当たる行で、論点の issue ができた（介護の日常生活圏域の設定）
         self.assertIn("「日常生活圏域は、地域の特性に応じたサービス提供", self.bun("issue", "issue=kaigo31"))
 
@@ -618,22 +635,24 @@ class TestReal(unittest.TestCase):
     def test_konkyo(self):
         # 質問が取り上げた資料（taio/konkyo.tsv）：資料の応答に、issue と同じ形で質問の一覧と、続きで段落を出す
         o = self.data["outou"]["document"]
-        t = self.bun("document", "document=doc:shingi-youho-teigen")
+        # 構造にしていない記載（SCHEMA.md 7.14）を出すようになり、質問の一覧が2つめの応答に移った（2026-11-28）
+        n = sum(1 for k in o if k.startswith("document=doc:shingi-youho-teigen&page="))
+        t = "\n".join(self.data["bun"][o[f"document=doc:shingi-youho-teigen&page={i}"]] for i in range(1, n + 1))
         # 提言（2024年2月）より前の質問は、提言に結び付けない（SCHEMA.md 7.10。2026-11-28）
         part = self.setsu(t, "## " + D.bun("mcp-midashi-konkyo", n=12))
         # 題は、テーマの定義にある質問も、一般質問の台帳の題（SCHEMA.md 7.10。2026-11-28）
         # 2025年3月10日の質問には、入力の確定済みの行と、2回めの読み取り（2026-11-28）の行がある。確定済みの行だけを出す
         self.assertIn("- 2025年3月10日　一般質問　「幼児教育保育施設再編整備計画（案）について」\n  - "
-                      + D.bun("shitsumon-kakutei") + "\n  - この資料に関する部分（8か所）（page：4）", part)
+                      + D.bun("shitsumon-kakutei") + "\n  - この資料に関する部分（8か所）（page：5）", part)
         self.assertEqual(part.count("  - " + D.kotoba("質問と事項の対応の表 question") + "\n"), 11)   # 読み取りの質問
         self.assertNotIn("2023年", part)
         self.assertIn(D.bun("keisai-yomi", short="この資料"), part)
-        rest = self.data["bun"][o["document=doc:shingi-youho-teigen&page=4"]]
+        rest = self.data["bun"][o["document=doc:shingi-youho-teigen&page=5"]]
         self.assertEqual(rest.count("\n- 「"), 8)
         self.assertIn("発言の段落7", rest)
         self.assertNotIn(D.kotoba("質問と事項の対応の表 yomi が「一致」"), rest)      # 確定済みの質問の段落には付けない
         self.assertNotIn(D.kotoba("質問と事項の対応の表 yomi が「1回だけ」"), rest)
-        rest = self.data["bun"][o["document=doc:shingi-youho-teigen&page=2"]]
+        rest = self.data["bun"][o["document=doc:shingi-youho-teigen&page=3"]]
         self.assertEqual(rest.count("\n- 「"), rest.count(D.kotoba("質問と事項の対応の表 yomi が「一致」"))
                          + rest.count(D.kotoba("質問と事項の対応の表 yomi が「1回だけ」")))
         self.assertIn("この資料を取り上げている、議会での質問 12 件", t)
@@ -975,7 +994,8 @@ class TestReal(unittest.TestCase):
         self.assertIn("- 国民健康保険と医療保険制度（field：wadai-kokuho）　" + D.bun("bunya-kazu", n=20), t)
         # 分野：基本施策は入力の字のまま。題ごとに、読みの言葉、会議録の URL。発言者の名前は出さない
         t = "\n".join(self.data["bun"][i] for k, i in sorted(o.items()) if k.startswith("field=①&page="))
-        self.assertIn("## 基本施策\n- (1)出産前から育児への切れ目のない支援の推進\n", t)
+        self.assertIn("## 基本施策\n" + D.bun("sogo-gazou", keikaku="第6次日野町総合計画")
+                      + "\n- (1)出産前から育児への切れ目のない支援の推進\n", t)
         self.assertIn("\n## " + D.bun("bunya-midashi-dai", n=103) + "\n", t)
         self.assertEqual(t.count("\n  - " + D.bun("bunya-link") + "："), 103)
         self.assertIn("（issue：", t)

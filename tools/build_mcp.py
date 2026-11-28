@@ -851,7 +851,11 @@ class Tsukuru:
         D = self.D
         nm, url = self.moto(x["source"], x["quote"])
         jiki = E(bs.hi_str(D, x["source_date"]))
-        lines = [f"- 「{S(x['quote']).replace(chr(10), chr(10) + '  ')}」",
+        lines = [f"- 「{S(x['quote']).replace(chr(10), chr(10) + '  ')}」"]
+        if x.get("iken"):
+            # 意見募集の結果の、提出された意見の行（SCHEMA.md 7.14）
+            lines.append("  - " + D.bun("kiroku-iken", midashi=S(x["iken"])))
+        lines += [
                  "  - " + (D.bun("mcp-issue-jiki-kubun", jiki=jiki, kubun=E(self.kubun_of(x["source"]))) if kubun
                            else D.bun("mcp-issue-jiki", jiki=jiki))]
         if x.get("yomi"):
@@ -1176,7 +1180,8 @@ class Tsukuru:
             items = [f"- {S(no + name)}" for no, name in x["shisaku"]]
             items.append(f"{E(D.kotoba('資料の一覧の表 namae と、shiryo のページ'))}：{self.bunsho_kagi(kk['id'])}"
                          f"　{E(D.bun('page', n=pp))}　{E(keys.source_url(inp, t[0]))}")
-            blocks.append(([f"## {S(x['midashi'])}"], items))
+            blocks.append(([f"## {S(x['midashi'])}", E(D.bun("sogo-gazou", keikaku=S(kk["name"])))], items))
+            blocks += self.field_kanren(fid)
             blocks += self.field_ronten(fid)
             blocks += self.kensho_bunya(fid)
             blocks += self.field_event(fid)
@@ -1188,6 +1193,35 @@ class Tsukuru:
         blocks.append(([f"## {E(D.bun('bunya-midashi-dai', n=len(dai)))}", E(D.bun("bunya-dai-setsumei"))],
                        [self.field_dai(fid, k) for k in dai]))
         return Outou(title, intro, blocks)
+
+    def field_kanren(self, fid):
+        """field に分野の番号：関連する個別計画と、指標の表のブロックの並び（SCHEMA.md 7.15、docs/design.md 4節の field の2。
+        2026-11-28）。字は入力の字のまま。数値は計算しない。"""
+        D, inp = self.D, self.inp
+        x = self.bu["kanren"].get(fid)
+        if not x:
+            return []
+        kk = self.bu["kk"]
+
+        def moto(tokoro):
+            return (f"{E(D.kotoba('資料の一覧の表 namae と、shiryo のページ'))}：{self.bunsho_kagi(kk['id'])}"
+                    f"　{E(D.bun('page', n=bb.tokoro_ji(D, tokoro)))}　{E(keys.source_url(inp, tokoro[0]))}")
+        out = []
+        if x["kanren"]:
+            kr = x["kanren"]
+            items = []
+            for k in kr["keikaku"]:
+                sub = bb.kanren_gyo(D, self.bu, k, self.bunsho_kagi)
+                items.append(f"- {S(k['namae'])}" + "".join(f"\n  - {y}" for y in sub))
+            out.append(([f"## {S(kr['h'])}", E(D.bun("kanren-setsumei", keikaku=S(kk["name"]))), moto(kr["tokoro"])], items))
+        for i, h in enumerate(x["shihyo"]):
+            head = ([f"## {E(D.bun('bunya-midashi-shihyo'))}"] if i == 0 else []) + [moto(h["tokoro"])]
+            items = [f"- {S(r[0])}：" + "　".join(D.bun("hyo-kijutsu-ran", midashi=S(c), atai=S(v))
+                                                for c, v in zip(h["head"][1:], r[1:])) for r in h["rows"]]
+            if h["note"]:
+                items.append(D.bun("shihyo-chu", chu=S(h["note"])))
+            out.append((head, items))
+        return out
 
     def field_ronten(self, fid):
         """field に分野の番号：論点を基本施策ごとに並べたブロックの並び（docs/design.md 4節の field の8。2026-11-28）。"""

@@ -43,6 +43,23 @@ class TestAteru(unittest.TestCase):
         self.assertEqual(self.ate([gyo("計画", source="pt:keikaku/honpen-old/3"), gyo("計画", source="doc:betsu/2")]),
                          [(rk.SHIRYO, "pt:keikaku/honpen-old"), None])
 
+    def test_han_hiduke(self):
+        # 行の資料が候補に無いときは、資料の日付が行の日付より前か同じ日の候補のうち、いちばん新しい資料（SCHEMA.md 7.14）
+        bunsho = [dict(bunsho="doc:chukan", namae="中間", hiduke=""), dict(bunsho="doc:saishu", namae="最終", hiduke="2024-02")]
+        namae = [dict(theme="hoiku", namae="提言", shu="資料", id="doc:chukan", betsumei="未来の提言", kohyo="2023-03-01"),
+                 dict(theme="hoiku", namae="提言", shu="資料", id="doc:saishu", betsumei="未来の提言", kohyo="")]
+        rows = [dict(gyo("未来の提言", source="doc:x/1"), source_date=d) for d in ("2023-09-04", "2025-08", "2022-01")]
+        self.assertEqual(rk.ateru(rows, JIKO, bunsho, namae),
+                         [(rk.SHIRYO, "doc:chukan"), (rk.SHIRYO, "doc:saishu"), None])
+
+    def test_iken(self):
+        self.assertEqual(rk.iken_of(gyo("x", source="doc:jigyo-shinkodomoen-pabu/2", title="意見募集 No.4 意見")), "意見の内容")
+        self.assertEqual(rk.iken_of(gyo("x", source="doc:jigyo-shinkodomoen-pabu/2", title="意見募集 No.4 町の考え方")), "")
+        self.assertEqual(rk.iken_of(gyo("x", source="doc:a/2", title="第6回懇話会 意見")), "")
+        inp = FakeInputs()
+        bad = rk.iken_problems(inp, [gyo("x", source="doc:jigyo-shinkodomoen-pabu/2", title="意見募集 No.4 補足")])
+        self.assertEqual(len([m for m in bad if "title で決められない" in m]), 1)
+
     def test_ataranai(self):
         # id の無い名前、空の about、近い字は対応づけない
         self.assertEqual(self.ate([gyo("名前だけ"), gyo(""), gyo("基本構想（案）")]), [None, None, None])

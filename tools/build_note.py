@@ -412,6 +412,8 @@ def collect(inp, teigi, theme):
     # 構造にしていない記載（確定済み）のうち、about が論点の名前のもの。事柄の記録と同じ形で、同じ所に出す。同じ論点、資料、
     # 引用の事柄の記録があるものは除く（SCHEMA.md 7.14。2026-11-28）
     ko = ko + rk.jiko_kiroku(inp, set(names), ko)[0]
+    if teigi.get("jiko"):
+        problems += [("定義", m) for m in rk.iken_problems(inp, ronten.kisai(inp))]
     katei = ronten.katei(inp, theme)
     _, more = ronten.katei_dasanai(inp, theme)      # 出さない過程の記録の行が、理由の条件に当たるか（SCHEMA.md §1）
     problems += [("(b) 出典の無い記述", m) for m in more]
@@ -672,14 +674,14 @@ class Page:
         inp, T, qsrc = self.inp, self.t, self.m["qsrc"]
         R = self.ronten(P)
         ko, docs = R["ko"], R["docs"]
-        sec1 = "".join(f"<div class='now'><div>「{S(x['quote'])}」</div><div class='m'>{keys.ymd(x['source_date'])}の資料　"
+        sec1 = "".join(f"<div class='now'><div>「{S(x['quote'])}」</div>{self.iken(x)}<div class='m'>{keys.ymd(x['source_date'])}の資料　"
                        f"{self.link(x)}{'　' + self.atai(x) if self.atai(x) else ''}"
                        f"{'　' + E(self.kisai_go(x['yomi'])) if x.get('yomi') else ''}</div></div>" for x in docs) \
             or "<p class='m'>町の資料の記述は、まだ整理できていません。</p>"
         if any(x.get("yomi") for x in docs):
             sec1 = f"<p class='m'>{E(self.D.bun('kisai-yomi-setsumei', short=short))}</p>" + sec1
         rows2 = "".join(f"<tr><td class='nw'>{keys.ymd(x['source_date'])}</td><td class='nw'>{self.doko(x)}</td>"
-                        f"<td>「{S(x['quote'])}」{'<br><span class=m>' + self.atai(x) + '</span>' if self.atai(x) else ''}{self.chu(x['source'], x['quote'])}</td>"
+                        f"<td>「{S(x['quote'])}」{self.iken(x)}{'<br><span class=m>' + self.atai(x) + '</span>' if self.atai(x) else ''}{self.chu(x['source'], x['quote'])}</td>"
                         f"<td>{self.link(x)}</td></tr>" for x in ko)
         tome = R["tome"]
         rows3 = "".join(f"<tr><td class='nw'>{keys.ymd(x['source_date'])}</td><td>「{S(x['quote'])}」</td>"
@@ -728,6 +730,10 @@ class Page:
 
     def yomi_go(self, yomi):
         return yomi_go(self.D, yomi)
+
+    def iken(self, x):
+        """意見募集の結果の、提出された意見の行の印（SCHEMA.md 7.14。docs/design.md 4節）。ほかの行は空。"""
+        return f"<div class='m'>{self.D.bun('kiroku-iken', midashi=S(x['iken']))}</div>" if x.get("iken") else ""
 
     def kisai_go(self, yomi):
         return kisai_go(self.D, yomi)
