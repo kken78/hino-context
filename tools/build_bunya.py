@@ -28,6 +28,8 @@ import kensho as ks  # noqa: E402
 import inputs  # noqa: E402
 import jiko  # noqa: E402
 import keys  # noqa: E402
+import sogo_kanren as sk  # noqa: E402
+import suji as sj  # noqa: E402
 
 OUT = os.path.join(inputs.ROOT, "build", "bunya", "index.html")
 SRC_PATH = os.path.abspath(__file__)
@@ -45,6 +47,14 @@ def yomu(inp):
         return None, more
     m = bu.matome(inp, brows, wrows, kk)
     m["kk"] = kk
+    # 関連する個別計画と、指標の表（SCHEMA.md 7.15。2026-11-28）
+    with open(os.path.join(inputs.ROOT, "teigi", "bunsho.tsv"), encoding="utf-8") as f:
+        bunsho = sj.read_bunsho(f.read())[0]
+    try:
+        m["kanren"] = sk.matome(inp, bunsho)
+    except sk.KanrenError as e:
+        return None, [str(e)]
+    m["bunsho_namae"] = {r["bunsho"]: r["namae"] for r in bunsho}
     return m, []
 
 
@@ -272,10 +282,11 @@ def render(D, m, ronten, today, notes=None):
             t = x["tokoro"]
             pp = bu_page(t) if len(t) == 1 else D.bun("kikan", a=bu_page(t[:1]), z=bu_page(t[-1:]))
             body.append(f"<p class='m'>{S(h['no'] + ' ' + h['name'])}　{S(x['seisaku'][0] + ' ' + x['seisaku'][1])}</p>")
-            body.append(f"<h2>{S(x['midashi'])}</h2><ul>" + "".join(f"<li>{S(no + name)}</li>" for no, name in x["shisaku"])
-                        + "</ul>")
+            body.append(f"<h2>{S(x['midashi'])}</h2><p class='m'>{E(D.bun('sogo-gazou', keikaku=kei))}</p><ul>"
+                        + "".join(f"<li>{S(no + name)}</li>" for no, name in x["shisaku"]) + "</ul>")
             body.append(f"<p class='m'>{E(D.kotoba('資料の一覧の表 namae と、shiryo のページ'))}："
                         f"<a href='{E(keys.source_url(m['inp'], t[0]))}' target='_blank'>{kei}　{E(D.bun('page', n=pp))}</a></p>")
+            body.append(kanren_html(D, m, fid))
             body.append(ronten_html(D, m, fid, notes, ronten))
             body.append(kensho_html(D, m, fid))
         else:
@@ -311,6 +322,51 @@ h1{{font-size:1.3em}} h2{{font-size:1.05em;border-top:2px solid #555;padding-top
 function show(){{var id=(location.hash||'#top').slice(1);var ps=document.querySelectorAll('.page');var hit=false;ps.forEach(function(p){{var on=p.id===id;p.classList.toggle('on',on);if(on)hit=true;}});if(!hit)document.getElementById('top').classList.add('on');window.scrollTo(0,0);}}
 window.addEventListener('hashchange',show);show();
 </script></body></html>"""
+
+
+def tokoro_ji(D, tokoro):
+    """pt の ID の並び → ページの字（1ページか、「a〜z」）。"""
+    return bu_page(tokoro) if len(tokoro) == 1 else D.bun("kikan", a=bu_page(tokoro[:1]), z=bu_page(tokoro[-1:]))
+
+
+def kanren_gyo(D, m, k, link):
+    """関連する個別計画の名前1つ → 結び付いた計画の文の並び（docs/design.md 4節の field の2。link は資料の ID → 字）。"""
+    docs = list(dict.fromkeys(k["shiryo"] + [b for _, _, bs_ in k["plans"] for b in bs_]))
+    out = [D.bun("kanren-shiryo", shiryo=link(b)) for b in docs]
+    out += [D.bun("kanren-nyuryoku", namae=S(nm)) for _, nm, bs_ in k["plans"] if not bs_]
+    return out or [E(D.bun("kanren-nashi"))]
+
+
+def kanren_html(D, m, fid):
+    """分野のページの、関連する個別計画と、指標の表（SCHEMA.md 7.15、docs/design.md 4節の field の2。2026-11-28）。"""
+    x = m["kanren"].get(fid)
+    if not x:
+        return ""
+    kei = S(m["kk"]["name"])
+    out = []
+    moto = E(D.kotoba("資料の一覧の表 namae と、shiryo のページ"))
+
+    def link_p(tokoro):
+        return (f"<p class='m'>{moto}：<a href='{E(keys.source_url(m['inp'], tokoro[0]))}' target='_blank'>"
+                f"{kei}　{E(D.bun('page', n=tokoro_ji(D, tokoro)))}</a></p>")
+    if x["kanren"]:
+        kr = x["kanren"]
+        out.append(f"<h2>{S(kr['h'])}</h2><p class='m'>{E(D.bun('kanren-setsumei', keikaku=kei))}</p><ul>")
+        for k in kr["keikaku"]:
+            out.append(f"<li>{S(k['namae'])}<br><span class='m'>"
+                       + "<br>".join(kanren_gyo(D, m, k, lambda b: S(m["bunsho_namae"][b]))) + "</span></li>")
+        out.append("</ul>" + link_p(kr["tokoro"]))
+    if x["shihyo"]:
+        out.append(f"<h2>{E(D.bun('bunya-midashi-shihyo'))}</h2>")
+        for h in x["shihyo"]:
+            out.append("<ul>" + "".join(
+                f"<li>{S(r[0])}<br><span class='m'>"
+                + "　".join(D.bun("hyo-kijutsu-ran", midashi=S(c), atai=S(v)) for c, v in zip(h["head"][1:], r[1:]))
+                + "</span></li>" for r in h["rows"]) + "</ul>")
+            if h["note"]:
+                out.append(f"<p class='m'>{D.bun('shihyo-chu', chu=S(h['note']))}</p>")
+            out.append(link_p(h["tokoro"]))
+    return "".join(out)
 
 
 def kensho_html(D, m, fid):
