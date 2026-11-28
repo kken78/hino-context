@@ -1,0 +1,4034 @@
+[
+ {
+  "taba": 1,
+  "kind": "hosei",
+  "ronten": [
+   "ronten/zen.md"
+  ],
+  "file": "/home/claude/yomi/yosan/jigyo/01.md",
+  "sha256": "b02063b81273cd7b5324e064c5ae7e56af9bfb2afe219a230ab92215e3ebda6a",
+  "jigyo": [
+   "hj:r3-gesuido-01/t001",
+   "hz:r3-gesuido-01/z001",
+   "hj:r3-ippan-01/m001",
+   "hj:r3-ippan-01/m002",
+   "hj:r3-ippan-01/m003",
+   "hj:r3-ippan-01/m004",
+   "hj:r3-ippan-02/m001",
+   "hj:r3-ippan-02/m002",
+   "hj:r3-ippan-02/m003",
+   "hj:r3-ippan-02/m004",
+   "hj:r3-ippan-02/m005",
+   "hj:r3-ippan-02/m006",
+   "hj:r3-ippan-02/m007",
+   "hj:r3-ippan-02/m008",
+   "hj:r3-ippan-02/m009",
+   "hj:r3-ippan-02/m010",
+   "hj:r3-ippan-03/m001",
+   "hj:r3-ippan-04/m001",
+   "hj:r3-ippan-04/m002",
+   "hj:r3-ippan-04/m003",
+   "hj:r3-ippan-04/m004",
+   "hj:r3-ippan-04/m005",
+   "hj:r3-ippan-04/m006",
+   "hj:r3-ippan-04/m007",
+   "hj:r3-ippan-04/m008",
+   "hj:r3-ippan-04/m009",
+   "hj:r3-ippan-04/m010",
+   "hj:r3-ippan-04/m011",
+   "hj:r3-ippan-04/m012",
+   "hj:r3-ippan-04/m013",
+   "hz:r3-ippan-04/z001",
+   "hz:r3-ippan-04/z002",
+   "hz:r3-ippan-04/z003",
+   "hz:r3-ippan-04/z004",
+   "hz:r3-ippan-04/z005",
+   "hj:r3-ippan-05/m001",
+   "hj:r3-ippan-05/m002",
+   "hj:r3-ippan-05/m003",
+   "hj:r3-ippan-05/m004",
+   "hj:r3-ippan-05/m005",
+   "hj:r3-ippan-05/m006",
+   "hj:r3-ippan-05/m007",
+   "hj:r3-ippan-05/m008",
+   "hj:r3-ippan-05/m009",
+   "hj:r3-ippan-05/m010",
+   "hj:r3-ippan-05/m011",
+   "hj:r3-ippan-06/m001",
+   "hj:r3-ippan-07/m001",
+   "hj:r3-ippan-07/m002",
+   "hj:r3-ippan-07/m003"
+  ]
+ },
+ {
+  "taba": 2,
+  "kind": "hosei",
+  "ronten": [
+   "ronten/zen.md"
+  ],
+  "file": "/home/claude/yomi/yosan/jigyo/02.md",
+  "sha256": "111c27fab403696ee87bd71bf06a70404bbeff296197630f92870dd92387235d",
+  "jigyo": [
+   "hj:r3-ippan-07/m004",
+   "hj:r3-ippan-07/m005",
+   "hj:r3-ippan-07/m006",
+   "hj:r3-ippan-07/m007",
+   "hj:r3-ippan-07/m008",
+   "hj:r3-ippan-07/m009",
+   "hj:r3-ippan-07/m010",
+   "hj:r3-ippan-07/m011",
+   "hj:r3-ippan-07/m012",
+   "hz:r3-ippan-07/z001",
+   "hz:r3-ippan-07/z002",
+   "hz:r3-ippan-07/z003",
+   "hz:r3-ippan-07/z004",
+   "hz:r3-ippan-07/z005",
+   "hj:r3-ippan-08/m001",
+   "hj:r3-ippan-09/m001",
+   "hj:r3-ippan-09/m002",
+   "hj:r3-ippan-09/m003",
+   "hj:r3-ippan-09/m004",
+   "hz:r3-ippan-09/z001",
+   "hz:r3-ippan-09/z002",
+   "hj:r3-ippan-10/m001",
+   "hj:r3-ippan-10/m002",
+   "hj:r3-ippan-10/m003",
+   "hj:r3-ippan-10/m004",
+   "hj:r3-ippan-10/m005",
+   "hj:r3-ippan-10/m006",
+   "hj:r3-ippan-10/m007",
+   "hj:r3-ippan-10/m008",
+   "hj:r3-ippan-10/m009",
+   "hj:r3-ippan-10/m010",
+   "hj:r3-ippan-10/m011",
+   "hz:r3-ippan-10/z001",
+   "hz:r3-ippan-10/z002",
+   "hz:r3-ippan-10/z003",
+   "hz:r3-ippan-10/z004",
+   "hz:r3-ippan-10/z005",
+   "hz:r3-ippan-10/z006",
+   "hz:r3-ippan-10/z007",
+   "hz:r3-ippan-10/z008",
+   "hz:r3-ippan-10/z009",
+   "hz:r3-ippan-10/z010",
+   "hz:r3-ippan-10/z011",
+   "hz:r3-ippan-10/z012",
+   "hz:r3-ippan-10/z013",
+   "hz:r3-ippan-10/z014",
+   "hz:r3-ippan-10/z015",
+   "hz:r3-ippan-10/z016",
+   "hz:r3-ippan-10/z017",
+   "hz:r3-ippan-10/z018"
+  ]
+ },
+ {
+  "taba": 3,
+  "kind": "hosei",
+  "ronten": [
+   "ronten/zen.md"
+  ],
+  "file": "/home/claude/yomi/yosan/jigyo/03.md",
+  "sha256": "78a9b9b3ebcf380d019f6748a96824b933df4536363945873c1c587d726365ba",
+  "jigyo": [
+   "hz:r3-ippan-10/z019",
+   "hz:r3-ippan-10/z020",
+   "hz:r3-ippan-10/z021",
+   "hz:r3-ippan-10/z022",
+   "hz:r3-ippan-10/z023",
+   "hz:r3-ippan-10/z024",
+   "hz:r3-ippan-10/z025",
+   "hz:r3-ippan-10/z026",
+   "hj:r3-kaigo-01/t001",
+   "hj:r3-kaigo-02/t001",
+   "hj:r3-kaigo-03/t001",
+   "hj:r3-kansui-01/t001",
+   "hj:r3-koki-01/t001",
+   "hj:r3-kokuho-01/t001",
+   "hj:r3-kokuho-02/t001",
+   "hj:r3-kokuho-03/t001",
+   "hz:r3-kokuho-03/z001",
+   "hj:r3-noshu-01/t001",
+   "hz:r3-noshu-01/z001",
+   "hj:r3-suido-01/t001",
+   "hj:r3-suido-02/t001",
+   "hj:r4-gesuido-01/t001",
+   "hj:r4-gesuido-02/t001",
+   "hj:r4-ippan-01/m001",
+   "hj:r4-ippan-01/m002",
+   "hj:r4-ippan-02/m001",
+   "hj:r4-ippan-02/m002",
+   "hj:r4-ippan-02/m003",
+   "hj:r4-ippan-02/m004",
+   "hj:r4-ippan-03/m001",
+   "hj:r4-ippan-03/m002",
+   "hj:r4-ippan-03/m003",
+   "hj:r4-ippan-03/m004",
+   "hj:r4-ippan-04/m001",
+   "hj:r4-ippan-04/m002",
+   "hj:r4-ippan-04/m003",
+   "hj:r4-ippan-04/m004",
+   "hj:r4-ippan-04/m005",
+   "hj:r4-ippan-04/m006",
+   "hj:r4-ippan-04/m007",
+   "hj:r4-ippan-05/m001",
+   "hj:r4-ippan-05/m002",
+   "hj:r4-ippan-05/m003",
+   "hj:r4-ippan-05/m004",
+   "hj:r4-ippan-05/m005",
+   "hj:r4-ippan-05/m006",
+   "hj:r4-ippan-05/m007",
+   "hj:r4-ippan-05/m008",
+   "hj:r4-ippan-05/m009",
+   "hj:r4-ippan-05/m010"
+  ]
+ },
+ {
+  "taba": 4,
+  "kind": "hosei",
+  "ronten": [
+   "ronten/zen.md"
+  ],
+  "file": "/home/claude/yomi/yosan/jigyo/04.md",
+  "sha256": "dbf2cba217f013acfcd08427a911a592f3500f73efeec7156ba65ddea9889499",
+  "jigyo": [
+   "hj:r4-ippan-05/m011",
+   "hj:r4-ippan-05/m012",
+   "hj:r4-ippan-05/m013",
+   "hj:r4-ippan-05/m014",
+   "hz:r4-ippan-05/z001",
+   "hz:r4-ippan-05/z002",
+   "hz:r4-ippan-05/z003",
+   "hz:r4-ippan-05/z004",
+   "hz:r4-ippan-05/z005",
+   "hz:r4-ippan-05/z006",
+   "hz:r4-ippan-05/z007",
+   "hj:r4-ippan-06/m001",
+   "hj:r4-ippan-06/m002",
+   "hj:r4-ippan-06/m003",
+   "hj:r4-ippan-06/m004",
+   "hj:r4-ippan-06/m005",
+   "hj:r4-ippan-06/m006",
+   "hj:r4-ippan-07/m001",
+   "hj:r4-ippan-07/m002",
+   "hj:r4-ippan-07/m003",
+   "hj:r4-ippan-07/m004",
+   "hj:r4-ippan-07/m005",
+   "hj:r4-ippan-07/m006",
+   "hz:r4-ippan-07/z001",
+   "hz:r4-ippan-07/z002",
+   "hz:r4-ippan-07/z003",
+   "hj:r4-ippan-08/m001",
+   "hj:r4-ippan-08/m002",
+   "hj:r4-ippan-08/m003",
+   "hj:r4-ippan-08/m004",
+   "hj:r4-ippan-08/m005",
+   "hj:r4-ippan-08/m006",
+   "hj:r4-ippan-08/m007",
+   "hj:r4-ippan-08/m008",
+   "hj:r4-ippan-08/m009",
+   "hj:r4-ippan-08/m010",
+   "hj:r4-ippan-08/m011",
+   "hz:r4-ippan-08/z001",
+   "hz:r4-ippan-08/z002",
+   "hz:r4-ippan-08/z003",
+   "hz:r4-ippan-08/z004",
+   "hj:r4-ippan-09/m001",
+   "hj:r4-ippan-09/m002",
+   "hj:r4-ippan-09/m003",
+   "hj:r4-ippan-09/m004",
+   "hj:r4-ippan-09/m005",
+   "hj:r4-ippan-09/m006",
+   "hj:r4-ippan-09/m007",
+   "hj:r4-ippan-09/m008",
+   "hz:r4-ippan-09/z001"
+  ]
+ },
+ {
+  "taba": 5,
+  "kind": "hosei",
+  "ronten": [
+   "ronten/zen.md"
+  ],
+  "file": "/home/claude/yomi/yosan/jigyo/05.md",
+  "sha256": "6459510974b3465d0adf5e370382026b7b70e0cd1a6592599eddc0bf300b4bfc",
+  "jigyo": [
+   "hz:r4-ippan-09/z002",
+   "hz:r4-ippan-09/z003",
+   "hz:r4-ippan-09/z004",
+   "hz:r4-ippan-09/z005",
+   "hz:r4-ippan-09/z006",
+   "hz:r4-ippan-09/z007",
+   "hz:r4-ippan-09/z008",
+   "hz:r4-ippan-09/z009",
+   "hz:r4-ippan-09/z010",
+   "hz:r4-ippan-09/z011",
+   "hz:r4-ippan-09/z012",
+   "hz:r4-ippan-09/z013",
+   "hz:r4-ippan-09/z014",
+   "hz:r4-ippan-09/z015",
+   "hz:r4-ippan-09/z016",
+   "hz:r4-ippan-09/z017",
+   "hz:r4-ippan-09/z018",
+   "hz:r4-ippan-09/z019",
+   "hz:r4-ippan-09/z020",
+   "hz:r4-ippan-09/z021",
+   "hz:r4-ippan-09/z022",
+   "hj:r4-kaigo-01/t001",
+   "hj:r4-kaigo-02/t001",
+   "hj:r4-kaigo-03/t001",
+   "hj:r4-kansui-01/t001",
+   "hj:r4-koki-01/t001",
+   "hj:r4-kokuho-01/t001",
+   "hj:r4-kokuho-02/t001",
+   "hj:r4-noshu-01/t001",
+   "hz:r4-noshu-01/z001",
+   "hj:r4-noshu-02/t001",
+   "hj:r4-noshu-03/t001",
+   "hz:r4-noshu-03/z001",
+   "hj:r4-suido-01/t001",
+   "hj:r4-suido-02/t001",
+   "hj:r5-gesuido-01/t001",
+   "hj:r5-gesuido-02/t001",
+   "hj:r5-gesuido-03/t001",
+   "hj:r5-ippan-01/m001",
+   "hj:r5-ippan-01/m002",
+   "hj:r5-ippan-01/m003",
+   "hj:r5-ippan-01/m004",
+   "hj:r5-ippan-01/m005",
+   "hj:r5-ippan-01/m006",
+   "hj:r5-ippan-01/m007",
+   "hj:r5-ippan-01/m008",
+   "hj:r5-ippan-01/m009",
+   "hj:r5-ippan-01/m010",
+   "hj:r5-ippan-01/m011",
+   "hj:r5-ippan-01/m012"
+  ]
+ },
+ {
+  "taba": 6,
+  "kind": "hosei",
+  "ronten": [
+   "ronten/zen.md"
+  ],
+  "file": "/home/claude/yomi/yosan/jigyo/06.md",
+  "sha256": "efd708a0b5b57ab84d97afc9c63bde1e7c248568dcdf48658670190e79e9ac28",
+  "jigyo": [
+   "hj:r5-ippan-01/m013",
+   "hj:r5-ippan-01/m014",
+   "hj:r5-ippan-01/m015",
+   "hj:r5-ippan-01/m016",
+   "hj:r5-ippan-02/m001",
+   "hj:r5-ippan-02/m002",
+   "hj:r5-ippan-02/m003",
+   "hj:r5-ippan-02/m004",
+   "hz:r5-ippan-02/z001",
+   "hj:r5-ippan-03/m001",
+   "hj:r5-ippan-03/m002",
+   "hj:r5-ippan-03/m003",
+   "hj:r5-ippan-03/m004",
+   "hj:r5-ippan-03/m005",
+   "hj:r5-ippan-03/m006",
+   "hj:r5-ippan-03/m007",
+   "hj:r5-ippan-03/m008",
+   "hj:r5-ippan-03/m009",
+   "hj:r5-ippan-03/m010",
+   "hj:r5-ippan-03/m011",
+   "hj:r5-ippan-03/m012",
+   "hj:r5-ippan-03/m013",
+   "hz:r5-ippan-03/z001",
+   "hz:r5-ippan-03/z002",
+   "hz:r5-ippan-03/z003",
+   "hz:r5-ippan-03/z004",
+   "hj:r5-ippan-04/m001",
+   "hj:r5-ippan-04/m002",
+   "hj:r5-ippan-04/m003",
+   "hj:r5-ippan-04/m004",
+   "hj:r5-ippan-04/m005",
+   "hj:r5-ippan-04/m006",
+   "hj:r5-ippan-04/m007",
+   "hj:r5-ippan-04/m008",
+   "hj:r5-ippan-04/m009",
+   "hz:r5-ippan-04/z001",
+   "hj:r5-ippan-05/m001",
+   "hj:r5-ippan-05/m002",
+   "hj:r5-ippan-06/m001",
+   "hj:r5-ippan-06/m002",
+   "hj:r5-ippan-07/m001",
+   "hj:r5-ippan-07/m002",
+   "hj:r5-ippan-07/m003",
+   "hj:r5-ippan-07/m004",
+   "hj:r5-ippan-07/m005",
+   "hz:r5-ippan-07/z001",
+   "hz:r5-ippan-07/z002",
+   "hj:r5-ippan-08/m001",
+   "hj:r5-ippan-08/m002",
+   "hj:r5-ippan-08/m003"
+  ]
+ },
+ {
+  "taba": 7,
+  "kind": "hosei",
+  "ronten": [
+   "ronten/zen.md"
+  ],
+  "file": "/home/claude/yomi/yosan/jigyo/07.md",
+  "sha256": "064ce06693dc6c4a2d99be120cb3d19222a96c92113ca3590bfd1ab64dd92fb4",
+  "jigyo": [
+   "hj:r5-ippan-08/m004",
+   "hj:r5-ippan-08/m005",
+   "hj:r5-ippan-08/m006",
+   "hj:r5-ippan-08/m007",
+   "hz:r5-ippan-08/z001",
+   "hz:r5-ippan-08/z002",
+   "hz:r5-ippan-08/z003",
+   "hz:r5-ippan-08/z004",
+   "hz:r5-ippan-08/z005",
+   "hz:r5-ippan-08/z006",
+   "hz:r5-ippan-08/z007",
+   "hz:r5-ippan-08/z008",
+   "hz:r5-ippan-08/z009",
+   "hz:r5-ippan-08/z010",
+   "hz:r5-ippan-08/z011",
+   "hz:r5-ippan-08/z012",
+   "hz:r5-ippan-08/z013",
+   "hz:r5-ippan-08/z014",
+   "hz:r5-ippan-08/z015",
+   "hz:r5-ippan-08/z016",
+   "hz:r5-ippan-08/z017",
+   "hz:r5-ippan-08/z018",
+   "hz:r5-ippan-08/z019",
+   "hz:r5-ippan-08/z020",
+   "hz:r5-ippan-08/z021",
+   "hz:r5-ippan-08/z022",
+   "hz:r5-ippan-08/z023",
+   "hj:r5-ippan-09/m001",
+   "hj:r5-ippan-09/m002",
+   "hj:r5-kaigo-01/t001",
+   "hj:r5-kaigo-02/t001",
+   "hj:r5-kaigo-03/t001",
+   "hj:r5-koki-01/t001",
+   "hj:r5-koki-02/t001",
+   "hj:r5-kokuho-01/t001",
+   "hj:r5-kokuho-02/t001",
+   "hj:r5-kokuho-03/t001",
+   "hj:r5-suido-01/t001",
+   "hj:r5-suido-02/t001",
+   "hj:r6-gesuido-01/t001",
+   "hj:r6-gesuido-02/t001",
+   "hj:r6-ippan-01/m001",
+   "hj:r6-ippan-02/m001",
+   "hj:r6-ippan-02/m002",
+   "hj:r6-ippan-02/m003",
+   "hj:r6-ippan-02/m004",
+   "hj:r6-ippan-03/m001",
+   "hj:r6-ippan-03/m002",
+   "hj:r6-ippan-03/m003",
+   "hj:r6-ippan-03/m004"
+  ]
+ },
+ {
+  "taba": 8,
+  "kind": "hosei",
+  "ronten": [
+   "ronten/zen.md"
+  ],
+  "file": "/home/claude/yomi/yosan/jigyo/08.md",
+  "sha256": "8be92a35396c9551aa2c4eccacef66344cdfcb1582073ca53ddab4f292f409c2",
+  "jigyo": [
+   "hj:r6-ippan-03/m005",
+   "hj:r6-ippan-04/m001",
+   "hj:r6-ippan-05/m001",
+   "hj:r6-ippan-05/m002",
+   "hj:r6-ippan-05/m003",
+   "hj:r6-ippan-05/m004",
+   "hj:r6-ippan-05/m005",
+   "hj:r6-ippan-05/m006",
+   "hj:r6-ippan-05/m007",
+   "hj:r6-ippan-05/m008",
+   "hj:r6-ippan-05/m009",
+   "hj:r6-ippan-05/m010",
+   "hj:r6-ippan-05/m011",
+   "hj:r6-ippan-05/m012",
+   "hj:r6-ippan-05/m013",
+   "hj:r6-ippan-05/m014",
+   "hz:r6-ippan-05/z001",
+   "hz:r6-ippan-05/z002",
+   "hj:r6-ippan-06/m001",
+   "hj:r6-ippan-06/m002",
+   "hj:r6-ippan-07/m001",
+   "hj:r6-ippan-07/m002",
+   "hj:r6-ippan-07/m003",
+   "hj:r6-ippan-07/m004",
+   "hj:r6-ippan-07/m005",
+   "hj:r6-ippan-07/m006",
+   "hj:r6-ippan-07/m007",
+   "hj:r6-ippan-07/m008",
+   "hj:r6-ippan-07/m009",
+   "hj:r6-ippan-07/m010",
+   "hj:r6-ippan-07/m011",
+   "hz:r6-ippan-07/z001",
+   "hz:r6-ippan-07/z002",
+   "hj:r6-ippan-08/m001",
+   "hj:r6-ippan-08/m002",
+   "hj:r6-ippan-08/m003",
+   "hj:r6-ippan-08/m004",
+   "hj:r6-ippan-08/m005",
+   "hj:r6-ippan-08/m006",
+   "hj:r6-ippan-08/m007",
+   "hj:r6-ippan-09/m001",
+   "hj:r6-ippan-09/m002",
+   "hj:r6-ippan-09/m003",
+   "hj:r6-ippan-09/m004",
+   "hj:r6-ippan-09/m005",
+   "hz:r6-ippan-09/z001",
+   "hz:r6-ippan-09/z002",
+   "hz:r6-ippan-09/z003",
+   "hz:r6-ippan-09/z004",
+   "hj:r6-ippan-10/m001"
+  ]
+ },
+ {
+  "taba": 9,
+  "kind": "hosei",
+  "ronten": [
+   "ronten/zen.md"
+  ],
+  "file": "/home/claude/yomi/yosan/jigyo/09.md",
+  "sha256": "88d07aa39d205af48e00544e40fc2dc881ea97300d999b1a52ef98df22ca1be9",
+  "jigyo": [
+   "hj:r6-ippan-10/m002",
+   "hj:r6-ippan-10/m003",
+   "hj:r6-ippan-10/m004",
+   "hj:r6-ippan-10/m005",
+   "hj:r6-ippan-10/m006",
+   "hj:r6-ippan-10/m007",
+   "hj:r6-ippan-10/m008",
+   "hz:r6-ippan-10/z001",
+   "hz:r6-ippan-10/z002",
+   "hz:r6-ippan-10/z003",
+   "hz:r6-ippan-10/z004",
+   "hz:r6-ippan-10/z005",
+   "hz:r6-ippan-10/z006",
+   "hz:r6-ippan-10/z007",
+   "hz:r6-ippan-10/z008",
+   "hz:r6-ippan-10/z009",
+   "hz:r6-ippan-10/z010",
+   "hz:r6-ippan-10/z011",
+   "hz:r6-ippan-10/z012",
+   "hz:r6-ippan-10/z013",
+   "hz:r6-ippan-10/z014",
+   "hz:r6-ippan-10/z015",
+   "hz:r6-ippan-10/z016",
+   "hz:r6-ippan-10/z017",
+   "hz:r6-ippan-10/z018",
+   "hz:r6-ippan-10/z019",
+   "hz:r6-ippan-10/z020",
+   "hz:r6-ippan-10/z021",
+   "hz:r6-ippan-10/z022",
+   "hz:r6-ippan-10/z023",
+   "hz:r6-ippan-10/z024",
+   "hj:r6-kaigo-01/t001",
+   "hj:r6-kaigo-02/t001",
+   "hj:r6-kaigo-03/t001",
+   "hj:r6-kaigo-04/t001",
+   "hj:r6-koki-01/t001",
+   "hj:r6-koki-02/t001",
+   "hj:r6-kokuho-01/t001",
+   "hj:r6-kokuho-02/t001",
+   "hj:r6-kokuho-03/t001",
+   "hj:r6-kokuho-04/t001",
+   "hj:r6-kokuho-05/t001",
+   "hj:r6-suido-01/t001",
+   "hj:r7-gesuido-02/t001",
+   "hj:r7-ippan-01/m001",
+   "hj:r7-ippan-02/m001",
+   "hj:r7-ippan-02/m002",
+   "hj:r7-ippan-03/m001",
+   "hj:r7-ippan-03/m002",
+   "hj:r7-ippan-03/m003"
+  ]
+ },
+ {
+  "taba": 10,
+  "kind": "hosei",
+  "ronten": [
+   "ronten/zen.md"
+  ],
+  "file": "/home/claude/yomi/yosan/jigyo/10.md",
+  "sha256": "94e5d6477923eb12affe74e9188251fdddad28e85d48b695e968f73eaa87de04",
+  "jigyo": [
+   "hj:r7-ippan-03/m004",
+   "hz:r7-ippan-03/z001",
+   "hz:r7-ippan-03/z002",
+   "hj:r7-ippan-04/m001",
+   "hj:r7-ippan-04/m002",
+   "hj:r7-ippan-04/m003",
+   "hj:r7-ippan-04/m004",
+   "hj:r7-ippan-04/m005",
+   "hj:r7-ippan-04/m006",
+   "hj:r7-ippan-04/m007",
+   "hj:r7-ippan-04/m008",
+   "hj:r7-ippan-04/m009",
+   "hj:r7-ippan-04/m010",
+   "hz:r7-ippan-04/z001",
+   "hz:r7-ippan-04/z002",
+   "hz:r7-ippan-04/z003",
+   "hz:r7-ippan-04/z004",
+   "hj:r7-ippan-05/m001",
+   "hj:r7-ippan-05/m002",
+   "hj:r7-ippan-05/m003",
+   "hj:r7-ippan-05/m004",
+   "hj:r7-ippan-05/m005",
+   "hj:r7-ippan-05/m006",
+   "hj:r7-ippan-05/m007",
+   "hj:r7-ippan-05/m008",
+   "hj:r7-ippan-05/m009",
+   "hj:r7-ippan-05/m010",
+   "hj:r7-ippan-05/m011",
+   "hj:r7-ippan-05/m012",
+   "hj:r7-ippan-05/m013",
+   "hj:r7-ippan-05/m014",
+   "hz:r7-ippan-05/z001",
+   "hz:r7-ippan-05/z002",
+   "hz:r7-ippan-05/z003",
+   "hz:r7-ippan-05/z004",
+   "hz:r7-ippan-05/z005",
+   "hz:r7-ippan-05/z006",
+   "hz:r7-ippan-05/z007",
+   "hz:r7-ippan-05/z008",
+   "hz:r7-ippan-05/z009",
+   "hz:r7-ippan-05/z010",
+   "hz:r7-ippan-05/z011",
+   "hj:r7-ippan-06/m001",
+   "hj:r7-ippan-06/m002",
+   "hj:r7-ippan-07/m001",
+   "hj:r7-ippan-07/m002",
+   "hj:r7-ippan-07/m003",
+   "hj:r7-ippan-07/m004",
+   "hj:r7-ippan-07/m005",
+   "hj:r7-ippan-07/m006"
+  ]
+ },
+ {
+  "taba": 11,
+  "kind": "hosei",
+  "ronten": [
+   "ronten/zen.md"
+  ],
+  "file": "/home/claude/yomi/yosan/jigyo/11.md",
+  "sha256": "efea68e95d4af32a476ba96aa278fee263796290a5a8807486cb088eaaa59087",
+  "jigyo": [
+   "hj:r7-ippan-07/m007",
+   "hz:r7-ippan-07/z001",
+   "hz:r7-ippan-07/z002",
+   "hz:r7-ippan-07/z003",
+   "hz:r7-ippan-07/z004",
+   "hz:r7-ippan-07/z005",
+   "hz:r7-ippan-07/z006",
+   "hz:r7-ippan-07/z007",
+   "hz:r7-ippan-07/z008",
+   "hz:r7-ippan-07/z009",
+   "hz:r7-ippan-07/z010",
+   "hj:r7-ippan-08/m001",
+   "hj:r7-ippan-08/m002",
+   "hj:r7-ippan-08/m003",
+   "hj:r7-ippan-08/m004",
+   "hj:r7-ippan-08/m005",
+   "hj:r7-ippan-08/m006",
+   "hj:r7-ippan-08/m007",
+   "hj:r7-ippan-08/m008",
+   "hj:r7-ippan-08/m009",
+   "hz:r7-ippan-08/z001",
+   "hz:r7-ippan-08/z002",
+   "hz:r7-ippan-08/z003",
+   "hz:r7-ippan-08/z004",
+   "hz:r7-ippan-08/z005",
+   "hz:r7-ippan-08/z006",
+   "hz:r7-ippan-08/z007",
+   "hz:r7-ippan-08/z008",
+   "hz:r7-ippan-08/z009",
+   "hz:r7-ippan-08/z010",
+   "hz:r7-ippan-08/z011",
+   "hz:r7-ippan-08/z012",
+   "hz:r7-ippan-08/z013",
+   "hz:r7-ippan-08/z014",
+   "hz:r7-ippan-08/z015",
+   "hz:r7-ippan-08/z016",
+   "hz:r7-ippan-08/z017",
+   "hz:r7-ippan-08/z018",
+   "hz:r7-ippan-08/z019",
+   "hz:r7-ippan-08/z020",
+   "hz:r7-ippan-08/z021",
+   "hz:r7-ippan-08/z022",
+   "hz:r7-ippan-08/z023",
+   "hz:r7-ippan-08/z024",
+   "hz:r7-ippan-08/z025",
+   "hj:r7-ippan-09/m001",
+   "hz:r7-ippan-09/z001",
+   "hz:r7-ippan-09/z002",
+   "hj:r7-kaigo-01/t001",
+   "hj:r7-kaigo-02/t001"
+  ]
+ },
+ {
+  "taba": 12,
+  "kind": "hosei",
+  "ronten": [
+   "ronten/zen.md"
+  ],
+  "file": "/home/claude/yomi/yosan/jigyo/12.md",
+  "sha256": "cfca2277c42f949dd163df4591b43d92ba2fc795704ad60f6cac81e3d09634b7",
+  "jigyo": [
+   "hj:r7-kaigo-03/t001",
+   "hj:r7-koki-01/t001",
+   "hj:r7-koki-02/t001",
+   "hj:r7-koki-03/t001",
+   "hj:r7-kokuho-01/t001",
+   "hj:r7-kokuho-02/t001",
+   "hj:r7-kokuho-03/t001",
+   "hj:r7-suido-02/t001",
+   "hj:r7-suido-03/t001",
+   "hj:r8-ippan-01/m001",
+   "hj:r8-ippan-01/m002",
+   "hj:r8-ippan-01/m003",
+   "hj:r8-ippan-01/m004",
+   "hj:r8-ippan-01/m005",
+   "hz:r8-ippan-01/z001",
+   "hj:r8-ippan-02/m001",
+   "hj:r8-ippan-03/m001",
+   "hj:r8-ippan-04/m001",
+   "hj:r8-ippan-04/m002",
+   "hj:r8-ippan-04/m003",
+   "hj:r8-ippan-04/m004",
+   "hj:r8-ippan-04/m005",
+   "hj:r8-ippan-04/m006",
+   "hj:r8-ippan-04/m007",
+   "hj:r8-ippan-04/m008",
+   "hj:r8-ippan-04/m009",
+   "hj:r8-ippan-04/m010",
+   "hj:r8-ippan-04/m011",
+   "hj:r8-ippan-04/m012",
+   "hj:r8-ippan-04/m013",
+   "hj:r8-ippan-04/m014",
+   "hj:r8-ippan-04/m015",
+   "hz:r8-ippan-04/z001",
+   "hz:r8-ippan-04/z002",
+   "hz:r8-ippan-04/z003",
+   "hz:r8-ippan-04/z004",
+   "hz:r8-ippan-04/z005",
+   "hz:r8-ippan-04/z006",
+   "hj:r8-kaigo-01/t001",
+   "hj:r8-kokuho-01/t001"
+  ]
+ },
+ {
+  "taba": 13,
+  "kind": "jisshi",
+  "ronten": [
+   "ronten/zen.md"
+  ],
+  "file": "/home/claude/yomi/yosan/jigyo/13.md",
+  "sha256": "067c3f1fcd71c6f01631c210aaf1cec89130e6cac00fdd1462242d9f2571900e",
+  "jigyo": [
+   "node:jisshi/e001",
+   "node:jisshi/e002",
+   "node:jisshi/e003",
+   "node:jisshi/e004",
+   "node:jisshi/e005",
+   "node:jisshi/e006",
+   "node:jisshi/e007",
+   "node:jisshi/e008",
+   "node:jisshi/e009",
+   "node:jisshi/e010",
+   "node:jisshi/e011",
+   "node:jisshi/e012",
+   "node:jisshi/e013",
+   "node:jisshi/e014",
+   "node:jisshi/e015",
+   "node:jisshi/e016",
+   "node:jisshi/e017",
+   "node:jisshi/e018",
+   "node:jisshi/e019",
+   "node:jisshi/e020",
+   "node:jisshi/e021",
+   "node:jisshi/e022",
+   "node:jisshi/e023",
+   "node:jisshi/e024",
+   "node:jisshi/e025",
+   "node:jisshi/e026",
+   "node:jisshi/e027",
+   "node:jisshi/e028",
+   "node:jisshi/e029",
+   "node:jisshi/e030",
+   "node:jisshi/e031",
+   "node:jisshi/e032",
+   "node:jisshi/e033",
+   "node:jisshi/e034",
+   "node:jisshi/e035",
+   "node:jisshi/e036",
+   "node:jisshi/e037",
+   "node:jisshi/e038",
+   "node:jisshi/e039",
+   "node:jisshi/e040",
+   "node:jisshi/e041",
+   "node:jisshi/e042",
+   "node:jisshi/e043",
+   "node:jisshi/e044",
+   "node:jisshi/e045",
+   "node:jisshi/e046",
+   "node:jisshi/e047",
+   "node:jisshi/e048",
+   "node:jisshi/e049",
+   "node:jisshi/e050"
+  ]
+ },
+ {
+  "taba": 14,
+  "kind": "jisshi",
+  "ronten": [
+   "ronten/zen.md"
+  ],
+  "file": "/home/claude/yomi/yosan/jigyo/14.md",
+  "sha256": "3b7740c700f925a262f64ebbfb348548bdb6dfc1566aac6ced0618b83c044c68",
+  "jigyo": [
+   "node:jisshi/e051",
+   "node:jisshi/e052",
+   "node:jisshi/e053",
+   "node:jisshi/e054",
+   "node:jisshi/e055",
+   "node:jisshi/e056",
+   "node:jisshi/e057",
+   "node:jisshi/e058",
+   "node:jisshi/e059",
+   "node:jisshi/e060",
+   "node:jisshi/e061",
+   "node:jisshi/e062",
+   "node:jisshi/e063",
+   "node:jisshi/e064",
+   "node:jisshi/e065",
+   "node:jisshi/e066",
+   "node:jisshi/e067",
+   "node:jisshi/e068",
+   "node:jisshi/e069",
+   "node:jisshi/e070",
+   "node:jisshi/e071",
+   "node:jisshi/e072",
+   "node:jisshi/e073",
+   "node:jisshi/e074",
+   "node:jisshi/e075",
+   "node:jisshi/e076",
+   "node:jisshi/e077",
+   "node:jisshi/e078",
+   "node:jisshi/e079",
+   "node:jisshi/e080",
+   "node:jisshi/e081",
+   "node:jisshi/e082",
+   "node:jisshi/e083",
+   "node:jisshi/e084",
+   "node:jisshi/e085",
+   "node:jisshi/e086",
+   "node:jisshi/e087",
+   "node:jisshi/e088",
+   "node:jisshi/e089",
+   "node:jisshi/e090",
+   "node:jisshi/e091",
+   "node:jisshi/e092",
+   "node:jisshi/e093",
+   "node:jisshi/e094",
+   "node:jisshi/e095",
+   "node:jisshi/e096",
+   "node:jisshi/e097",
+   "node:jisshi/e098",
+   "node:jisshi/e099",
+   "node:jisshi/e100"
+  ]
+ },
+ {
+  "taba": 15,
+  "kind": "jisshi",
+  "ronten": [
+   "ronten/zen.md"
+  ],
+  "file": "/home/claude/yomi/yosan/jigyo/15.md",
+  "sha256": "86ef3c0e0442e446e63b756134ca4e68b54b0359db1b273a99297acd1cfef5d9",
+  "jigyo": [
+   "node:jisshi/e101",
+   "node:jisshi/e102",
+   "node:jisshi/e103",
+   "node:jisshi/e104",
+   "node:jisshi/e105",
+   "node:jisshi/e106",
+   "node:jisshi/e107",
+   "node:jisshi/e108",
+   "node:jisshi/e109",
+   "node:jisshi/e110",
+   "node:jisshi/e111",
+   "node:jisshi/e112",
+   "node:jisshi/e113",
+   "node:jisshi/e114",
+   "node:jisshi/e115",
+   "node:jisshi/e116",
+   "node:jisshi/e117",
+   "node:jisshi/e118",
+   "node:jisshi/e119",
+   "node:jisshi/e120",
+   "node:jisshi/e121",
+   "node:jisshi/e122",
+   "node:jisshi/e123",
+   "node:jisshi/e124",
+   "node:jisshi/e125",
+   "node:jisshi/e126",
+   "node:jisshi/e127",
+   "node:jisshi/e128",
+   "node:jisshi/e129",
+   "node:jisshi/e130",
+   "node:jisshi/e131",
+   "node:jisshi/e132",
+   "node:jisshi/e133",
+   "node:jisshi/e134",
+   "node:jisshi/e135",
+   "node:jisshi/e136",
+   "node:jisshi/e137",
+   "node:jisshi/e138",
+   "node:jisshi/e139",
+   "node:jisshi/e140",
+   "node:jisshi/e141",
+   "node:jisshi/e142",
+   "node:jisshi/e143",
+   "node:jisshi/e144",
+   "node:jisshi/e145",
+   "node:jisshi/e146",
+   "node:jisshi/e147",
+   "node:jisshi/e148",
+   "node:jisshi/e149",
+   "node:jisshi/e150"
+  ]
+ },
+ {
+  "taba": 16,
+  "kind": "jisshi",
+  "ronten": [
+   "ronten/zen.md"
+  ],
+  "file": "/home/claude/yomi/yosan/jigyo/16.md",
+  "sha256": "8ebadb3841cd9b9a287e5392c20db73c78b867b7b5e9d85693b61d762e16d6c2",
+  "jigyo": [
+   "node:jisshi/e151",
+   "node:jisshi/e152",
+   "node:jisshi/e153",
+   "node:jisshi/e154",
+   "node:jisshi/e155",
+   "node:jisshi/e156",
+   "node:jisshi/e157",
+   "node:jisshi/e158",
+   "node:jisshi/e159",
+   "node:jisshi/e160",
+   "node:jisshi/e161",
+   "node:jisshi/e162",
+   "node:jisshi/e163",
+   "node:jisshi/e164",
+   "node:jisshi/e165",
+   "node:jisshi/e166",
+   "node:jisshi/e167",
+   "node:jisshi/e168",
+   "node:jisshi/e169",
+   "node:jisshi/e170",
+   "node:jisshi/e171",
+   "node:jisshi/e172",
+   "node:jisshi/e173",
+   "node:jisshi/e174",
+   "node:jisshi/e175",
+   "node:jisshi/e176"
+  ]
+ },
+ {
+  "taba": 17,
+  "kind": "fuhyo",
+  "ronten": [
+   "ronten/zen.md"
+  ],
+  "file": "/home/claude/yomi/yosan/jigyo/17.md",
+  "sha256": "ad5d95a3518864e85de85f0d32b7a84873de5334f61d7a3a54b09d81419e0531",
+  "jigyo": [
+   "fu-0001",
+   "fu-0002",
+   "fu-0003",
+   "fu-0004",
+   "fu-0005",
+   "fu-0006",
+   "fu-0007",
+   "fu-0008",
+   "fu-0009",
+   "fu-0010",
+   "fu-0011",
+   "fu-0012",
+   "fu-0013",
+   "fu-0014",
+   "fu-0015",
+   "fu-0016",
+   "fu-0017",
+   "fu-0018",
+   "fu-0019",
+   "fu-0020",
+   "fu-0021",
+   "fu-0022",
+   "fu-0023",
+   "fu-0024",
+   "fu-0025",
+   "fu-0026",
+   "fu-0027",
+   "fu-0028",
+   "fu-0029",
+   "fu-0030",
+   "fu-0031",
+   "fu-0032",
+   "fu-0033",
+   "fu-0034",
+   "fu-0035",
+   "fu-0036",
+   "fu-0037",
+   "fu-0038",
+   "fu-0039",
+   "fu-0040",
+   "fu-0041",
+   "fu-0042",
+   "fu-0043",
+   "fu-0044",
+   "fu-0045",
+   "fu-0046",
+   "fu-0047",
+   "fu-0048",
+   "fu-0049",
+   "fu-0050"
+  ],
+  "members": {
+   "fu-0001": [
+    "fh:fuhyo-r3/b001",
+    "fh:fuhyo-r4/b001",
+    "fh:fuhyo-r5/b001"
+   ],
+   "fu-0002": [
+    "fh:fuhyo-r3/b002",
+    "fh:fuhyo-r4/b002"
+   ],
+   "fu-0003": [
+    "fh:fuhyo-r3/b003"
+   ],
+   "fu-0004": [
+    "fh:fuhyo-r3/b004"
+   ],
+   "fu-0005": [
+    "fh:fuhyo-r3/b005",
+    "fh:fuhyo-r4/b006"
+   ],
+   "fu-0006": [
+    "fh:fuhyo-r3/b006",
+    "fh:fuhyo-r5/b007",
+    "fh:fuhyo-r6/b007",
+    "fh:fuhyo-r7/b008",
+    "fh:fuhyo-r8/b007"
+   ],
+   "fu-0007": [
+    "fh:fuhyo-r3/b007"
+   ],
+   "fu-0008": [
+    "fh:fuhyo-r3/b008",
+    "fh:fuhyo-r4/b010"
+   ],
+   "fu-0009": [
+    "fh:fuhyo-r3/b009",
+    "fh:fuhyo-r4/b009",
+    "fh:fuhyo-r5/b009",
+    "fh:fuhyo-r6/b009",
+    "fh:fuhyo-r7/b010",
+    "fh:fuhyo-r8/b009"
+   ],
+   "fu-0010": [
+    "fh:fuhyo-r3/b010"
+   ],
+   "fu-0011": [
+    "fh:fuhyo-r3/b011"
+   ],
+   "fu-0012": [
+    "fh:fuhyo-r3/b012"
+   ],
+   "fu-0013": [
+    "fh:fuhyo-r3/b013",
+    "fh:fuhyo-r5/b014"
+   ],
+   "fu-0014": [
+    "fh:fuhyo-r3/b014"
+   ],
+   "fu-0015": [
+    "fh:fuhyo-r3/b015",
+    "fh:fuhyo-r4/b018"
+   ],
+   "fu-0016": [
+    "fh:fuhyo-r3/b016",
+    "fh:fuhyo-r4/b019",
+    "fh:fuhyo-r5/b018",
+    "fh:fuhyo-r6/b017",
+    "fh:fuhyo-r7/b018",
+    "fh:fuhyo-r8/b018"
+   ],
+   "fu-0017": [
+    "fh:fuhyo-r3/b017"
+   ],
+   "fu-0018": [
+    "fh:fuhyo-r3/b018",
+    "fh:fuhyo-r5/b021",
+    "fh:fuhyo-r6/b020",
+    "fh:fuhyo-r8/b021"
+   ],
+   "fu-0019": [
+    "fh:fuhyo-r3/b019"
+   ],
+   "fu-0020": [
+    "fh:fuhyo-r3/b020"
+   ],
+   "fu-0021": [
+    "fh:fuhyo-r3/b021"
+   ],
+   "fu-0022": [
+    "fh:fuhyo-r3/b022"
+   ],
+   "fu-0023": [
+    "fh:fuhyo-r3/b023"
+   ],
+   "fu-0024": [
+    "fh:fuhyo-r3/b024",
+    "fh:fuhyo-r4/b027",
+    "fh:fuhyo-r5/b027",
+    "fh:fuhyo-r6/b026",
+    "fh:fuhyo-r8/b027"
+   ],
+   "fu-0025": [
+    "fh:fuhyo-r3/b025"
+   ],
+   "fu-0026": [
+    "fh:fuhyo-r3/b026"
+   ],
+   "fu-0027": [
+    "fh:fuhyo-r3/b027"
+   ],
+   "fu-0028": [
+    "fh:fuhyo-r3/b028"
+   ],
+   "fu-0029": [
+    "fh:fuhyo-r3/b029",
+    "fh:fuhyo-r4/b032",
+    "fh:fuhyo-r5/b033",
+    "fh:fuhyo-r6/b033",
+    "fh:fuhyo-r8/b034"
+   ],
+   "fu-0030": [
+    "fh:fuhyo-r3/b030",
+    "fh:fuhyo-r4/b033",
+    "fh:fuhyo-r5/b034",
+    "fh:fuhyo-r6/b035",
+    "fh:fuhyo-r7/b037",
+    "fh:fuhyo-r8/b036"
+   ],
+   "fu-0031": [
+    "fh:fuhyo-r3/b031"
+   ],
+   "fu-0032": [
+    "fh:fuhyo-r3/b032",
+    "fh:fuhyo-r4/b035",
+    "fh:fuhyo-r5/b037",
+    "fh:fuhyo-r6/b037",
+    "fh:fuhyo-r7/b039",
+    "fh:fuhyo-r8/b038"
+   ],
+   "fu-0033": [
+    "fh:fuhyo-r3/b033",
+    "fh:fuhyo-r4/b036",
+    "fh:fuhyo-r5/b038",
+    "fh:fuhyo-r6/b038",
+    "fh:fuhyo-r8/b039"
+   ],
+   "fu-0034": [
+    "fh:fuhyo-r3/b034"
+   ],
+   "fu-0035": [
+    "fh:fuhyo-r3/b035",
+    "fh:fuhyo-r5/b040",
+    "fh:fuhyo-r6/b040"
+   ],
+   "fu-0036": [
+    "fh:fuhyo-r3/b036"
+   ],
+   "fu-0037": [
+    "fh:fuhyo-r3/b037"
+   ],
+   "fu-0038": [
+    "fh:fuhyo-r3/b038"
+   ],
+   "fu-0039": [
+    "fh:fuhyo-r3/b039",
+    "fh:fuhyo-r5/b045",
+    "fh:fuhyo-r6/b045",
+    "fh:fuhyo-r7/b047",
+    "fh:fuhyo-r8/b050"
+   ],
+   "fu-0040": [
+    "fh:fuhyo-r3/b040",
+    "fh:fuhyo-r4/b044",
+    "fh:fuhyo-r5/b046",
+    "fh:fuhyo-r6/b046",
+    "fh:fuhyo-r8/b051"
+   ],
+   "fu-0041": [
+    "fh:fuhyo-r3/b041"
+   ],
+   "fu-0042": [
+    "fh:fuhyo-r3/b042"
+   ],
+   "fu-0043": [
+    "fh:fuhyo-r3/b043"
+   ],
+   "fu-0044": [
+    "fh:fuhyo-r3/b044",
+    "fh:fuhyo-r4/b048",
+    "fh:fuhyo-r5/b050",
+    "fh:fuhyo-r6/b050"
+   ],
+   "fu-0045": [
+    "fh:fuhyo-r3/b045",
+    "fh:fuhyo-r5/b051"
+   ],
+   "fu-0046": [
+    "fh:fuhyo-r3/b046"
+   ],
+   "fu-0047": [
+    "fh:fuhyo-r3/b047"
+   ],
+   "fu-0048": [
+    "fh:fuhyo-r3/b048",
+    "fh:fuhyo-r4/b052",
+    "fh:fuhyo-r6/b058",
+    "fh:fuhyo-r7/b060",
+    "fh:fuhyo-r8/b059"
+   ],
+   "fu-0049": [
+    "fh:fuhyo-r3/b049",
+    "fh:fuhyo-r5/b056",
+    "fh:fuhyo-r6/b060"
+   ],
+   "fu-0050": [
+    "fh:fuhyo-r3/b050"
+   ]
+  }
+ },
+ {
+  "taba": 18,
+  "kind": "fuhyo",
+  "ronten": [
+   "ronten/zen.md"
+  ],
+  "file": "/home/claude/yomi/yosan/jigyo/18.md",
+  "sha256": "978226197ef8e12dc2b59f453ef0f014cadb0b0d89e98786b916ded67cb32a4a",
+  "jigyo": [
+   "fu-0051",
+   "fu-0052",
+   "fu-0053",
+   "fu-0054",
+   "fu-0055",
+   "fu-0056",
+   "fu-0057",
+   "fu-0058",
+   "fu-0059",
+   "fu-0060",
+   "fu-0061",
+   "fu-0062",
+   "fu-0063",
+   "fu-0064",
+   "fu-0065",
+   "fu-0066",
+   "fu-0067",
+   "fu-0068",
+   "fu-0069",
+   "fu-0070",
+   "fu-0071",
+   "fu-0072",
+   "fu-0073",
+   "fu-0074",
+   "fu-0075",
+   "fu-0076",
+   "fu-0077",
+   "fu-0078",
+   "fu-0079",
+   "fu-0080",
+   "fu-0081",
+   "fu-0082",
+   "fu-0083",
+   "fu-0084",
+   "fu-0085",
+   "fu-0086",
+   "fu-0087",
+   "fu-0088",
+   "fu-0089",
+   "fu-0090",
+   "fu-0091",
+   "fu-0092",
+   "fu-0093",
+   "fu-0094",
+   "fu-0095",
+   "fu-0096",
+   "fu-0097",
+   "fu-0098",
+   "fu-0099",
+   "fu-0100"
+  ],
+  "members": {
+   "fu-0051": [
+    "fh:fuhyo-r3/b051",
+    "fh:fuhyo-r4/b055",
+    "fh:fuhyo-r5/b058"
+   ],
+   "fu-0052": [
+    "fh:fuhyo-r3/b052"
+   ],
+   "fu-0053": [
+    "fh:fuhyo-r3/b053"
+   ],
+   "fu-0054": [
+    "fh:fuhyo-r3/b054",
+    "fh:fuhyo-r4/b057",
+    "fh:fuhyo-r5/b060"
+   ],
+   "fu-0055": [
+    "fh:fuhyo-r3/b055",
+    "fh:fuhyo-r5/b061",
+    "fh:fuhyo-r6/b065",
+    "fh:fuhyo-r7/b067"
+   ],
+   "fu-0056": [
+    "fh:fuhyo-r3/b056",
+    "fh:fuhyo-r4/b059",
+    "fh:fuhyo-r5/b062"
+   ],
+   "fu-0057": [
+    "fh:fuhyo-r3/b057"
+   ],
+   "fu-0058": [
+    "fh:fuhyo-r3/b058",
+    "fh:fuhyo-r4/b061",
+    "fh:fuhyo-r5/b065",
+    "fh:fuhyo-r6/b068",
+    "fh:fuhyo-r7/b069",
+    "fh:fuhyo-r8/b069"
+   ],
+   "fu-0059": [
+    "fh:fuhyo-r3/b059",
+    "fh:fuhyo-r4/b062",
+    "fh:fuhyo-r5/b066",
+    "fh:fuhyo-r6/b069",
+    "fh:fuhyo-r7/b070",
+    "fh:fuhyo-r8/b070"
+   ],
+   "fu-0060": [
+    "fh:fuhyo-r3/b060",
+    "fh:fuhyo-r4/b063",
+    "fh:fuhyo-r5/b067",
+    "fh:fuhyo-r6/b070",
+    "fh:fuhyo-r7/b071",
+    "fh:fuhyo-r8/b071"
+   ],
+   "fu-0061": [
+    "fh:fuhyo-r3/b061",
+    "fh:fuhyo-r4/b064",
+    "fh:fuhyo-r5/b068",
+    "fh:fuhyo-r6/b071",
+    "fh:fuhyo-r7/b072",
+    "fh:fuhyo-r8/b072"
+   ],
+   "fu-0062": [
+    "fh:fuhyo-r3/b062",
+    "fh:fuhyo-r4/b065",
+    "fh:fuhyo-r5/b069",
+    "fh:fuhyo-r6/b072",
+    "fh:fuhyo-r7/b073",
+    "fh:fuhyo-r8/b073"
+   ],
+   "fu-0063": [
+    "fh:fuhyo-r3/b063",
+    "fh:fuhyo-r4/b066",
+    "fh:fuhyo-r5/b070",
+    "fh:fuhyo-r6/b073",
+    "fh:fuhyo-r7/b074",
+    "fh:fuhyo-r8/b074"
+   ],
+   "fu-0064": [
+    "fh:fuhyo-r3/b064",
+    "fh:fuhyo-r4/b067"
+   ],
+   "fu-0065": [
+    "fh:fuhyo-r3/b065",
+    "fh:fuhyo-r4/b070",
+    "fh:fuhyo-r5/b075",
+    "fh:fuhyo-r6/b076",
+    "fh:fuhyo-r8/b077"
+   ],
+   "fu-0066": [
+    "fh:fuhyo-r3/b066"
+   ],
+   "fu-0067": [
+    "fh:fuhyo-r3/b067"
+   ],
+   "fu-0068": [
+    "fh:fuhyo-r3/b068",
+    "fh:fuhyo-r4/b072",
+    "fh:fuhyo-r5/b077",
+    "fh:fuhyo-r8/b080"
+   ],
+   "fu-0069": [
+    "fh:fuhyo-r3/b069",
+    "fh:fuhyo-r4/b073"
+   ],
+   "fu-0070": [
+    "fh:fuhyo-r3/b070",
+    "fh:fuhyo-r4/b074",
+    "fh:fuhyo-r5/b079",
+    "fh:fuhyo-r6/b082",
+    "fh:fuhyo-r7/b084",
+    "fh:fuhyo-r8/b082"
+   ],
+   "fu-0071": [
+    "fh:fuhyo-r3/b071"
+   ],
+   "fu-0072": [
+    "fh:fuhyo-r3/b072"
+   ],
+   "fu-0073": [
+    "fh:fuhyo-r3/b073",
+    "fh:fuhyo-r5/b082",
+    "fh:fuhyo-r6/b087",
+    "fh:fuhyo-r7/b089",
+    "fh:fuhyo-r8/b085"
+   ],
+   "fu-0074": [
+    "fh:fuhyo-r3/b074"
+   ],
+   "fu-0075": [
+    "fh:fuhyo-r3/b075"
+   ],
+   "fu-0076": [
+    "fh:fuhyo-r3/b076"
+   ],
+   "fu-0077": [
+    "fh:fuhyo-r3/b077"
+   ],
+   "fu-0078": [
+    "fh:fuhyo-r3/b078"
+   ],
+   "fu-0079": [
+    "fh:fuhyo-r3/b079",
+    "fh:fuhyo-r4/b085",
+    "fh:fuhyo-r5/b085",
+    "fh:fuhyo-r6/b090",
+    "fh:fuhyo-r7/b092",
+    "fh:fuhyo-r8/b088"
+   ],
+   "fu-0080": [
+    "fh:fuhyo-r3/b080",
+    "fh:fuhyo-r4/b086",
+    "fh:fuhyo-r5/b087",
+    "fh:fuhyo-r6/b093",
+    "fh:fuhyo-r7/b095",
+    "fh:fuhyo-r8/b091"
+   ],
+   "fu-0081": [
+    "fh:fuhyo-r3/b081",
+    "fh:fuhyo-r4/b087",
+    "fh:fuhyo-r5/b088",
+    "fh:fuhyo-r6/b094",
+    "fh:fuhyo-r7/b096",
+    "fh:fuhyo-r8/b092"
+   ],
+   "fu-0082": [
+    "fh:fuhyo-r3/b082",
+    "fh:fuhyo-r4/b088",
+    "fh:fuhyo-r5/b089",
+    "fh:fuhyo-r6/b095",
+    "fh:fuhyo-r7/b097",
+    "fh:fuhyo-r8/b093"
+   ],
+   "fu-0083": [
+    "fh:fuhyo-r3/b083"
+   ],
+   "fu-0084": [
+    "fh:fuhyo-r3/b084",
+    "fh:fuhyo-r5/b092",
+    "fh:fuhyo-r6/b098",
+    "fh:fuhyo-r7/b100"
+   ],
+   "fu-0085": [
+    "fh:fuhyo-r3/b085"
+   ],
+   "fu-0086": [
+    "fh:fuhyo-r3/b086",
+    "fh:fuhyo-r4/b092",
+    "fh:fuhyo-r5/b094",
+    "fh:fuhyo-r6/b100",
+    "fh:fuhyo-r7/b102",
+    "fh:fuhyo-r8/b098"
+   ],
+   "fu-0087": [
+    "fh:fuhyo-r3/b087",
+    "fh:fuhyo-r4/b093"
+   ],
+   "fu-0088": [
+    "fh:fuhyo-r3/b088"
+   ],
+   "fu-0089": [
+    "fh:fuhyo-r3/b089",
+    "fh:fuhyo-r4/b095",
+    "fh:fuhyo-r5/b097",
+    "fh:fuhyo-r6/b103",
+    "fh:fuhyo-r7/b105",
+    "fh:fuhyo-r8/b101"
+   ],
+   "fu-0090": [
+    "fh:fuhyo-r3/b090",
+    "fh:fuhyo-r4/b096"
+   ],
+   "fu-0091": [
+    "fh:fuhyo-r3/b091"
+   ],
+   "fu-0092": [
+    "fh:fuhyo-r3/b092"
+   ],
+   "fu-0093": [
+    "fh:fuhyo-r3/b093"
+   ],
+   "fu-0094": [
+    "fh:fuhyo-r3/b094",
+    "fh:fuhyo-r4/b100",
+    "fh:fuhyo-r5/b102"
+   ],
+   "fu-0095": [
+    "fh:fuhyo-r3/b095",
+    "fh:fuhyo-r4/b101",
+    "fh:fuhyo-r5/b103"
+   ],
+   "fu-0096": [
+    "fh:fuhyo-r3/b096",
+    "fh:fuhyo-r4/b102",
+    "fh:fuhyo-r5/b104"
+   ],
+   "fu-0097": [
+    "fh:fuhyo-r3/b097"
+   ],
+   "fu-0098": [
+    "fh:fuhyo-r3/b098",
+    "fh:fuhyo-r4/b104",
+    "fh:fuhyo-r5/b106"
+   ],
+   "fu-0099": [
+    "fh:fuhyo-r3/b099"
+   ],
+   "fu-0100": [
+    "fh:fuhyo-r3/b100",
+    "fh:fuhyo-r4/b106",
+    "fh:fuhyo-r5/b108",
+    "fh:fuhyo-r6/b114",
+    "fh:fuhyo-r7/b118",
+    "fh:fuhyo-r8/b116"
+   ]
+  }
+ },
+ {
+  "taba": 19,
+  "kind": "fuhyo",
+  "ronten": [
+   "ronten/zen.md"
+  ],
+  "file": "/home/claude/yomi/yosan/jigyo/19.md",
+  "sha256": "03da3f2f9d67816dc0956d122d48476e827bb2397e8a9b8f4d6238261fe10b3b",
+  "jigyo": [
+   "fu-0101",
+   "fu-0102",
+   "fu-0103",
+   "fu-0104",
+   "fu-0105",
+   "fu-0106",
+   "fu-0107",
+   "fu-0108",
+   "fu-0109",
+   "fu-0110",
+   "fu-0111",
+   "fu-0112",
+   "fu-0113",
+   "fu-0114",
+   "fu-0115",
+   "fu-0116",
+   "fu-0117",
+   "fu-0118",
+   "fu-0119",
+   "fu-0120",
+   "fu-0121",
+   "fu-0122",
+   "fu-0123",
+   "fu-0124",
+   "fu-0125",
+   "fu-0126",
+   "fu-0127",
+   "fu-0128",
+   "fu-0129",
+   "fu-0130",
+   "fu-0131",
+   "fu-0132",
+   "fu-0133",
+   "fu-0134",
+   "fu-0135",
+   "fu-0136",
+   "fu-0137",
+   "fu-0138",
+   "fu-0139",
+   "fu-0140",
+   "fu-0141",
+   "fu-0142",
+   "fu-0143",
+   "fu-0144",
+   "fu-0145",
+   "fu-0146",
+   "fu-0147",
+   "fu-0148",
+   "fu-0149",
+   "fu-0150"
+  ],
+  "members": {
+   "fu-0101": [
+    "fh:fuhyo-r3/b101",
+    "fh:fuhyo-r4/b107",
+    "fh:fuhyo-r5/b109"
+   ],
+   "fu-0102": [
+    "fh:fuhyo-r3/b102"
+   ],
+   "fu-0103": [
+    "fh:fuhyo-r3/b103",
+    "fh:fuhyo-r4/b109",
+    "fh:fuhyo-r5/b111"
+   ],
+   "fu-0104": [
+    "fh:fuhyo-r3/b104",
+    "fh:fuhyo-r4/b110",
+    "fh:fuhyo-r5/b112"
+   ],
+   "fu-0105": [
+    "fh:fuhyo-r3/b105",
+    "fh:fuhyo-r5/b113",
+    "fh:fuhyo-r6/b119"
+   ],
+   "fu-0106": [
+    "fh:fuhyo-r3/b106",
+    "fh:fuhyo-r4/b114",
+    "fh:fuhyo-r5/b114",
+    "fh:fuhyo-r6/b120",
+    "fh:fuhyo-r7/b126",
+    "fh:fuhyo-r8/b122"
+   ],
+   "fu-0107": [
+    "fh:fuhyo-r3/b107"
+   ],
+   "fu-0108": [
+    "fh:fuhyo-r3/b108",
+    "fh:fuhyo-r4/b116",
+    "fh:fuhyo-r5/b116"
+   ],
+   "fu-0109": [
+    "fh:fuhyo-r3/b109"
+   ],
+   "fu-0110": [
+    "fh:fuhyo-r3/b110"
+   ],
+   "fu-0111": [
+    "fh:fuhyo-r3/b111"
+   ],
+   "fu-0112": [
+    "fh:fuhyo-r3/b112",
+    "fh:fuhyo-r4/b121",
+    "fh:fuhyo-r5/b122"
+   ],
+   "fu-0113": [
+    "fh:fuhyo-r3/b113"
+   ],
+   "fu-0114": [
+    "fh:fuhyo-r3/b114"
+   ],
+   "fu-0115": [
+    "fh:fuhyo-r3/b115",
+    "fh:fuhyo-r4/b125",
+    "fh:fuhyo-r5/b126"
+   ],
+   "fu-0116": [
+    "fh:fuhyo-r3/b116"
+   ],
+   "fu-0117": [
+    "fh:fuhyo-r3/b117"
+   ],
+   "fu-0118": [
+    "fh:fuhyo-r3/b118"
+   ],
+   "fu-0119": [
+    "fh:fuhyo-r3/b119"
+   ],
+   "fu-0120": [
+    "fh:fuhyo-r3/b120"
+   ],
+   "fu-0121": [
+    "fh:fuhyo-r3/b121",
+    "fh:fuhyo-r4/b131",
+    "fh:fuhyo-r5/b132",
+    "fh:fuhyo-r6/b136",
+    "fh:fuhyo-r7/b142",
+    "fh:fuhyo-r8/b137"
+   ],
+   "fu-0122": [
+    "fh:fuhyo-r3/b122"
+   ],
+   "fu-0123": [
+    "fh:fuhyo-r3/b123",
+    "fh:fuhyo-r4/b133",
+    "fh:fuhyo-r5/b135",
+    "fh:fuhyo-r6/b142",
+    "fh:fuhyo-r7/b148",
+    "fh:fuhyo-r8/b143"
+   ],
+   "fu-0124": [
+    "fh:fuhyo-r3/b124",
+    "fh:fuhyo-r4/b134",
+    "fh:fuhyo-r5/b136"
+   ],
+   "fu-0125": [
+    "fh:fuhyo-r3/b125",
+    "fh:fuhyo-r4/b135",
+    "fh:fuhyo-r5/b137"
+   ],
+   "fu-0126": [
+    "fh:fuhyo-r3/b126",
+    "fh:fuhyo-r5/b138",
+    "fh:fuhyo-r6/b145"
+   ],
+   "fu-0127": [
+    "fh:fuhyo-r3/b127",
+    "fh:fuhyo-r4/b137"
+   ],
+   "fu-0128": [
+    "fh:fuhyo-r3/b128"
+   ],
+   "fu-0129": [
+    "fh:fuhyo-r3/b129"
+   ],
+   "fu-0130": [
+    "fh:fuhyo-r3/b130"
+   ],
+   "fu-0131": [
+    "fh:fuhyo-r3/b131",
+    "fh:fuhyo-r4/b142"
+   ],
+   "fu-0132": [
+    "fh:fuhyo-r3/b132",
+    "fh:fuhyo-r4/b143",
+    "fh:fuhyo-r5/b145",
+    "fh:fuhyo-r6/b152"
+   ],
+   "fu-0133": [
+    "fh:fuhyo-r3/b133"
+   ],
+   "fu-0134": [
+    "fh:fuhyo-r3/b134"
+   ],
+   "fu-0135": [
+    "fh:fuhyo-r3/b135",
+    "fh:fuhyo-r4/b146"
+   ],
+   "fu-0136": [
+    "fh:fuhyo-r3/b136",
+    "fh:fuhyo-r4/b147",
+    "fh:fuhyo-r5/b148",
+    "fh:fuhyo-r6/b158",
+    "fh:fuhyo-r8/b159"
+   ],
+   "fu-0137": [
+    "fh:fuhyo-r3/b137",
+    "fh:fuhyo-r5/b149",
+    "fh:fuhyo-r6/b159"
+   ],
+   "fu-0138": [
+    "fh:fuhyo-r3/b138",
+    "fh:fuhyo-r4/b149",
+    "fh:fuhyo-r5/b152"
+   ],
+   "fu-0139": [
+    "fh:fuhyo-r3/b139",
+    "fh:fuhyo-r5/b153",
+    "fh:fuhyo-r6/b161",
+    "fh:fuhyo-r7/b167"
+   ],
+   "fu-0140": [
+    "fh:fuhyo-r3/b140"
+   ],
+   "fu-0141": [
+    "fh:fuhyo-r3/b141",
+    "fh:fuhyo-r4/b151",
+    "fh:fuhyo-r5/b154",
+    "fh:fuhyo-r6/b162",
+    "fh:fuhyo-r7/b169",
+    "fh:fuhyo-r8/b164"
+   ],
+   "fu-0142": [
+    "fh:fuhyo-r3/b142"
+   ],
+   "fu-0143": [
+    "fh:fuhyo-r3/b143",
+    "fh:fuhyo-r4/b153",
+    "fh:fuhyo-r5/b156",
+    "fh:fuhyo-r6/b164"
+   ],
+   "fu-0144": [
+    "fh:fuhyo-r3/b144"
+   ],
+   "fu-0145": [
+    "fh:fuhyo-r3/b145"
+   ],
+   "fu-0146": [
+    "fh:fuhyo-r3/b146"
+   ],
+   "fu-0147": [
+    "fh:fuhyo-r3/b147"
+   ],
+   "fu-0148": [
+    "fh:fuhyo-r3/b148"
+   ],
+   "fu-0149": [
+    "fh:fuhyo-r3/b149"
+   ],
+   "fu-0150": [
+    "fh:fuhyo-r3/b150",
+    "fh:fuhyo-r4/b161",
+    "fh:fuhyo-r5/b163",
+    "fh:fuhyo-r6/b172",
+    "fh:fuhyo-r7/b180"
+   ]
+  }
+ },
+ {
+  "taba": 20,
+  "kind": "fuhyo",
+  "ronten": [
+   "ronten/zen.md"
+  ],
+  "file": "/home/claude/yomi/yosan/jigyo/20.md",
+  "sha256": "3dab72ea553fa94cdc77fda23621e5b91ac2981bf2464c87ed1a3f8967399599",
+  "jigyo": [
+   "fu-0151",
+   "fu-0152",
+   "fu-0153",
+   "fu-0154",
+   "fu-0155",
+   "fu-0156",
+   "fu-0157",
+   "fu-0158",
+   "fu-0159",
+   "fu-0160",
+   "fu-0161",
+   "fu-0162",
+   "fu-0163",
+   "fu-0164",
+   "fu-0165",
+   "fu-0166",
+   "fu-0167",
+   "fu-0168",
+   "fu-0169",
+   "fu-0170",
+   "fu-0171",
+   "fu-0172",
+   "fu-0173",
+   "fu-0174",
+   "fu-0175",
+   "fu-0176",
+   "fu-0177",
+   "fu-0178",
+   "fu-0179",
+   "fu-0180",
+   "fu-0181",
+   "fu-0182",
+   "fu-0183",
+   "fu-0184",
+   "fu-0185",
+   "fu-0186",
+   "fu-0187",
+   "fu-0188",
+   "fu-0189",
+   "fu-0190",
+   "fu-0191",
+   "fu-0192",
+   "fu-0193",
+   "fu-0194",
+   "fu-0195",
+   "fu-0196",
+   "fu-0197",
+   "fu-0198",
+   "fu-0199",
+   "fu-0200"
+  ],
+  "members": {
+   "fu-0151": [
+    "fh:fuhyo-r3/b151"
+   ],
+   "fu-0152": [
+    "fh:fuhyo-r3/b152"
+   ],
+   "fu-0153": [
+    "fh:fuhyo-r3/b153",
+    "fh:fuhyo-r5/b166"
+   ],
+   "fu-0154": [
+    "fh:fuhyo-r3/b154"
+   ],
+   "fu-0155": [
+    "fh:fuhyo-r3/b155"
+   ],
+   "fu-0156": [
+    "fh:fuhyo-r4/b003"
+   ],
+   "fu-0157": [
+    "fh:fuhyo-r4/b004"
+   ],
+   "fu-0158": [
+    "fh:fuhyo-r4/b005",
+    "fh:fuhyo-r5/b005"
+   ],
+   "fu-0159": [
+    "fh:fuhyo-r4/b007"
+   ],
+   "fu-0160": [
+    "fh:fuhyo-r4/b008",
+    "fh:fuhyo-r5/b008",
+    "fh:fuhyo-r6/b008",
+    "fh:fuhyo-r7/b009",
+    "fh:fuhyo-r8/b008"
+   ],
+   "fu-0161": [
+    "fh:fuhyo-r4/b011",
+    "fh:fuhyo-r5/b011"
+   ],
+   "fu-0162": [
+    "fh:fuhyo-r4/b012"
+   ],
+   "fu-0163": [
+    "fh:fuhyo-r4/b013",
+    "fh:fuhyo-r6/b013",
+    "fh:fuhyo-r8/b014"
+   ],
+   "fu-0164": [
+    "fh:fuhyo-r4/b014"
+   ],
+   "fu-0165": [
+    "fh:fuhyo-r4/b015"
+   ],
+   "fu-0166": [
+    "fh:fuhyo-r4/b016"
+   ],
+   "fu-0167": [
+    "fh:fuhyo-r4/b017",
+    "fh:fuhyo-r5/b016",
+    "fh:fuhyo-r6/b015",
+    "fh:fuhyo-r7/b016"
+   ],
+   "fu-0168": [
+    "fh:fuhyo-r4/b020"
+   ],
+   "fu-0169": [
+    "fh:fuhyo-r4/b021"
+   ],
+   "fu-0170": [
+    "fh:fuhyo-r4/b022"
+   ],
+   "fu-0171": [
+    "fh:fuhyo-r4/b023"
+   ],
+   "fu-0172": [
+    "fh:fuhyo-r4/b024"
+   ],
+   "fu-0173": [
+    "fh:fuhyo-r4/b025"
+   ],
+   "fu-0174": [
+    "fh:fuhyo-r4/b026"
+   ],
+   "fu-0175": [
+    "fh:fuhyo-r4/b028"
+   ],
+   "fu-0176": [
+    "fh:fuhyo-r4/b029"
+   ],
+   "fu-0177": [
+    "fh:fuhyo-r4/b030"
+   ],
+   "fu-0178": [
+    "fh:fuhyo-r4/b031",
+    "fh:fuhyo-r5/b032",
+    "fh:fuhyo-r6/b032",
+    "fh:fuhyo-r7/b034",
+    "fh:fuhyo-r8/b033"
+   ],
+   "fu-0179": [
+    "fh:fuhyo-r4/b034",
+    "fh:fuhyo-r5/b036",
+    "fh:fuhyo-r6/b036",
+    "fh:fuhyo-r7/b038",
+    "fh:fuhyo-r8/b037"
+   ],
+   "fu-0180": [
+    "fh:fuhyo-r4/b037",
+    "fh:fuhyo-r5/b039",
+    "fh:fuhyo-r6/b039",
+    "fh:fuhyo-r7/b041",
+    "fh:fuhyo-r8/b040"
+   ],
+   "fu-0181": [
+    "fh:fuhyo-r4/b038"
+   ],
+   "fu-0182": [
+    "fh:fuhyo-r4/b039",
+    "fh:fuhyo-r5/b041",
+    "fh:fuhyo-r6/b041",
+    "fh:fuhyo-r7/b043"
+   ],
+   "fu-0183": [
+    "fh:fuhyo-r4/b040"
+   ],
+   "fu-0184": [
+    "fh:fuhyo-r4/b041"
+   ],
+   "fu-0185": [
+    "fh:fuhyo-r4/b042",
+    "fh:fuhyo-r5/b044",
+    "fh:fuhyo-r6/b044",
+    "fh:fuhyo-r7/b046",
+    "fh:fuhyo-r8/b048"
+   ],
+   "fu-0186": [
+    "fh:fuhyo-r4/b043"
+   ],
+   "fu-0187": [
+    "fh:fuhyo-r4/b045"
+   ],
+   "fu-0188": [
+    "fh:fuhyo-r4/b046"
+   ],
+   "fu-0189": [
+    "fh:fuhyo-r4/b047",
+    "fh:fuhyo-r7/b051"
+   ],
+   "fu-0190": [
+    "fh:fuhyo-r4/b049",
+    "fh:fuhyo-r6/b052"
+   ],
+   "fu-0191": [
+    "fh:fuhyo-r4/b050"
+   ],
+   "fu-0192": [
+    "fh:fuhyo-r4/b051"
+   ],
+   "fu-0193": [
+    "fh:fuhyo-r4/b053"
+   ],
+   "fu-0194": [
+    "fh:fuhyo-r4/b054"
+   ],
+   "fu-0195": [
+    "fh:fuhyo-r4/b056"
+   ],
+   "fu-0196": [
+    "fh:fuhyo-r4/b058"
+   ],
+   "fu-0197": [
+    "fh:fuhyo-r4/b060"
+   ],
+   "fu-0198": [
+    "fh:fuhyo-r4/b068"
+   ],
+   "fu-0199": [
+    "fh:fuhyo-r4/b069"
+   ],
+   "fu-0200": [
+    "fh:fuhyo-r4/b071"
+   ]
+  }
+ },
+ {
+  "taba": 21,
+  "kind": "fuhyo",
+  "ronten": [
+   "ronten/zen.md"
+  ],
+  "file": "/home/claude/yomi/yosan/jigyo/21.md",
+  "sha256": "536e331b61fda6f74cb64f6e25c0be7fef8abd896b566ac8b659c08e61242869",
+  "jigyo": [
+   "fu-0201",
+   "fu-0202",
+   "fu-0203",
+   "fu-0204",
+   "fu-0205",
+   "fu-0206",
+   "fu-0207",
+   "fu-0208",
+   "fu-0209",
+   "fu-0210",
+   "fu-0211",
+   "fu-0212",
+   "fu-0213",
+   "fu-0214",
+   "fu-0215",
+   "fu-0216",
+   "fu-0217",
+   "fu-0218",
+   "fu-0219",
+   "fu-0220",
+   "fu-0221",
+   "fu-0222",
+   "fu-0223",
+   "fu-0224",
+   "fu-0225",
+   "fu-0226",
+   "fu-0227",
+   "fu-0228",
+   "fu-0229",
+   "fu-0230",
+   "fu-0231",
+   "fu-0232",
+   "fu-0233",
+   "fu-0234",
+   "fu-0235",
+   "fu-0236",
+   "fu-0237",
+   "fu-0238",
+   "fu-0239",
+   "fu-0240",
+   "fu-0241",
+   "fu-0242",
+   "fu-0243",
+   "fu-0244",
+   "fu-0245",
+   "fu-0246",
+   "fu-0247",
+   "fu-0248",
+   "fu-0249",
+   "fu-0250"
+  ],
+  "members": {
+   "fu-0201": [
+    "fh:fuhyo-r4/b075"
+   ],
+   "fu-0202": [
+    "fh:fuhyo-r4/b076"
+   ],
+   "fu-0203": [
+    "fh:fuhyo-r4/b077"
+   ],
+   "fu-0204": [
+    "fh:fuhyo-r4/b078"
+   ],
+   "fu-0205": [
+    "fh:fuhyo-r4/b079"
+   ],
+   "fu-0206": [
+    "fh:fuhyo-r4/b080"
+   ],
+   "fu-0207": [
+    "fh:fuhyo-r4/b081"
+   ],
+   "fu-0208": [
+    "fh:fuhyo-r4/b082"
+   ],
+   "fu-0209": [
+    "fh:fuhyo-r4/b083"
+   ],
+   "fu-0210": [
+    "fh:fuhyo-r4/b084",
+    "fh:fuhyo-r5/b084",
+    "fh:fuhyo-r6/b089",
+    "fh:fuhyo-r7/b091",
+    "fh:fuhyo-r8/b087"
+   ],
+   "fu-0211": [
+    "fh:fuhyo-r4/b089",
+    "fh:fuhyo-r5/b090"
+   ],
+   "fu-0212": [
+    "fh:fuhyo-r4/b090"
+   ],
+   "fu-0213": [
+    "fh:fuhyo-r4/b091",
+    "fh:fuhyo-r5/b093",
+    "fh:fuhyo-r6/b099",
+    "fh:fuhyo-r7/b101",
+    "fh:fuhyo-r8/b097"
+   ],
+   "fu-0214": [
+    "fh:fuhyo-r4/b094"
+   ],
+   "fu-0215": [
+    "fh:fuhyo-r4/b097",
+    "fh:fuhyo-r5/b099",
+    "fh:fuhyo-r7/b107",
+    "fh:fuhyo-r8/b103"
+   ],
+   "fu-0216": [
+    "fh:fuhyo-r4/b098",
+    "fh:fuhyo-r5/b100",
+    "fh:fuhyo-r7/b109",
+    "fh:fuhyo-r8/b107"
+   ],
+   "fu-0217": [
+    "fh:fuhyo-r4/b099",
+    "fh:fuhyo-r5/b101",
+    "fh:fuhyo-r6/b107",
+    "fh:fuhyo-r7/b110",
+    "fh:fuhyo-r8/b108"
+   ],
+   "fu-0218": [
+    "fh:fuhyo-r4/b103",
+    "fh:fuhyo-r5/b105"
+   ],
+   "fu-0219": [
+    "fh:fuhyo-r4/b105"
+   ],
+   "fu-0220": [
+    "fh:fuhyo-r4/b108",
+    "fh:fuhyo-r5/b110"
+   ],
+   "fu-0221": [
+    "fh:fuhyo-r4/b111"
+   ],
+   "fu-0222": [
+    "fh:fuhyo-r4/b112"
+   ],
+   "fu-0223": [
+    "fh:fuhyo-r4/b113"
+   ],
+   "fu-0224": [
+    "fh:fuhyo-r4/b115"
+   ],
+   "fu-0225": [
+    "fh:fuhyo-r4/b117",
+    "fh:fuhyo-r5/b117"
+   ],
+   "fu-0226": [
+    "fh:fuhyo-r4/b118"
+   ],
+   "fu-0227": [
+    "fh:fuhyo-r4/b119"
+   ],
+   "fu-0228": [
+    "fh:fuhyo-r4/b120"
+   ],
+   "fu-0229": [
+    "fh:fuhyo-r4/b122"
+   ],
+   "fu-0230": [
+    "fh:fuhyo-r4/b123",
+    "fh:fuhyo-r5/b124"
+   ],
+   "fu-0231": [
+    "fh:fuhyo-r4/b124",
+    "fh:fuhyo-r5/b125"
+   ],
+   "fu-0232": [
+    "fh:fuhyo-r4/b126",
+    "fh:fuhyo-r5/b127"
+   ],
+   "fu-0233": [
+    "fh:fuhyo-r4/b127"
+   ],
+   "fu-0234": [
+    "fh:fuhyo-r4/b128"
+   ],
+   "fu-0235": [
+    "fh:fuhyo-r4/b129"
+   ],
+   "fu-0236": [
+    "fh:fuhyo-r4/b130"
+   ],
+   "fu-0237": [
+    "fh:fuhyo-r4/b132"
+   ],
+   "fu-0238": [
+    "fh:fuhyo-r4/b136"
+   ],
+   "fu-0239": [
+    "fh:fuhyo-r4/b138"
+   ],
+   "fu-0240": [
+    "fh:fuhyo-r4/b139"
+   ],
+   "fu-0241": [
+    "fh:fuhyo-r4/b140"
+   ],
+   "fu-0242": [
+    "fh:fuhyo-r4/b141"
+   ],
+   "fu-0243": [
+    "fh:fuhyo-r4/b144",
+    "fh:fuhyo-r5/b146",
+    "fh:fuhyo-r6/b153"
+   ],
+   "fu-0244": [
+    "fh:fuhyo-r4/b145"
+   ],
+   "fu-0245": [
+    "fh:fuhyo-r4/b148"
+   ],
+   "fu-0246": [
+    "fh:fuhyo-r4/b150"
+   ],
+   "fu-0247": [
+    "fh:fuhyo-r4/b152"
+   ],
+   "fu-0248": [
+    "fh:fuhyo-r4/b154",
+    "fh:fuhyo-r5/b157",
+    "fh:fuhyo-r6/b165",
+    "fh:fuhyo-r7/b172",
+    "fh:fuhyo-r8/b167"
+   ],
+   "fu-0249": [
+    "fh:fuhyo-r4/b155"
+   ],
+   "fu-0250": [
+    "fh:fuhyo-r4/b156"
+   ]
+  }
+ },
+ {
+  "taba": 22,
+  "kind": "fuhyo",
+  "ronten": [
+   "ronten/zen.md"
+  ],
+  "file": "/home/claude/yomi/yosan/jigyo/22.md",
+  "sha256": "b04ff0f48e7c5c1bbd8b62552518bd4c6ca12394d3ee8eaa61525b31efaf5f36",
+  "jigyo": [
+   "fu-0251",
+   "fu-0252",
+   "fu-0253",
+   "fu-0254",
+   "fu-0255",
+   "fu-0256",
+   "fu-0257",
+   "fu-0258",
+   "fu-0259",
+   "fu-0260",
+   "fu-0261",
+   "fu-0262",
+   "fu-0263",
+   "fu-0264",
+   "fu-0265",
+   "fu-0266",
+   "fu-0267",
+   "fu-0268",
+   "fu-0269",
+   "fu-0270",
+   "fu-0271",
+   "fu-0272",
+   "fu-0273",
+   "fu-0274",
+   "fu-0275",
+   "fu-0276",
+   "fu-0277",
+   "fu-0278",
+   "fu-0279",
+   "fu-0280",
+   "fu-0281",
+   "fu-0282",
+   "fu-0283",
+   "fu-0284",
+   "fu-0285",
+   "fu-0286",
+   "fu-0287",
+   "fu-0288",
+   "fu-0289",
+   "fu-0290",
+   "fu-0291",
+   "fu-0292",
+   "fu-0293",
+   "fu-0294",
+   "fu-0295",
+   "fu-0296",
+   "fu-0297",
+   "fu-0298",
+   "fu-0299",
+   "fu-0300"
+  ],
+  "members": {
+   "fu-0251": [
+    "fh:fuhyo-r4/b157"
+   ],
+   "fu-0252": [
+    "fh:fuhyo-r4/b158"
+   ],
+   "fu-0253": [
+    "fh:fuhyo-r4/b159"
+   ],
+   "fu-0254": [
+    "fh:fuhyo-r4/b160"
+   ],
+   "fu-0255": [
+    "fh:fuhyo-r4/b162"
+   ],
+   "fu-0256": [
+    "fh:fuhyo-r4/b163"
+   ],
+   "fu-0257": [
+    "fh:fuhyo-r4/b164"
+   ],
+   "fu-0258": [
+    "fh:fuhyo-r4/b165",
+    "fh:fuhyo-r5/b167",
+    "fh:fuhyo-r6/b055"
+   ],
+   "fu-0259": [
+    "fh:fuhyo-r4/b166"
+   ],
+   "fu-0260": [
+    "fh:fuhyo-r5/b002"
+   ],
+   "fu-0261": [
+    "fh:fuhyo-r5/b003"
+   ],
+   "fu-0262": [
+    "fh:fuhyo-r5/b004"
+   ],
+   "fu-0263": [
+    "fh:fuhyo-r5/b006"
+   ],
+   "fu-0264": [
+    "fh:fuhyo-r5/b010",
+    "fh:fuhyo-r6/b010"
+   ],
+   "fu-0265": [
+    "fh:fuhyo-r5/b012"
+   ],
+   "fu-0266": [
+    "fh:fuhyo-r5/b013"
+   ],
+   "fu-0267": [
+    "fh:fuhyo-r5/b015"
+   ],
+   "fu-0268": [
+    "fh:fuhyo-r5/b017",
+    "fh:fuhyo-r6/b016"
+   ],
+   "fu-0269": [
+    "fh:fuhyo-r5/b019"
+   ],
+   "fu-0270": [
+    "fh:fuhyo-r5/b020",
+    "fh:fuhyo-r6/b019",
+    "fh:fuhyo-r7/b020",
+    "fh:fuhyo-r8/b020"
+   ],
+   "fu-0271": [
+    "fh:fuhyo-r5/b022"
+   ],
+   "fu-0272": [
+    "fh:fuhyo-r5/b023"
+   ],
+   "fu-0273": [
+    "fh:fuhyo-r5/b024"
+   ],
+   "fu-0274": [
+    "fh:fuhyo-r5/b025",
+    "fh:fuhyo-r6/b024",
+    "fh:fuhyo-r7/b026",
+    "fh:fuhyo-r8/b025"
+   ],
+   "fu-0275": [
+    "fh:fuhyo-r5/b026"
+   ],
+   "fu-0276": [
+    "fh:fuhyo-r5/b028"
+   ],
+   "fu-0277": [
+    "fh:fuhyo-r5/b029",
+    "fh:fuhyo-r6/b028"
+   ],
+   "fu-0278": [
+    "fh:fuhyo-r5/b030"
+   ],
+   "fu-0279": [
+    "fh:fuhyo-r5/b031"
+   ],
+   "fu-0280": [
+    "fh:fuhyo-r5/b035"
+   ],
+   "fu-0281": [
+    "fh:fuhyo-r5/b042"
+   ],
+   "fu-0282": [
+    "fh:fuhyo-r5/b043"
+   ],
+   "fu-0283": [
+    "fh:fuhyo-r5/b047"
+   ],
+   "fu-0284": [
+    "fh:fuhyo-r5/b048"
+   ],
+   "fu-0285": [
+    "fh:fuhyo-r5/b049",
+    "fh:fuhyo-r6/b049"
+   ],
+   "fu-0286": [
+    "fh:fuhyo-r5/b052"
+   ],
+   "fu-0287": [
+    "fh:fuhyo-r5/b053"
+   ],
+   "fu-0288": [
+    "fh:fuhyo-r5/b054"
+   ],
+   "fu-0289": [
+    "fh:fuhyo-r5/b055"
+   ],
+   "fu-0290": [
+    "fh:fuhyo-r5/b057"
+   ],
+   "fu-0291": [
+    "fh:fuhyo-r5/b059"
+   ],
+   "fu-0292": [
+    "fh:fuhyo-r5/b063",
+    "fh:fuhyo-r7/b086"
+   ],
+   "fu-0293": [
+    "fh:fuhyo-r5/b064"
+   ],
+   "fu-0294": [
+    "fh:fuhyo-r5/b071",
+    "fh:fuhyo-r6/b074",
+    "fh:fuhyo-r7/b075",
+    "fh:fuhyo-r8/b075"
+   ],
+   "fu-0295": [
+    "fh:fuhyo-r5/b072"
+   ],
+   "fu-0296": [
+    "fh:fuhyo-r5/b073"
+   ],
+   "fu-0297": [
+    "fh:fuhyo-r5/b074"
+   ],
+   "fu-0298": [
+    "fh:fuhyo-r5/b076",
+    "fh:fuhyo-r6/b077"
+   ],
+   "fu-0299": [
+    "fh:fuhyo-r5/b078",
+    "fh:fuhyo-r6/b081",
+    "fh:fuhyo-r7/b083",
+    "fh:fuhyo-r8/b081"
+   ],
+   "fu-0300": [
+    "fh:fuhyo-r5/b080",
+    "fh:fuhyo-r6/b083",
+    "fh:fuhyo-r7/b085"
+   ]
+  }
+ },
+ {
+  "taba": 23,
+  "kind": "fuhyo",
+  "ronten": [
+   "ronten/zen.md"
+  ],
+  "file": "/home/claude/yomi/yosan/jigyo/23.md",
+  "sha256": "309688cf31e12c23e0b452864e79322b2fa46c4c1ce7dddd6e554d8a491d54fe",
+  "jigyo": [
+   "fu-0301",
+   "fu-0302",
+   "fu-0303",
+   "fu-0304",
+   "fu-0305",
+   "fu-0306",
+   "fu-0307",
+   "fu-0308",
+   "fu-0309",
+   "fu-0310",
+   "fu-0311",
+   "fu-0312",
+   "fu-0313",
+   "fu-0314",
+   "fu-0315",
+   "fu-0316",
+   "fu-0317",
+   "fu-0318",
+   "fu-0319",
+   "fu-0320",
+   "fu-0321",
+   "fu-0322",
+   "fu-0323",
+   "fu-0324",
+   "fu-0325",
+   "fu-0326",
+   "fu-0327",
+   "fu-0328",
+   "fu-0329",
+   "fu-0330",
+   "fu-0331",
+   "fu-0332",
+   "fu-0333",
+   "fu-0334",
+   "fu-0335",
+   "fu-0336",
+   "fu-0337",
+   "fu-0338",
+   "fu-0339",
+   "fu-0340",
+   "fu-0341",
+   "fu-0342",
+   "fu-0343",
+   "fu-0344",
+   "fu-0345",
+   "fu-0346",
+   "fu-0347",
+   "fu-0348",
+   "fu-0349",
+   "fu-0350"
+  ],
+  "members": {
+   "fu-0301": [
+    "fh:fuhyo-r5/b081"
+   ],
+   "fu-0302": [
+    "fh:fuhyo-r5/b083"
+   ],
+   "fu-0303": [
+    "fh:fuhyo-r5/b086"
+   ],
+   "fu-0304": [
+    "fh:fuhyo-r5/b091"
+   ],
+   "fu-0305": [
+    "fh:fuhyo-r5/b095",
+    "fh:fuhyo-r7/b103"
+   ],
+   "fu-0306": [
+    "fh:fuhyo-r5/b096"
+   ],
+   "fu-0307": [
+    "fh:fuhyo-r5/b098",
+    "fh:fuhyo-r6/b104",
+    "fh:fuhyo-r7/b106",
+    "fh:fuhyo-r8/b102"
+   ],
+   "fu-0308": [
+    "fh:fuhyo-r5/b107"
+   ],
+   "fu-0309": [
+    "fh:fuhyo-r5/b115",
+    "fh:fuhyo-r6/b121",
+    "fh:fuhyo-r7/b127",
+    "fh:fuhyo-r8/b123"
+   ],
+   "fu-0310": [
+    "fh:fuhyo-r5/b118"
+   ],
+   "fu-0311": [
+    "fh:fuhyo-r5/b119"
+   ],
+   "fu-0312": [
+    "fh:fuhyo-r5/b120"
+   ],
+   "fu-0313": [
+    "fh:fuhyo-r5/b121"
+   ],
+   "fu-0314": [
+    "fh:fuhyo-r5/b123"
+   ],
+   "fu-0315": [
+    "fh:fuhyo-r5/b128"
+   ],
+   "fu-0316": [
+    "fh:fuhyo-r5/b129"
+   ],
+   "fu-0317": [
+    "fh:fuhyo-r5/b130",
+    "fh:fuhyo-r6/b134",
+    "fh:fuhyo-r7/b140"
+   ],
+   "fu-0318": [
+    "fh:fuhyo-r5/b131",
+    "fh:fuhyo-r6/b135",
+    "fh:fuhyo-r7/b141",
+    "fh:fuhyo-r8/b136"
+   ],
+   "fu-0319": [
+    "fh:fuhyo-r5/b133"
+   ],
+   "fu-0320": [
+    "fh:fuhyo-r5/b134"
+   ],
+   "fu-0321": [
+    "fh:fuhyo-r5/b139",
+    "fh:fuhyo-r6/b146",
+    "fh:fuhyo-r8/b147"
+   ],
+   "fu-0322": [
+    "fh:fuhyo-r5/b140"
+   ],
+   "fu-0323": [
+    "fh:fuhyo-r5/b141"
+   ],
+   "fu-0324": [
+    "fh:fuhyo-r5/b142"
+   ],
+   "fu-0325": [
+    "fh:fuhyo-r5/b143"
+   ],
+   "fu-0326": [
+    "fh:fuhyo-r5/b144",
+    "fh:fuhyo-r6/b151",
+    "fh:fuhyo-r7/b157"
+   ],
+   "fu-0327": [
+    "fh:fuhyo-r5/b147"
+   ],
+   "fu-0328": [
+    "fh:fuhyo-r5/b150"
+   ],
+   "fu-0329": [
+    "fh:fuhyo-r5/b151",
+    "fh:fuhyo-r7/b163"
+   ],
+   "fu-0330": [
+    "fh:fuhyo-r5/b155",
+    "fh:fuhyo-r6/b163",
+    "fh:fuhyo-r7/b170"
+   ],
+   "fu-0331": [
+    "fh:fuhyo-r5/b158",
+    "fh:fuhyo-r6/b166"
+   ],
+   "fu-0332": [
+    "fh:fuhyo-r5/b159"
+   ],
+   "fu-0333": [
+    "fh:fuhyo-r5/b160"
+   ],
+   "fu-0334": [
+    "fh:fuhyo-r5/b161"
+   ],
+   "fu-0335": [
+    "fh:fuhyo-r5/b162"
+   ],
+   "fu-0336": [
+    "fh:fuhyo-r5/b164"
+   ],
+   "fu-0337": [
+    "fh:fuhyo-r5/b165"
+   ],
+   "fu-0338": [
+    "fh:fuhyo-r5/b168"
+   ],
+   "fu-0339": [
+    "fh:fuhyo-r6/b001"
+   ],
+   "fu-0340": [
+    "fh:fuhyo-r6/b002"
+   ],
+   "fu-0341": [
+    "fh:fuhyo-r6/b003"
+   ],
+   "fu-0342": [
+    "fh:fuhyo-r6/b004"
+   ],
+   "fu-0343": [
+    "fh:fuhyo-r6/b005"
+   ],
+   "fu-0344": [
+    "fh:fuhyo-r6/b006",
+    "fh:fuhyo-r8/b006"
+   ],
+   "fu-0345": [
+    "fh:fuhyo-r6/b011"
+   ],
+   "fu-0346": [
+    "fh:fuhyo-r6/b012"
+   ],
+   "fu-0347": [
+    "fh:fuhyo-r6/b014"
+   ],
+   "fu-0348": [
+    "fh:fuhyo-r6/b018",
+    "fh:fuhyo-r7/b019",
+    "fh:fuhyo-r8/b019"
+   ],
+   "fu-0349": [
+    "fh:fuhyo-r6/b021"
+   ],
+   "fu-0350": [
+    "fh:fuhyo-r6/b022"
+   ]
+  }
+ },
+ {
+  "taba": 24,
+  "kind": "fuhyo",
+  "ronten": [
+   "ronten/zen.md"
+  ],
+  "file": "/home/claude/yomi/yosan/jigyo/24.md",
+  "sha256": "7d930224e00f9124ccaa546390378e7875bfa35bb14d4afee32251c6630a21be",
+  "jigyo": [
+   "fu-0351",
+   "fu-0352",
+   "fu-0353",
+   "fu-0354",
+   "fu-0355",
+   "fu-0356",
+   "fu-0357",
+   "fu-0358",
+   "fu-0359",
+   "fu-0360",
+   "fu-0361",
+   "fu-0362",
+   "fu-0363",
+   "fu-0364",
+   "fu-0365",
+   "fu-0366",
+   "fu-0367",
+   "fu-0368",
+   "fu-0369",
+   "fu-0370",
+   "fu-0371",
+   "fu-0372",
+   "fu-0373",
+   "fu-0374",
+   "fu-0375",
+   "fu-0376",
+   "fu-0377",
+   "fu-0378",
+   "fu-0379",
+   "fu-0380",
+   "fu-0381",
+   "fu-0382",
+   "fu-0383",
+   "fu-0384",
+   "fu-0385",
+   "fu-0386",
+   "fu-0387",
+   "fu-0388",
+   "fu-0389",
+   "fu-0390",
+   "fu-0391",
+   "fu-0392",
+   "fu-0393",
+   "fu-0394",
+   "fu-0395",
+   "fu-0396",
+   "fu-0397",
+   "fu-0398",
+   "fu-0399",
+   "fu-0400"
+  ],
+  "members": {
+   "fu-0351": [
+    "fh:fuhyo-r6/b023"
+   ],
+   "fu-0352": [
+    "fh:fuhyo-r6/b025"
+   ],
+   "fu-0353": [
+    "fh:fuhyo-r6/b027"
+   ],
+   "fu-0354": [
+    "fh:fuhyo-r6/b029",
+    "fh:fuhyo-r8/b030"
+   ],
+   "fu-0355": [
+    "fh:fuhyo-r6/b030"
+   ],
+   "fu-0356": [
+    "fh:fuhyo-r6/b031"
+   ],
+   "fu-0357": [
+    "fh:fuhyo-r6/b034"
+   ],
+   "fu-0358": [
+    "fh:fuhyo-r6/b042"
+   ],
+   "fu-0359": [
+    "fh:fuhyo-r6/b043"
+   ],
+   "fu-0360": [
+    "fh:fuhyo-r6/b047",
+    "fh:fuhyo-r8/b052"
+   ],
+   "fu-0361": [
+    "fh:fuhyo-r6/b048"
+   ],
+   "fu-0362": [
+    "fh:fuhyo-r6/b051"
+   ],
+   "fu-0363": [
+    "fh:fuhyo-r6/b053"
+   ],
+   "fu-0364": [
+    "fh:fuhyo-r6/b054"
+   ],
+   "fu-0365": [
+    "fh:fuhyo-r6/b056"
+   ],
+   "fu-0366": [
+    "fh:fuhyo-r6/b057",
+    "fh:fuhyo-r7/b059",
+    "fh:fuhyo-r8/b058"
+   ],
+   "fu-0367": [
+    "fh:fuhyo-r6/b059",
+    "fh:fuhyo-r7/b061",
+    "fh:fuhyo-r8/b060"
+   ],
+   "fu-0368": [
+    "fh:fuhyo-r6/b061"
+   ],
+   "fu-0369": [
+    "fh:fuhyo-r6/b062"
+   ],
+   "fu-0370": [
+    "fh:fuhyo-r6/b063"
+   ],
+   "fu-0371": [
+    "fh:fuhyo-r6/b064"
+   ],
+   "fu-0372": [
+    "fh:fuhyo-r6/b066"
+   ],
+   "fu-0373": [
+    "fh:fuhyo-r6/b067"
+   ],
+   "fu-0374": [
+    "fh:fuhyo-r6/b075"
+   ],
+   "fu-0375": [
+    "fh:fuhyo-r6/b078"
+   ],
+   "fu-0376": [
+    "fh:fuhyo-r6/b079"
+   ],
+   "fu-0377": [
+    "fh:fuhyo-r6/b080"
+   ],
+   "fu-0378": [
+    "fh:fuhyo-r6/b084"
+   ],
+   "fu-0379": [
+    "fh:fuhyo-r6/b085"
+   ],
+   "fu-0380": [
+    "fh:fuhyo-r6/b086"
+   ],
+   "fu-0381": [
+    "fh:fuhyo-r6/b088"
+   ],
+   "fu-0382": [
+    "fh:fuhyo-r6/b091"
+   ],
+   "fu-0383": [
+    "fh:fuhyo-r6/b092"
+   ],
+   "fu-0384": [
+    "fh:fuhyo-r6/b096"
+   ],
+   "fu-0385": [
+    "fh:fuhyo-r6/b097",
+    "fh:fuhyo-r7/b099",
+    "fh:fuhyo-r8/b095"
+   ],
+   "fu-0386": [
+    "fh:fuhyo-r6/b101"
+   ],
+   "fu-0387": [
+    "fh:fuhyo-r6/b102"
+   ],
+   "fu-0388": [
+    "fh:fuhyo-r6/b105"
+   ],
+   "fu-0389": [
+    "fh:fuhyo-r6/b106"
+   ],
+   "fu-0390": [
+    "fh:fuhyo-r6/b108",
+    "fh:fuhyo-r7/b112",
+    "fh:fuhyo-r8/b110"
+   ],
+   "fu-0391": [
+    "fh:fuhyo-r6/b109",
+    "fh:fuhyo-r7/b113",
+    "fh:fuhyo-r8/b111"
+   ],
+   "fu-0392": [
+    "fh:fuhyo-r6/b110",
+    "fh:fuhyo-r7/b114",
+    "fh:fuhyo-r8/b112"
+   ],
+   "fu-0393": [
+    "fh:fuhyo-r6/b111",
+    "fh:fuhyo-r7/b115",
+    "fh:fuhyo-r8/b113"
+   ],
+   "fu-0394": [
+    "fh:fuhyo-r6/b112",
+    "fh:fuhyo-r8/b114"
+   ],
+   "fu-0395": [
+    "fh:fuhyo-r6/b113",
+    "fh:fuhyo-r7/b117",
+    "fh:fuhyo-r8/b115"
+   ],
+   "fu-0396": [
+    "fh:fuhyo-r6/b115",
+    "fh:fuhyo-r7/b119",
+    "fh:fuhyo-r8/b117"
+   ],
+   "fu-0397": [
+    "fh:fuhyo-r6/b116",
+    "fh:fuhyo-r7/b120"
+   ],
+   "fu-0398": [
+    "fh:fuhyo-r6/b117",
+    "fh:fuhyo-r7/b121",
+    "fh:fuhyo-r8/b118"
+   ],
+   "fu-0399": [
+    "fh:fuhyo-r6/b118",
+    "fh:fuhyo-r7/b122"
+   ],
+   "fu-0400": [
+    "fh:fuhyo-r6/b122",
+    "fh:fuhyo-r7/b128",
+    "fh:fuhyo-r8/b124"
+   ]
+  }
+ },
+ {
+  "taba": 25,
+  "kind": "fuhyo",
+  "ronten": [
+   "ronten/zen.md"
+  ],
+  "file": "/home/claude/yomi/yosan/jigyo/25.md",
+  "sha256": "5572eaef607fe438e4b0361de8c7e396bbc9dba1503692562d7af28839ed4a29",
+  "jigyo": [
+   "fu-0401",
+   "fu-0402",
+   "fu-0403",
+   "fu-0404",
+   "fu-0405",
+   "fu-0406",
+   "fu-0407",
+   "fu-0408",
+   "fu-0409",
+   "fu-0410",
+   "fu-0411",
+   "fu-0412",
+   "fu-0413",
+   "fu-0414",
+   "fu-0415",
+   "fu-0416",
+   "fu-0417",
+   "fu-0418",
+   "fu-0419",
+   "fu-0420",
+   "fu-0421",
+   "fu-0422",
+   "fu-0423",
+   "fu-0424",
+   "fu-0425",
+   "fu-0426",
+   "fu-0427",
+   "fu-0428",
+   "fu-0429",
+   "fu-0430",
+   "fu-0431",
+   "fu-0432",
+   "fu-0433",
+   "fu-0434",
+   "fu-0435",
+   "fu-0436",
+   "fu-0437",
+   "fu-0438",
+   "fu-0439",
+   "fu-0440",
+   "fu-0441",
+   "fu-0442",
+   "fu-0443",
+   "fu-0444",
+   "fu-0445",
+   "fu-0446",
+   "fu-0447",
+   "fu-0448",
+   "fu-0449",
+   "fu-0450"
+  ],
+  "members": {
+   "fu-0401": [
+    "fh:fuhyo-r6/b123"
+   ],
+   "fu-0402": [
+    "fh:fuhyo-r6/b124"
+   ],
+   "fu-0403": [
+    "fh:fuhyo-r6/b125"
+   ],
+   "fu-0404": [
+    "fh:fuhyo-r6/b126"
+   ],
+   "fu-0405": [
+    "fh:fuhyo-r6/b127",
+    "fh:fuhyo-r8/b128"
+   ],
+   "fu-0406": [
+    "fh:fuhyo-r6/b128"
+   ],
+   "fu-0407": [
+    "fh:fuhyo-r6/b129"
+   ],
+   "fu-0408": [
+    "fh:fuhyo-r6/b130"
+   ],
+   "fu-0409": [
+    "fh:fuhyo-r6/b131"
+   ],
+   "fu-0410": [
+    "fh:fuhyo-r6/b132"
+   ],
+   "fu-0411": [
+    "fh:fuhyo-r6/b133",
+    "fh:fuhyo-r7/b139",
+    "fh:fuhyo-r8/b134"
+   ],
+   "fu-0412": [
+    "fh:fuhyo-r6/b137"
+   ],
+   "fu-0413": [
+    "fh:fuhyo-r6/b138"
+   ],
+   "fu-0414": [
+    "fh:fuhyo-r6/b139"
+   ],
+   "fu-0415": [
+    "fh:fuhyo-r6/b140"
+   ],
+   "fu-0416": [
+    "fh:fuhyo-r6/b141",
+    "fh:fuhyo-r7/b147",
+    "fh:fuhyo-r8/b142"
+   ],
+   "fu-0417": [
+    "fh:fuhyo-r6/b143",
+    "fh:fuhyo-r7/b149"
+   ],
+   "fu-0418": [
+    "fh:fuhyo-r6/b144"
+   ],
+   "fu-0419": [
+    "fh:fuhyo-r6/b147"
+   ],
+   "fu-0420": [
+    "fh:fuhyo-r6/b148"
+   ],
+   "fu-0421": [
+    "fh:fuhyo-r6/b149"
+   ],
+   "fu-0422": [
+    "fh:fuhyo-r6/b150"
+   ],
+   "fu-0423": [
+    "fh:fuhyo-r6/b154"
+   ],
+   "fu-0424": [
+    "fh:fuhyo-r6/b155"
+   ],
+   "fu-0425": [
+    "fh:fuhyo-r6/b156"
+   ],
+   "fu-0426": [
+    "fh:fuhyo-r6/b157"
+   ],
+   "fu-0427": [
+    "fh:fuhyo-r6/b160",
+    "fh:fuhyo-r7/b166",
+    "fh:fuhyo-r8/b161"
+   ],
+   "fu-0428": [
+    "fh:fuhyo-r6/b167"
+   ],
+   "fu-0429": [
+    "fh:fuhyo-r6/b168"
+   ],
+   "fu-0430": [
+    "fh:fuhyo-r6/b169"
+   ],
+   "fu-0431": [
+    "fh:fuhyo-r6/b170"
+   ],
+   "fu-0432": [
+    "fh:fuhyo-r6/b171"
+   ],
+   "fu-0433": [
+    "fh:fuhyo-r6/b173"
+   ],
+   "fu-0434": [
+    "fh:fuhyo-r6/b174"
+   ],
+   "fu-0435": [
+    "fh:fuhyo-r6/b175"
+   ],
+   "fu-0436": [
+    "fh:fuhyo-r6/b176"
+   ],
+   "fu-0437": [
+    "fh:fuhyo-r6/b177"
+   ],
+   "fu-0438": [
+    "fh:fuhyo-r7/b001",
+    "fh:fuhyo-r8/b001"
+   ],
+   "fu-0439": [
+    "fh:fuhyo-r7/b002",
+    "fh:fuhyo-r8/b002"
+   ],
+   "fu-0440": [
+    "fh:fuhyo-r7/b003"
+   ],
+   "fu-0441": [
+    "fh:fuhyo-r7/b004"
+   ],
+   "fu-0442": [
+    "fh:fuhyo-r7/b005"
+   ],
+   "fu-0443": [
+    "fh:fuhyo-r7/b006"
+   ],
+   "fu-0444": [
+    "fh:fuhyo-r7/b007"
+   ],
+   "fu-0445": [
+    "fh:fuhyo-r7/b011"
+   ],
+   "fu-0446": [
+    "fh:fuhyo-r7/b012",
+    "fh:fuhyo-r8/b012"
+   ],
+   "fu-0447": [
+    "fh:fuhyo-r7/b013"
+   ],
+   "fu-0448": [
+    "fh:fuhyo-r7/b014"
+   ],
+   "fu-0449": [
+    "fh:fuhyo-r7/b015"
+   ],
+   "fu-0450": [
+    "fh:fuhyo-r7/b017"
+   ]
+  }
+ },
+ {
+  "taba": 26,
+  "kind": "fuhyo",
+  "ronten": [
+   "ronten/zen.md"
+  ],
+  "file": "/home/claude/yomi/yosan/jigyo/26.md",
+  "sha256": "5c5be01394f0231e8f52631242200f73e5d8b8ceb980a985d7fe6e78463c7fbc",
+  "jigyo": [
+   "fu-0451",
+   "fu-0452",
+   "fu-0453",
+   "fu-0454",
+   "fu-0455",
+   "fu-0456",
+   "fu-0457",
+   "fu-0458",
+   "fu-0459",
+   "fu-0460",
+   "fu-0461",
+   "fu-0462",
+   "fu-0463",
+   "fu-0464",
+   "fu-0465",
+   "fu-0466",
+   "fu-0467",
+   "fu-0468",
+   "fu-0469",
+   "fu-0470",
+   "fu-0471",
+   "fu-0472",
+   "fu-0473",
+   "fu-0474",
+   "fu-0475",
+   "fu-0476",
+   "fu-0477",
+   "fu-0478",
+   "fu-0479",
+   "fu-0480",
+   "fu-0481",
+   "fu-0482",
+   "fu-0483",
+   "fu-0484",
+   "fu-0485",
+   "fu-0486",
+   "fu-0487",
+   "fu-0488",
+   "fu-0489",
+   "fu-0490",
+   "fu-0491",
+   "fu-0492",
+   "fu-0493",
+   "fu-0494",
+   "fu-0495",
+   "fu-0496",
+   "fu-0497",
+   "fu-0498",
+   "fu-0499",
+   "fu-0500"
+  ],
+  "members": {
+   "fu-0451": [
+    "fh:fuhyo-r7/b021"
+   ],
+   "fu-0452": [
+    "fh:fuhyo-r7/b022"
+   ],
+   "fu-0453": [
+    "fh:fuhyo-r7/b023"
+   ],
+   "fu-0454": [
+    "fh:fuhyo-r7/b024"
+   ],
+   "fu-0455": [
+    "fh:fuhyo-r7/b025"
+   ],
+   "fu-0456": [
+    "fh:fuhyo-r7/b027",
+    "fh:fuhyo-r8/b026"
+   ],
+   "fu-0457": [
+    "fh:fuhyo-r7/b028"
+   ],
+   "fu-0458": [
+    "fh:fuhyo-r7/b029"
+   ],
+   "fu-0459": [
+    "fh:fuhyo-r7/b030"
+   ],
+   "fu-0460": [
+    "fh:fuhyo-r7/b031"
+   ],
+   "fu-0461": [
+    "fh:fuhyo-r7/b032"
+   ],
+   "fu-0462": [
+    "fh:fuhyo-r7/b033",
+    "fh:fuhyo-r8/b032"
+   ],
+   "fu-0463": [
+    "fh:fuhyo-r7/b035"
+   ],
+   "fu-0464": [
+    "fh:fuhyo-r7/b036"
+   ],
+   "fu-0465": [
+    "fh:fuhyo-r7/b040"
+   ],
+   "fu-0466": [
+    "fh:fuhyo-r7/b042"
+   ],
+   "fu-0467": [
+    "fh:fuhyo-r7/b044",
+    "fh:fuhyo-r8/b046"
+   ],
+   "fu-0468": [
+    "fh:fuhyo-r7/b045"
+   ],
+   "fu-0469": [
+    "fh:fuhyo-r7/b048"
+   ],
+   "fu-0470": [
+    "fh:fuhyo-r7/b049"
+   ],
+   "fu-0471": [
+    "fh:fuhyo-r7/b050"
+   ],
+   "fu-0472": [
+    "fh:fuhyo-r7/b052",
+    "fh:fuhyo-r8/b055"
+   ],
+   "fu-0473": [
+    "fh:fuhyo-r7/b053"
+   ],
+   "fu-0474": [
+    "fh:fuhyo-r7/b054",
+    "fh:fuhyo-r8/b056"
+   ],
+   "fu-0475": [
+    "fh:fuhyo-r7/b055"
+   ],
+   "fu-0476": [
+    "fh:fuhyo-r7/b056",
+    "fh:fuhyo-r8/b041"
+   ],
+   "fu-0477": [
+    "fh:fuhyo-r7/b057",
+    "fh:fuhyo-r8/b042"
+   ],
+   "fu-0478": [
+    "fh:fuhyo-r7/b058"
+   ],
+   "fu-0479": [
+    "fh:fuhyo-r7/b062"
+   ],
+   "fu-0480": [
+    "fh:fuhyo-r7/b063"
+   ],
+   "fu-0481": [
+    "fh:fuhyo-r7/b064"
+   ],
+   "fu-0482": [
+    "fh:fuhyo-r7/b065"
+   ],
+   "fu-0483": [
+    "fh:fuhyo-r7/b066"
+   ],
+   "fu-0484": [
+    "fh:fuhyo-r7/b068"
+   ],
+   "fu-0485": [
+    "fh:fuhyo-r7/b076"
+   ],
+   "fu-0486": [
+    "fh:fuhyo-r7/b077"
+   ],
+   "fu-0487": [
+    "fh:fuhyo-r7/b078"
+   ],
+   "fu-0488": [
+    "fh:fuhyo-r7/b079"
+   ],
+   "fu-0489": [
+    "fh:fuhyo-r7/b080"
+   ],
+   "fu-0490": [
+    "fh:fuhyo-r7/b081"
+   ],
+   "fu-0491": [
+    "fh:fuhyo-r7/b082"
+   ],
+   "fu-0492": [
+    "fh:fuhyo-r7/b087"
+   ],
+   "fu-0493": [
+    "fh:fuhyo-r7/b088"
+   ],
+   "fu-0494": [
+    "fh:fuhyo-r7/b090",
+    "fh:fuhyo-r8/b086"
+   ],
+   "fu-0495": [
+    "fh:fuhyo-r7/b093"
+   ],
+   "fu-0496": [
+    "fh:fuhyo-r7/b094"
+   ],
+   "fu-0497": [
+    "fh:fuhyo-r7/b098"
+   ],
+   "fu-0498": [
+    "fh:fuhyo-r7/b104"
+   ],
+   "fu-0499": [
+    "fh:fuhyo-r7/b108"
+   ],
+   "fu-0500": [
+    "fh:fuhyo-r7/b111"
+   ]
+  }
+ },
+ {
+  "taba": 27,
+  "kind": "fuhyo",
+  "ronten": [
+   "ronten/zen.md"
+  ],
+  "file": "/home/claude/yomi/yosan/jigyo/27.md",
+  "sha256": "e6e380514c46abf95cbd024f8c9b9f89bf38e4779bce23066f310dbb73cc0c4b",
+  "jigyo": [
+   "fu-0501",
+   "fu-0502",
+   "fu-0503",
+   "fu-0504",
+   "fu-0505",
+   "fu-0506",
+   "fu-0507",
+   "fu-0508",
+   "fu-0509",
+   "fu-0510",
+   "fu-0511",
+   "fu-0512",
+   "fu-0513",
+   "fu-0514",
+   "fu-0515",
+   "fu-0516",
+   "fu-0517",
+   "fu-0518",
+   "fu-0519",
+   "fu-0520",
+   "fu-0521",
+   "fu-0522",
+   "fu-0523",
+   "fu-0524",
+   "fu-0525",
+   "fu-0526",
+   "fu-0527",
+   "fu-0528",
+   "fu-0529",
+   "fu-0530",
+   "fu-0531",
+   "fu-0532",
+   "fu-0533",
+   "fu-0534",
+   "fu-0535",
+   "fu-0536",
+   "fu-0537",
+   "fu-0538",
+   "fu-0539",
+   "fu-0540",
+   "fu-0541",
+   "fu-0542",
+   "fu-0543",
+   "fu-0544",
+   "fu-0545",
+   "fu-0546",
+   "fu-0547",
+   "fu-0548",
+   "fu-0549",
+   "fu-0550"
+  ],
+  "members": {
+   "fu-0501": [
+    "fh:fuhyo-r7/b116"
+   ],
+   "fu-0502": [
+    "fh:fuhyo-r7/b123"
+   ],
+   "fu-0503": [
+    "fh:fuhyo-r7/b124"
+   ],
+   "fu-0504": [
+    "fh:fuhyo-r7/b125"
+   ],
+   "fu-0505": [
+    "fh:fuhyo-r7/b129"
+   ],
+   "fu-0506": [
+    "fh:fuhyo-r7/b130"
+   ],
+   "fu-0507": [
+    "fh:fuhyo-r7/b131"
+   ],
+   "fu-0508": [
+    "fh:fuhyo-r7/b132"
+   ],
+   "fu-0509": [
+    "fh:fuhyo-r7/b133"
+   ],
+   "fu-0510": [
+    "fh:fuhyo-r7/b134",
+    "fh:fuhyo-r8/b129"
+   ],
+   "fu-0511": [
+    "fh:fuhyo-r7/b135"
+   ],
+   "fu-0512": [
+    "fh:fuhyo-r7/b136",
+    "fh:fuhyo-r8/b131"
+   ],
+   "fu-0513": [
+    "fh:fuhyo-r7/b137"
+   ],
+   "fu-0514": [
+    "fh:fuhyo-r7/b138",
+    "fh:fuhyo-r8/b133"
+   ],
+   "fu-0515": [
+    "fh:fuhyo-r7/b143",
+    "fh:fuhyo-r8/b138"
+   ],
+   "fu-0516": [
+    "fh:fuhyo-r7/b144",
+    "fh:fuhyo-r8/b139"
+   ],
+   "fu-0517": [
+    "fh:fuhyo-r7/b145",
+    "fh:fuhyo-r8/b140"
+   ],
+   "fu-0518": [
+    "fh:fuhyo-r7/b146"
+   ],
+   "fu-0519": [
+    "fh:fuhyo-r7/b150",
+    "fh:fuhyo-r8/b145"
+   ],
+   "fu-0520": [
+    "fh:fuhyo-r7/b151"
+   ],
+   "fu-0521": [
+    "fh:fuhyo-r7/b152"
+   ],
+   "fu-0522": [
+    "fh:fuhyo-r7/b153"
+   ],
+   "fu-0523": [
+    "fh:fuhyo-r7/b154"
+   ],
+   "fu-0524": [
+    "fh:fuhyo-r7/b155"
+   ],
+   "fu-0525": [
+    "fh:fuhyo-r7/b156"
+   ],
+   "fu-0526": [
+    "fh:fuhyo-r7/b158",
+    "fh:fuhyo-r8/b153"
+   ],
+   "fu-0527": [
+    "fh:fuhyo-r7/b159",
+    "fh:fuhyo-r8/b154"
+   ],
+   "fu-0528": [
+    "fh:fuhyo-r7/b160"
+   ],
+   "fu-0529": [
+    "fh:fuhyo-r7/b161"
+   ],
+   "fu-0530": [
+    "fh:fuhyo-r7/b162"
+   ],
+   "fu-0531": [
+    "fh:fuhyo-r7/b164"
+   ],
+   "fu-0532": [
+    "fh:fuhyo-r7/b165"
+   ],
+   "fu-0533": [
+    "fh:fuhyo-r7/b168"
+   ],
+   "fu-0534": [
+    "fh:fuhyo-r7/b171"
+   ],
+   "fu-0535": [
+    "fh:fuhyo-r7/b173"
+   ],
+   "fu-0536": [
+    "fh:fuhyo-r7/b174"
+   ],
+   "fu-0537": [
+    "fh:fuhyo-r7/b175"
+   ],
+   "fu-0538": [
+    "fh:fuhyo-r7/b176"
+   ],
+   "fu-0539": [
+    "fh:fuhyo-r7/b177"
+   ],
+   "fu-0540": [
+    "fh:fuhyo-r7/b178"
+   ],
+   "fu-0541": [
+    "fh:fuhyo-r7/b179"
+   ],
+   "fu-0542": [
+    "fh:fuhyo-r7/b181"
+   ],
+   "fu-0543": [
+    "fh:fuhyo-r7/b182",
+    "fh:fuhyo-r8/b178"
+   ],
+   "fu-0544": [
+    "fh:fuhyo-r7/b183"
+   ],
+   "fu-0545": [
+    "fh:fuhyo-r7/b184",
+    "fh:fuhyo-r8/b181"
+   ],
+   "fu-0546": [
+    "fh:fuhyo-r8/b003"
+   ],
+   "fu-0547": [
+    "fh:fuhyo-r8/b004"
+   ],
+   "fu-0548": [
+    "fh:fuhyo-r8/b005"
+   ],
+   "fu-0549": [
+    "fh:fuhyo-r8/b010"
+   ],
+   "fu-0550": [
+    "fh:fuhyo-r8/b011"
+   ]
+  }
+ },
+ {
+  "taba": 28,
+  "kind": "fuhyo",
+  "ronten": [
+   "ronten/zen.md"
+  ],
+  "file": "/home/claude/yomi/yosan/jigyo/28.md",
+  "sha256": "5cd8c75fb38cd8b720dec14701aef4db697fa1627122311e0786194093f1d56a",
+  "jigyo": [
+   "fu-0551",
+   "fu-0552",
+   "fu-0553",
+   "fu-0554",
+   "fu-0555",
+   "fu-0556",
+   "fu-0557",
+   "fu-0558",
+   "fu-0559",
+   "fu-0560",
+   "fu-0561",
+   "fu-0562",
+   "fu-0563",
+   "fu-0564",
+   "fu-0565",
+   "fu-0566",
+   "fu-0567",
+   "fu-0568",
+   "fu-0569",
+   "fu-0570",
+   "fu-0571",
+   "fu-0572",
+   "fu-0573",
+   "fu-0574",
+   "fu-0575",
+   "fu-0576",
+   "fu-0577",
+   "fu-0578",
+   "fu-0579",
+   "fu-0580",
+   "fu-0581",
+   "fu-0582",
+   "fu-0583",
+   "fu-0584",
+   "fu-0585",
+   "fu-0586",
+   "fu-0587",
+   "fu-0588",
+   "fu-0589",
+   "fu-0590",
+   "fu-0591",
+   "fu-0592",
+   "fu-0593",
+   "fu-0594",
+   "fu-0595",
+   "fu-0596",
+   "fu-0597",
+   "fu-0598",
+   "fu-0599",
+   "fu-0600"
+  ],
+  "members": {
+   "fu-0551": [
+    "fh:fuhyo-r8/b013"
+   ],
+   "fu-0552": [
+    "fh:fuhyo-r8/b015"
+   ],
+   "fu-0553": [
+    "fh:fuhyo-r8/b016"
+   ],
+   "fu-0554": [
+    "fh:fuhyo-r8/b017"
+   ],
+   "fu-0555": [
+    "fh:fuhyo-r8/b022"
+   ],
+   "fu-0556": [
+    "fh:fuhyo-r8/b023"
+   ],
+   "fu-0557": [
+    "fh:fuhyo-r8/b024"
+   ],
+   "fu-0558": [
+    "fh:fuhyo-r8/b028"
+   ],
+   "fu-0559": [
+    "fh:fuhyo-r8/b029"
+   ],
+   "fu-0560": [
+    "fh:fuhyo-r8/b031"
+   ],
+   "fu-0561": [
+    "fh:fuhyo-r8/b035"
+   ],
+   "fu-0562": [
+    "fh:fuhyo-r8/b043"
+   ],
+   "fu-0563": [
+    "fh:fuhyo-r8/b044"
+   ],
+   "fu-0564": [
+    "fh:fuhyo-r8/b045"
+   ],
+   "fu-0565": [
+    "fh:fuhyo-r8/b047"
+   ],
+   "fu-0566": [
+    "fh:fuhyo-r8/b049"
+   ],
+   "fu-0567": [
+    "fh:fuhyo-r8/b053"
+   ],
+   "fu-0568": [
+    "fh:fuhyo-r8/b054"
+   ],
+   "fu-0569": [
+    "fh:fuhyo-r8/b057"
+   ],
+   "fu-0570": [
+    "fh:fuhyo-r8/b061"
+   ],
+   "fu-0571": [
+    "fh:fuhyo-r8/b062"
+   ],
+   "fu-0572": [
+    "fh:fuhyo-r8/b063"
+   ],
+   "fu-0573": [
+    "fh:fuhyo-r8/b064"
+   ],
+   "fu-0574": [
+    "fh:fuhyo-r8/b065"
+   ],
+   "fu-0575": [
+    "fh:fuhyo-r8/b066"
+   ],
+   "fu-0576": [
+    "fh:fuhyo-r8/b067"
+   ],
+   "fu-0577": [
+    "fh:fuhyo-r8/b068"
+   ],
+   "fu-0578": [
+    "fh:fuhyo-r8/b076"
+   ],
+   "fu-0579": [
+    "fh:fuhyo-r8/b078"
+   ],
+   "fu-0580": [
+    "fh:fuhyo-r8/b079"
+   ],
+   "fu-0581": [
+    "fh:fuhyo-r8/b083"
+   ],
+   "fu-0582": [
+    "fh:fuhyo-r8/b084"
+   ],
+   "fu-0583": [
+    "fh:fuhyo-r8/b089"
+   ],
+   "fu-0584": [
+    "fh:fuhyo-r8/b090"
+   ],
+   "fu-0585": [
+    "fh:fuhyo-r8/b094"
+   ],
+   "fu-0586": [
+    "fh:fuhyo-r8/b096"
+   ],
+   "fu-0587": [
+    "fh:fuhyo-r8/b099"
+   ],
+   "fu-0588": [
+    "fh:fuhyo-r8/b100"
+   ],
+   "fu-0589": [
+    "fh:fuhyo-r8/b104"
+   ],
+   "fu-0590": [
+    "fh:fuhyo-r8/b105"
+   ],
+   "fu-0591": [
+    "fh:fuhyo-r8/b106"
+   ],
+   "fu-0592": [
+    "fh:fuhyo-r8/b109"
+   ],
+   "fu-0593": [
+    "fh:fuhyo-r8/b119"
+   ],
+   "fu-0594": [
+    "fh:fuhyo-r8/b120"
+   ],
+   "fu-0595": [
+    "fh:fuhyo-r8/b121"
+   ],
+   "fu-0596": [
+    "fh:fuhyo-r8/b125"
+   ],
+   "fu-0597": [
+    "fh:fuhyo-r8/b126"
+   ],
+   "fu-0598": [
+    "fh:fuhyo-r8/b127"
+   ],
+   "fu-0599": [
+    "fh:fuhyo-r8/b130"
+   ],
+   "fu-0600": [
+    "fh:fuhyo-r8/b132"
+   ]
+  }
+ },
+ {
+  "taba": 29,
+  "kind": "fuhyo",
+  "ronten": [
+   "ronten/zen.md"
+  ],
+  "file": "/home/claude/yomi/yosan/jigyo/29.md",
+  "sha256": "6c9e56b9497392072a6c180f80a14ad93d32424effa3eccbb2d1ee4a74253829",
+  "jigyo": [
+   "fu-0601",
+   "fu-0602",
+   "fu-0603",
+   "fu-0604",
+   "fu-0605",
+   "fu-0606",
+   "fu-0607",
+   "fu-0608",
+   "fu-0609",
+   "fu-0610",
+   "fu-0611",
+   "fu-0612",
+   "fu-0613",
+   "fu-0614",
+   "fu-0615",
+   "fu-0616",
+   "fu-0617",
+   "fu-0618",
+   "fu-0619",
+   "fu-0620",
+   "fu-0621",
+   "fu-0622",
+   "fu-0623",
+   "fu-0624",
+   "fu-0625",
+   "fu-0626",
+   "fu-0627",
+   "fu-0628",
+   "fu-0629",
+   "fu-0630"
+  ],
+  "members": {
+   "fu-0601": [
+    "fh:fuhyo-r8/b135"
+   ],
+   "fu-0602": [
+    "fh:fuhyo-r8/b141"
+   ],
+   "fu-0603": [
+    "fh:fuhyo-r8/b144"
+   ],
+   "fu-0604": [
+    "fh:fuhyo-r8/b146"
+   ],
+   "fu-0605": [
+    "fh:fuhyo-r8/b148"
+   ],
+   "fu-0606": [
+    "fh:fuhyo-r8/b149"
+   ],
+   "fu-0607": [
+    "fh:fuhyo-r8/b150"
+   ],
+   "fu-0608": [
+    "fh:fuhyo-r8/b151"
+   ],
+   "fu-0609": [
+    "fh:fuhyo-r8/b152"
+   ],
+   "fu-0610": [
+    "fh:fuhyo-r8/b155"
+   ],
+   "fu-0611": [
+    "fh:fuhyo-r8/b156"
+   ],
+   "fu-0612": [
+    "fh:fuhyo-r8/b157"
+   ],
+   "fu-0613": [
+    "fh:fuhyo-r8/b158"
+   ],
+   "fu-0614": [
+    "fh:fuhyo-r8/b160"
+   ],
+   "fu-0615": [
+    "fh:fuhyo-r8/b162"
+   ],
+   "fu-0616": [
+    "fh:fuhyo-r8/b163"
+   ],
+   "fu-0617": [
+    "fh:fuhyo-r8/b165"
+   ],
+   "fu-0618": [
+    "fh:fuhyo-r8/b166"
+   ],
+   "fu-0619": [
+    "fh:fuhyo-r8/b168"
+   ],
+   "fu-0620": [
+    "fh:fuhyo-r8/b169"
+   ],
+   "fu-0621": [
+    "fh:fuhyo-r8/b170"
+   ],
+   "fu-0622": [
+    "fh:fuhyo-r8/b171"
+   ],
+   "fu-0623": [
+    "fh:fuhyo-r8/b172"
+   ],
+   "fu-0624": [
+    "fh:fuhyo-r8/b173"
+   ],
+   "fu-0625": [
+    "fh:fuhyo-r8/b174"
+   ],
+   "fu-0626": [
+    "fh:fuhyo-r8/b175"
+   ],
+   "fu-0627": [
+    "fh:fuhyo-r8/b176"
+   ],
+   "fu-0628": [
+    "fh:fuhyo-r8/b177"
+   ],
+   "fu-0629": [
+    "fh:fuhyo-r8/b179"
+   ],
+   "fu-0630": [
+    "fh:fuhyo-r8/b180"
+   ]
+  }
+ }
+]
