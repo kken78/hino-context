@@ -1321,7 +1321,8 @@ def konkyo_problems(inp, tk, tables, rows, namae=None, yomi_qs=None):
     """質問が取り上げた資料と出来事の表の行を検査し、資料の ID ごとに質問を tk.konkyo に、出来事の ID ごとに質問を
     tk.event に入れる。→ 問題の並び。
     質問は、どれかのテーマの定義の問い・質疑か、生成AIの2回の読み取りで読んだ質問（yomi_qs。質問 → 読んだテーマの並び）。
-    質問の題は、その質問があるテーマの定義の行（無ければ hino-council-search の data/ippan.tsv）から取り、注は、そのテーマの Page から引く。
+    質問の題は、hino-council-search の data/ippan.tsv にある質問は、その台帳の題（build_note.dai_of。SCHEMA.md 7.10）、
+    台帳に無い質問は、その質問があるテーマの定義の行から取り、注は、そのテーマの Page から引く。
     同じ資料（出来事）と質問の行は、1つの質問にまとめ、段落ごとに yomi を持つ（「入力の確定済み」の行は、人が確認した質問）。
     2つのテーマの読み取りの行がある段落の yomi は、tools/yomi.py の yomi_awase で決める（SCHEMA.md 7.10）。
     資料の ID でも出来事の名前でもない aite（計画（案）と、資料と出来事の名前の表に無い名前）の行は、出さない。"""
@@ -1331,7 +1332,7 @@ def konkyo_problems(inp, tk, tables, rows, namae=None, yomi_qs=None):
     bunsho = set(hiduke)
     problems = [("(i) 質問が取り上げた資料", m) for m in konkyo.check(rows, bunsho, hiduke, namae)]
     problems += [("(i) 資料と出来事の名前の表", m) for m in ym.check_namae(namae, bunsho, hiduke)]
-    qsrc, qtheme, src_of, ippan = {}, {}, {}, set()
+    qsrc, qtheme, src_of = {}, {}, {}
     for r in inp.ronten_tsv(ronten.THEMES):
         if r["kind"] in ("問い", "質疑"):
             qsrc.setdefault(r["value"], r["source"])
@@ -1343,8 +1344,6 @@ def konkyo_problems(inp, tk, tables, rows, namae=None, yomi_qs=None):
         th = ths[0]                   # 2つ以上のテーマで読んだ質問は、テーマの順の最初のテーマ（SCHEMA.md 7.10）
         qsrc[q] = src_of.get((th, q)) or bn.ippan_src(inp, q)
         qtheme[q] = th
-        if not src_of.get((th, q)):
-            ippan.add(q)
     pres = shogo.check_paras(inp, [dict(where=f"質問が取り上げた資料 {r['question']} / {r['aite']}", hani=r["hani"])
                                    for r in rows])
     for m in pres.mismatched:
@@ -1373,8 +1372,8 @@ def konkyo_problems(inp, tk, tables, rows, namae=None, yomi_qs=None):
         out = []
         for q, x in qd.items():
             who = bn.qhead_parts(qsrc[q])[0]
-            # 題は、aite に付いた段落の発言を含む問いの題名（SCHEMA.md 7.10。2026-11-28）
-            dai = bn.dai_of(inp, q, qsrc, ippan, {sid for sid, _ in x["yomi"]})
+            # 題は、aite に付いた段落が範囲に入る題の題名（SCHEMA.md 7.10。2026-11-28）
+            dai = bn.dai_of(inp, q, qsrc, set(x["yomi"]), tk.D.bun("bunya-dai-nashi"))
             ys = x["ys"]
             if konkyo.NYURYOKU in ys and len(ys) > 1:
                 problems.append(("(i) 質問が取り上げた資料", f"{q} / {aite}：入力の確定済みの行と、読み取りの行がある"))

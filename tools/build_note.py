@@ -97,24 +97,35 @@ def shudai_of(theme, jiko_rows=None, shudai=None):
     return [dict(r, point=names[r["jiko"]]) for r in shudai if r["jiko"] in names]
 
 
-def ippan_src(inp, q, sids=None):
+def ippan_src(inp, q, paras=None):
     """テーマの定義に無い一般質問の、題の字（qhead_parts で読める形）。一般質問の台帳（hino-council-search の
     data/ippan.tsv）の、議員の名前と題名から作る。台帳に無ければ空。
-    sids（出すものに付いた段落の発言の sid の集まり）を渡したときは、turns にその発言がある問いの題名だけを並べる。
-    当たる問いが無ければ、全部の題名を並べる（SCHEMA.md 7.10。2026-11-28）。"""
+    paras（出すものに付いた段落。発言の sid と段落の番号の組の集まり）を渡したときは、その段落が範囲に入る題の題名だけを
+    並べる（dai_gyo）。当たる題が無ければ、全部の題名を並べる（SCHEMA.md 7.10。2026-11-28）。"""
     rs = inp.ippan().get(keys.sid_of(q), [])
     if not rs:
         return ""
-    if sids:
-        rs = inputs.Inputs.ippan_ate(rs, sids) or rs
+    if paras:
+        rs = dai_gyo(inp, q, paras) or rs
     return f"{inp.role(keys.sid_of(q)) or '0番'} {rs[0]['member']} " + "".join(f"「{r['title']}」" for r in rs)
 
 
-def dai_of(inp, q, qsrc, ippan, sids):
-    """質問の題。テーマの定義に無い一般質問（ippan にある質問）は、sids の発言を含む問いの題名（ippan_src）。
-    ほかは qsrc の字から。"""
-    if q in ippan:
-        return qhead_parts(ippan_src(inp, q, sids))[1]
+def dai_gyo(inp, q, paras):
+    """質問と、出すものに付いた段落の集まり → 台帳の題の行の並び（inputs.Inputs.ippan_dai）。議案への質疑と、台帳に無い
+    質問は空。論点の応答（issue）と試作のページ、資料と出来事の応答の題（dai_of）と、分野の応答（field）の論点の添え方
+    （tools/bunya.py の dai_of_question）が、この関数で題を決める（SCHEMA.md 7.10・7.11。2026-11-28）。"""
+    if not q.startswith("iq:"):
+        return []
+    return inp.ippan_dai(keys.sid_of(q), paras)[1]
+
+
+def dai_of(inp, q, qsrc, paras, nashi):
+    """質問の題。一般質問の台帳にある質問は、テーマの定義にあるかどうかにかかわらず、paras の段落が範囲に入る題の題名
+    （dai_gyo。当たる題が無いときの扱いは inputs.Inputs.ippan_dai）を「」で囲んで並べる。題名が空の題は nashi の文
+    （docs/design.md の bunya-dai-nashi）。台帳に無い質問（議案への質疑など）は qsrc の字から（SCHEMA.md 7.10）。"""
+    rs = dai_gyo(inp, q, paras)
+    if rs:
+        return "".join(f"「{r['title']}」" if r["title"].strip() else nashi for r in rs)
     return qhead_parts(qsrc.get(q, ""))[1]
 
 
@@ -293,11 +304,9 @@ def collect(inp, teigi, theme):
     problems = []
     yomi = teigi.get("shudai") or [] if teigi.get("jiko") else []
     points |= {r["point"] for r in yomi}
-    ippan = set()       # 題を一般質問の台帳から取る質問
     for q in dict.fromkeys(r["question"] for r in yomi):
         if q not in qsrc:
-            qsrc[q] = ippan_src(inp, q)
-            ippan.add(q)
+            qsrc[q] = ippan_src(inp, q)       # テーマの定義に無い質問の、議員の名前と題名（題は dai_of で選ぶ）
     for P, *_ in teigi["topics"]:
         if P not in points:
             problems.append(("定義", f"論点「{P}」が、hino-ronten の題材 {theme} の事柄に無く、"
@@ -369,7 +378,7 @@ def collect(inp, teigi, theme):
         cres = shogo.check_quotes(inp, [dict(where=where, source=c["moto"], quote=f) for f in frs])
         for m in cres.mismatched:
             problems.append(("(a) 引用がもとの資料に無い", f"{m['where']}：{m['reason']}（{m['source']}）「{m['quote']}」"))
-    return dict(ko=ko, katei=katei, ta=ta, qsrc=qsrc, ippan=ippan, mokuteki=moku, yomi=yomi), problems, (res, pres)
+    return dict(ko=ko, katei=katei, ta=ta, qsrc=qsrc, mokuteki=moku, yomi=yomi), problems, (res, pres)
 
 
 # ---- ページ ----
@@ -499,7 +508,7 @@ class Page:
             q = r["question"]
             who = qhead_parts(self.m["qsrc"].get(q, ""))[0]
             paras = [(sid, i, inputs.paragraphs(self.inp.statement_text(sid))[i - 1]) for sid, i in keys.paras_of(r["hani"])]
-            dai = self.dai(q, {sid for sid, _, _ in paras})
+            dai = self.dai(q, {(sid, i) for sid, i, _ in paras})
             qs.append(dict(question=q, date=qdate(q), sitsugi=q.startswith("sq:"), who=who, dai=dai, paras=paras,
                            mikakunin=False, yomi={}))
         # 生成AIの2回の読み取りの行（SCHEMA.md 7.10）。質問ごとに段落をまとめ、段落ごとに一致か1回だけかを持つ
@@ -512,7 +521,7 @@ class Page:
         for q, fl in yq.items():
             who = qhead_parts(self.m["qsrc"].get(q, ""))[0]
             paras = [(sid, i, inputs.paragraphs(self.inp.statement_text(sid))[i - 1]) for sid, i in sorted(fl)]
-            dai = self.dai(q, {sid for sid, _, _ in paras})
+            dai = self.dai(q, set(fl))
             qs.append(dict(question=q, date=qdate(q), sitsugi=q.startswith("sq:"), who=who, dai=dai, paras=paras,
                            mikakunin=True, yomi=fl))
         qs.sort(key=lambda x: x["date"], reverse=True)
@@ -527,9 +536,9 @@ class Page:
                 for (g, n), rs in aite.items()]
         return dict(ko=ko, docs=docs, tome=tome, jisseki=any(x["kind"] == "実績" for x in ko), qs=qs, mokuteki=moku)
 
-    def dai(self, q, sids):
-        """質問の題（dai_of）。sids は、出すものに付いた段落の発言の sid の集まり。"""
-        return dai_of(self.inp, q, self.m["qsrc"], self.m.get("ippan", set()), sids)
+    def dai(self, q, paras):
+        """質問の題（dai_of）。paras は、出すものに付いた段落（発言の sid と段落の番号の組）の集まり。"""
+        return dai_of(self.inp, q, self.m["qsrc"], paras, self.D.bun("bunya-dai-nashi"))
 
     def topic(self, P, slug, short, setsumei):
         inp, T, qsrc = self.inp, self.t, self.m["qsrc"]
@@ -584,7 +593,7 @@ class Page:
 <p class='m'>一つの質問では、複数の話題が取り上げられます。ここでは、{E(short)}に関する部分だけを抜き出しています。質問の全体は、会議録で確認できます。</p>{yset}{''.join(blocks)}
 <p class='m'>{keisai}</p>
 </section>"""
-        return h, len(ko), len(ta), [(r["question"], {sid for sid, _, _ in r["paras"]}) for r in ta]
+        return h, len(ko), len(ta), [(r["question"], {(sid, i) for sid, i, _ in r["paras"]}) for r in ta]
 
     def yomi_go(self, yomi):
         return yomi_go(self.D, yomi)
