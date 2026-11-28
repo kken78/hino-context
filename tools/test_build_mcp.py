@@ -427,7 +427,7 @@ class TestReal(unittest.TestCase):
         t = "\n".join(self.issue_pages(mid))
         self.assertIn(f"# 職員の育成と人事評価（issue：{mid}）", t)
         self.assertIn(D.bun("ronten-matome-setsumei-an"), t)
-        ronten = [x for x in t.split("\n") if x.startswith("## ")]
+        ronten = [x for x in t.split("\n") if x.startswith("## ") and x != "## " + D.bun("mcp-midashi-matome-tsunagari")]
         self.assertEqual([re.sub("（issue：.*", "", x[3:]) for x in ronten],
                          ["職員研修とOJT", "メンター制度", "人事評価", "職員のメンタルヘルス", "職場の風土づくり", "職員のやりがい",
                           "職員の知識と経験の組織での共有", "職員の配置と異動"])
@@ -450,6 +450,33 @@ class TestReal(unittest.TestCase):
         # 確定済みの記録だけの論点にも、同じまとまりの論点を出す
         self.assertIn("## " + D.bun("mcp-midashi-issue-matome"), self.issue_pages("hoiku33")[0])
 
+    def test_matome_tsunagari(self):
+        """まとまりどうしのつながり（SCHEMA.md 7.10、docs/design.md 4節。2026-11-28）：まとまりの応答の最後に、同じ題で取り上げられた
+        論点が入っている、ほかのまとまりを、題の数の多い順に出す。theme と field のまとまりの見出しに3つまで添える。論点の issue の
+        同じ題の論点に、まとまりの名前と ID を添える。"""
+        mid = "b33-k1:職員の育成と人事評価"
+        t = "\n".join(self.issue_pages(mid))
+        s = self.setsu(t, "## " + D.bun("mcp-midashi-matome-tsunagari"))
+        self.assertIn(D.bun("mcp-matome-tsunagari-setsumei"), s)
+        ls = [x for x in s.split("\n") if x.startswith("- ")]
+        hataraki = "- " + D.bun("mcp-matome-mei", matome="働き方（issue：b33-k1:働き方）")
+        saiyo = "- " + D.bun("mcp-matome-mei", matome="職員数と採用（issue：b33-k1:職員数と採用）")
+        self.assertTrue(ls[0].startswith(hataraki), ls[0])
+        self.assertTrue(ls[0].endswith(D.bun("mcp-issue-issho-kazu", n=4)), ls[0])
+        self.assertTrue(any(x.startswith(saiyo) and x.endswith(D.bun("mcp-issue-issho-kazu", n=3)) for x in ls))
+        self.assertFalse(any(mid + "）" in x for x in ls))                  # 自分のまとまりは出さない
+        self.assertTrue(any("（issue：chiiki:" in x for x in ls))           # ほかのテーマのまとまりも出す
+        kazu = [int(re.search(r"(\d+)件$", x).group(1)) for x in ls]
+        self.assertEqual(kazu, sorted(kazu, reverse=True))
+        # field ㉝ の、まとまりの見出しの下
+        f = "\n".join(self.data["bun"][i] for k, i in sorted(self.data["outou"]["field"].items()) if k.startswith("field=㉝&page="))
+        self.assertIn(D.bun("ronten-matome-tsunagari", matome="職員数と採用（issue：b33-k1:職員数と採用）、"
+                            "業務改善とデジタル化（issue：b33-k1:業務改善とデジタル化）、職員の育成と人事評価（issue：b33-k1:職員の育成と人事評価）"), f)
+        # 論点の issue の、同じ題で取り上げられた論点
+        i = self.issue_pages("b33-07")[0]
+        self.assertIn("- 職員の時間外勤務（issue：b33-01）　" + D.bun("mcp-issue-issho-kazu", n=2) + "　"
+                      + D.bun("mcp-matome-mei", matome="働き方（issue：b33-k1:働き方）"), i)
+
     def test_issho_of(self):
         """同じ質問の同じ題で一緒に取り上げられた論点の数（題の数の多い順。同じ数は事項の表の順）。"""
         class Inp:
@@ -464,6 +491,17 @@ class TestReal(unittest.TestCase):
         j = [dict(id=x) for x in "abcd"]
         self.assertEqual(bm.issho_of(Inp(), rows, j), {"a": [("b", 1), ("c", 1)],
                                                        "b": [("a", 1)], "c": [("a", 1)]})
+
+    def test_tsunagari_of(self):
+        """まとまりどうしのつながり：同じ題の数（題ごとに1つ）。まとまりに入っていない論点は論点として。基本施策の行は数えない。"""
+        dai = {("x", "1"): {"a", "c"}, ("x", "2"): {"a", "c", "e"}, ("x", "3"): {"b", "d", "k"}, ("x", "4"): {"a", "b"},
+               ("x", "5"): {"k", "c"}}
+        matome = {"M1": dict(rows=[dict(id="a"), dict(id="b")]), "M2": dict(rows=[dict(id="c")]),
+                  "M3": dict(rows=[dict(id="c"), dict(id="e")])}
+        j = [dict(id=x) for x in "abcdek"]
+        self.assertEqual(bm.tsunagari_of(dai, matome, {"k"}, j)["M1"],
+                         [("matome", "M2", 2), ("matome", "M3", 2), ("ronten", "d", 1)])
+        self.assertEqual(bm.tsunagari_of(dai, matome, {"k"}, j)["M3"], [("matome", "M1", 2)])
 
     @staticmethod
     def setsu(t, midashi):
@@ -509,7 +547,9 @@ class TestReal(unittest.TestCase):
         # 「ほかの分野にかかわる話題」のまとまりは、最後に置く（2026-11-28）
         hoka = nashi[nashi.index(f"#### {bn.jiko.HOKA}"):]
         self.assertNotIn("\n#### ", hoka)
-        self.assertIn(f"#### {bn.jiko.HOKA}（issue：hoiku:{bn.jiko.HOKA}）\n" + D.bun("ronten-matome-setsumei")
+        self.assertIn(f"#### {bn.jiko.HOKA}（issue：hoiku:{bn.jiko.HOKA}）\n" + D.bun("ronten-matome-setsumei") + "\n"
+                      + D.bun("ronten-matome-tsunagari", matome="地域と子育て（issue：hoiku:地域と子育て）、"
+                              "子育て支援（issue：hoiku:子育て支援）、集落の維持（issue：chiiki:集落の維持）")
                       + "\n- 子育て施策の情報発信（issue：hoiku48）　種類：取り組み　質問 ", hoka)
         self.assertTrue(any(x.startswith("- 給食のアレルギー対応（issue：hoiku40）　種類：取り組み　質問 ") for x in gyo))
         self.assertEqual(sum(x.endswith(f"（{D.bun('ronten-mada')}）") for x in gyo), 0)
