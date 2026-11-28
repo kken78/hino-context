@@ -842,12 +842,13 @@ class TestReal(unittest.TestCase):
         r = "\n".join(self.data["bun"][i] for k, i in sorted(o["review"].items())
                       if k.startswith("review=node:senryaku2/e008&page="))
         self.assertTrue(r.split("\n")[1] == "# " + e008)
-        self.assertIn("- 令和7年度　目標 52　実績 30　達成率 57.7%", r)
+        self.assertIn("- 令和7年度　目標 52回　実績 30回　達成率 57.7%", r)          # 入力の tani を付ける
         self.assertIn("- 基準値【R2】：3.7 回", r)
-        self.assertIn("## 内部検証（町が書いたもの）\n### 取り組み状況\n", r)
-        self.assertIn("### 実施が困難なこと\n- 「特にありません。」（47ページ）", r)
+        self.assertIn("## 内部検証（町が書いたもの）\n### 取り組み状況（46〜47ページ）\n", r)
+        self.assertIn(D.bun("kensho-hito"), r)          # 入力の検収の台帳に人の印が無い
+        self.assertIn("### 実施が困難なこと（46〜47ページ）\n- 「特にありません。」", r)
         self.assertIn("    - 「Ｂ 実施できている １８点 ～ １３点」（8ページ）", r)
-        self.assertEqual(r.count("\n### コメント\n"), 1)
+        self.assertEqual(r.count("\n### コメント（46〜47ページ）\n"), 1)
         self.assertEqual(sum(1 for x in r.split("\n") if x.startswith("- 「")), 10 + 6 + 12 + 1 + 1 + 5 + 3 + 7)
         # 目標2・実績1で達成率100.0% の行も、字のまま（2026-11-28 の依頼者の決定）
         r = self.bun("review", "review=node:senryaku2/e017")
@@ -855,8 +856,17 @@ class TestReal(unittest.TestCase):
         # 欄の見出しがシートによって違う欄は、そのシートの字
         r = "\n".join(self.data["bun"][i] for k, i in sorted(o["review"].items())
                       if k.startswith("review=node:senryaku2/e010&page="))
-        self.assertIn("### 実施できていないこと・困難なこと\n", r)
+        self.assertIn("### 実施できていないこと・困難なこと（50〜51ページ）\n", r)
         self.assertNotIn("### 実施が困難なこと", r)
+        # 担当部署と取り組みの方向は、シートの字。本編と違うときは、本編の字も添える
+        r = self.bun("review", "review=node:senryaku2/e038")
+        self.assertIn("- " + D.bun("kensho-tantou", tantou="R3：住民課、R4：交通環境政策課・建設計画課") + "\n  - "
+                      + D.bun("kensho-tantou-honpen", tantou="交通環境政策課・建設計画課"), r)
+        r = self.bun("review", "review=node:senryaku2/e009")
+        self.assertIn("取り組みの方向（施策検証シート）「子育てにやさしい風土づくり」\n  - "
+                      + D.bun("kensho-houkou-honpen", houkou="生涯にわたる学びと活躍の推進"), r)
+        r = self.bun("review", "review=node:senryaku2/e008")
+        self.assertNotIn(D.bun("kensho-tantou-honpen", tantou="図書館"), r)
 
     def test_repo_json(self):
         # リポジトリの JSON は、いまの表から作ったものと同じ（違えば、作り直していない）

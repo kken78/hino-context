@@ -78,8 +78,9 @@ HYO_COLUMNS = (("項目の表", sj.SUJI_COLUMNS), ("数値と内容の表", sj.A
                ("質問が取り上げた資料と出来事の表", konkyo.COLS), ("質問と事項の対応の表", yomi.COLS),
                ("資料と出来事の名前の表", yomi.NAMAE_COLS), ("候補の名前と扱いの対応の表", yomi.KOUHO_COLS),
                ("質問の題と分野の対応の表", bunya.COLS), ("分野に無い話題の名前の表", bunya.WADAI_COLS),
-               ("施策検証の取り組みの表", kensho.COLS), ("施策検証の KPI の表", kensho.KPI_COLS),
-               ("施策検証の文の表", kensho.BUN_COLS), ("施策検証の取り組みと分野の対応の表", kensho.BUNYA_COLS),
+               ("施策検証シートの表", kensho.SHEET_COLS), ("施策検証シートの KPI の表", kensho.KPI_COLS),
+               ("施策検証シートの項目の表", kensho.BUN_COLS), ("施策検証シートの検収の台帳", kensho.AUDIT_COLS),
+               ("施策検証の取り組みと分野の対応の表", kensho.BUNYA_COLS),
                ("施策検証の欄の表", kensho.RAN_COLS), ("検証結果の説明の表", kensho.KEKKA_COLS))
 # データの側の言葉（SCHEMA.md の表の名前と、入力の文字の呼び方）。ツールの説明の文に書いてよい（design_problems）
 DATA_GO = tuple(h for h, _ in HYO_COLUMNS) + ("もとの資料から取り出した文字",)
