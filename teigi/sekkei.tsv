@@ -7,7 +7,7 @@ mono	過程の出来事	入力:hino-ronten/records/katei.tsv
 mono	施設・地区・組織	入力:hino-ronten/ref/shisetsu.tsv	地区と組織は読んでいない
 mono	問い・質疑・報告	入力:hino-ronten/ref/themes.tsv;taio/yomi-hoiku/taba.json;taio/yomi-kaigo/taba.json;taio/yomi-kokyo/taba.json;taio/yomi-chiiki/taba.json;入力:hino-council-search/data/ippan.tsv	テーマの定義にある問いと質疑と、生成AIの2回の読み取りで読んだ一般質問（幼保41。テーマの定義の外の29を含む。介護22。テーマの定義の外の17を含む。公共施設の再編39。テーマの定義の外の23を含む。地域のあり方29。テーマの定義の外の9を含む。2つのテーマで読んだ質問が12ある）。一般質問の台帳の題の全部（964）は、総合計画の分野を付ける単位（SCHEMA.md 7.11）
 kankei	目的と手段（取り組みが、課題や目的に対処する）	入力:hino-ronten/records/tsunagari.tsv	確定済みの記録のうち、両端が事項の表にある組を、論点のページと MCP の応答（issue）に出す。このリポジトリの表は無い
-kankei	資料が、事項について記す	入力:hino-ronten/records/kotogara.tsv;taio/kensho.tsv;taio/kensho-kpi.tsv;taio/kensho-bun.tsv	確定済みの記録を読むだけ。数値は teigi/atai.tsv。総合戦略の施策検証結果報告書（令和7年度）の施策検証シートが、総合戦略の取り組みについて記す記述（生成AIの2回の読み取り。SCHEMA.md 7.12）
+kankei	資料が、事項について記す	入力:hino-ronten/records/kotogara.tsv;入力:hino-town-docs/data/struct/senryaku-sheet.tsv;入力:hino-town-docs/data/struct/senryaku-kpi.tsv;入力:hino-town-docs/data/struct/senryaku-bun.tsv	確定済みの記録を読むだけ。数値は teigi/atai.tsv。総合戦略の施策検証結果報告書（令和7年度）の施策検証シートが、総合戦略の取り組みについて記す記述は、入力の hino-town-docs の構造化の層の表を読む（人の確認はまだ。SCHEMA.md 7.12）
 kankei	資料が、資料のもとになる	teigi/bunsho-kankei.tsv	
 kankei	出来事が、取り組み・資料の根拠になる	無い	
 kankei	取り組みに、予算の事業が当たる	無い	
