@@ -52,6 +52,7 @@ import keys  # noqa: E402
 import kensho as ks  # noqa: E402
 import konkyo  # noqa: E402
 import ronten  # noqa: E402
+import ronten_kisai as rk  # noqa: E402
 import shogo  # noqa: E402
 import suji as sj  # noqa: E402
 import yomi as ym  # noqa: E402
@@ -187,6 +188,7 @@ class Tsukuru:
         self.bunya_ronten = {}           # 題の (from, n) → 論点の (名前, ID, テーマ) の並び（tools/bunya.py の ronten_of_dai）。build で入れる
         self.ks = None                   # 施策検証結果報告書の記述（tools/kensho.py の matome）。build で入れる
         self.tsunagari = {}              # まとまりの ID → 同じ題に付いた論点の入る、ほかのまとまりと論点（tsunagari_of）。build で入れる
+        self.sk = {}                     # (種類, 資料か出来事の ID) → 構造にしていない記載の行と Page の組の並び（SCHEMA.md 7.14）。build で入れる
 
     # 資料の名前と url
     def moto(self, key, quote=""):
@@ -319,9 +321,21 @@ class Tsukuru:
         """出来事1つ。document の、資料を取り上げている質問と同じ形（gikai）で返す。"""
         D = self.D
         r, qs, _ = self.event[k]
-        return self.gikai(self.event_kagi(k), [], [], qs, D.bun("mcp-event-short"),
+        blocks = self.kiroku_block((rk.DEKIGOTO, k), D.bun("mcp-midashi-event-kiroku"), D.bun("mcp-event-short"))
+        return self.gikai(self.event_kagi(k), [], blocks, qs, D.bun("mcp-event-short"),
                           lambda q: self.konkyo_pg.get(q["question"]),
                           f"## {E(D.bun('mcp-midashi-event-konkyo', n=len(qs)))}", [], k)
+
+    def kiroku_block(self, k, midashi, short):
+        """資料か出来事 k に当たる構造にしていない記載（SCHEMA.md 7.14）→ ブロックの並び（行が無ければ空）。
+        midashi は見出しの文。記述の出し方は、論点の記述と同じ（kijutsu）。source_date の新しい順。"""
+        D = self.D
+        rs = self.sk.get(k, [])
+        if not rs:
+            return []
+        rs = sorted(rs, key=lambda xp: xp[0]["source_date"], reverse=True)
+        return [([f"## {E(midashi)}", E(D.bun("mcp-kiroku-setsumei", short=E(short)))],
+                 [self.kijutsu(pg, x) for x, pg in rs])]
 
     def shurui(self, r):
         """事項の表の shurui → 種類の言葉（docs/design.md 3節）。"""
@@ -711,7 +725,8 @@ class Tsukuru:
         hyo = [p for p in self.t["bubun"] if p["bunsho"] == bkey and p["shu"] == sj.HYO]
         intro = [E(D.bun("mcp-shiryo-hani")),
                  E(D.bun("mcp-shiryo-kazu", hyo=len(hyo), atai=len(ar), teigi=len({r["suji"] for r in ar}),
-                         kara=len(kk), e=len(ke), q=len(self.konkyo.get(bkey, [])))),
+                         kara=len(kk), e=len(ke), q=len(self.konkyo.get(bkey, [])),
+                         kiroku=len(self.sk.get((rk.SHIRYO, bkey), [])))),
                  f"- {E(D.kotoba('資料の一覧の表 shurui'))}：{E(shurui.get(b['shurui'], b['shurui']))}"]
         if b["konkyo"]:
             kp = D.bun("page", n=sj.page_no(b["konkyo_tokoro"]))
@@ -761,6 +776,7 @@ class Tsukuru:
         if items and any(sj.mikakunin(p) for p in self.t["bubun"] if p["bunsho"] == bkey and p["shu"] == sj.HYO):
             items.append(E(D.bun("mikakunin-hyo")))
         blocks.append(([f"## {E(D.bun('mcp-midashi-hyo-ichiran'))}"], items or nai))
+        blocks += self.kiroku_block((rk.SHIRYO, bkey), D.bun("mcp-midashi-shiryo-kiroku"), D.bun("mcp-konkyo-short"))
         qs = self.konkyo.get(bkey, [])
         if not qs:
             return Outou(self.bunsho_kagi(bkey), self.bunsho_intro(bkey), blocks)
@@ -1638,6 +1654,43 @@ def theme_jun(inp):
     return list(dict.fromkeys(r["theme"] for r in inp.ronten_tsv(ronten.THEMES)))
 
 
+def kiroku_problems(inp, tk, tables, namae=None, jiko_rows=None):
+    """構造にしていない記載（確定済み）のうち、資料か出来事に当たる行（tools/ronten_kisai.py）を、tk.sk に入れる。→ 問題の並び。
+    引用は、論点の記述と同じく、資料の本文と照合する。出来事は、event の応答がある出来事（tk.event）でなければ止める。
+    注と金額の単位を引く Page は、about が hino-ronten のテーマの定義の事柄か記載にある最初のテーマの Page。"""
+    namae = ym.read_namae() if namae is None else namae
+    jiko_rows = jiko.read() if jiko_rows is None else jiko_rows
+    sk = rk.shiryo_kiroku(inp, jiko_rows, tables["bunsho"], namae)
+    th_of = {}
+    for r in inp.ronten_tsv(ronten.THEMES):
+        if r["kind"] in ("事柄", "記載"):
+            th_of.setdefault(r["value"], r["theme"])
+    problems = []
+    rows = [(k, x) for k, xs in sk.items() for x in xs]
+    res = shogo.check_quotes(inp, [dict(where=f"構造にしていない記載 {x['point']} / {x['source']}", source=x["source"],
+                                        quote=x["quote"]) for _, x in rows])
+    problems += [("(a) 引用が資料の本文に無い", f"{m['where']}：{m['reason']}（{m['source']}）「{m['quote']}」")
+                 for m in res.mismatched]
+    tk.sk = {}
+    for k, x in rows:
+        if k[0] == rk.DEKIGOTO and k[1] not in tk.event:
+            problems.append(("(i) 資料と出来事の名前の表", f"構造にしていない記載 {x['point']}：出来事 {k[1]} の応答が無い"))
+            continue
+        th = th_of.get(x["point"])
+        if th not in tk.note:
+            problems.append(("(b) 出典の無い記述", f"構造にしていない記載 {x['point']}：テーマの定義の事柄か記載に無い"))
+            continue
+        try:
+            ok = keys.source_name(inp, x["source"]) and keys.source_url(inp, x["source"]) and x["source_date"]
+        except keys.KeyFormError:
+            ok = False
+        if not ok:
+            problems.append(("(b) 出典の無い記述", f"構造にしていない記載 {x['point']}：資料「{x['source']}」の名前か url か日付が作れない"))
+            continue
+        tk.sk.setdefault(k, []).append((x, tk.note[th][1]))
+    return problems
+
+
 def konkyo_problems(inp, tk, tables, rows, namae=None, yomi_qs=None):
     """質問が取り上げた資料と出来事の表の行を検査し、資料の ID ごとに質問を tk.konkyo に、出来事の ID ごとに質問を
     tk.event に入れる。→ 問題の並び。
@@ -1799,6 +1852,8 @@ def build(inp, tables, kotoba, read_problems=(), design=None, skill=None, notes=
         tk.yomi_nashi[th] = ym.nashi_shitsumon(th, yomi_rows)
     # (i) 質問が取り上げた資料と出来事の表
     problems += konkyo_problems(inp, tk, tables, konkyo_rows, yomi_qs=yomi_qs)
+    # 構造にしていない記載のうち、資料か出来事に当たる行（SCHEMA.md 7.14。2026-11-28）
+    problems += kiroku_problems(inp, tk, tables)
     slugs = [slug for T, _ in tk.note.values() for _, slug, _, _ in T["topics"]]
     # ほかのテーマと共通の事項（SCHEMA.md 7.9）は、2つのテーマにあってよい。issue は、theme の列の最初のテーマで作るので、
     # そのテーマの論点にあること
