@@ -345,8 +345,10 @@ class TestReal(unittest.TestCase):
         self.assertEqual(n1 + n2, 3 + 10 + 7 + 2)
         self.assertIn(D.bun("keisai-yomi", short="定員"), sec)
         self.assertIn(D.bun("yomi-setsumei", short="定員"), sec)
-        # テーマの定義に無い質問の題は、一般質問の台帳の題名の全部
-        self.assertIn("「松尾公園テニスコート」「待機児童問題」", page)
+        # 一般質問の題は、付いた段落が範囲に入る台帳の題名だけ（段落の単位。SCHEMA.md 7.10。2026-11-28）。
+        # 2017年9月14日の質問は、前は、次の題の start の発言の全体が前の題にも入って「松尾公園テニスコート」も出ていた
+        self.assertNotIn("「松尾公園テニスコート」「待機児童問題」", page)
+        self.assertIn("2017年9月14日　一般質問（", page)
 
     def test_jiko(self):
         """事項の表から作る論点の一覧（SCHEMA.md 7.9）：記録のある13の論点にページを作り、記録の無い24は、一覧に名前と

@@ -49,6 +49,14 @@ class FakeInputs:
     def ronten_tsv(self, path):
         return [dict(r) for r in self._ronten.get(path, [])]
 
+    def ippan(self):
+        """一般質問の台帳。テスト用の入力には無い。"""
+        return {}
+
+    ippan_turn = inputs.Inputs.ippan_turn
+    ippan_dai = inputs.Inputs.ippan_dai
+    ippan_ate = staticmethod(inputs.Inputs.ippan_ate)
+
 
 def sample():
     return FakeInputs(

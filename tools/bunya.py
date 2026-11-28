@@ -27,6 +27,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
+import build_note as bn  # noqa: E402
 import inputs  # noqa: E402
 import keys  # noqa: E402
 
@@ -320,33 +321,10 @@ def start_problems(inp):
 
 # ---- 論点とのつながり ----
 
-def turn_index(inp):
-    """発言の sid → その発言を turns に含む台帳の題の (from, n) の並び。"""
-    out = {}
-    for f, rs in inp.ippan().items():
-        for r in rs:
-            for t in r["turns"].split(";"):
-                if t:
-                    out.setdefault(t.split(":")[0], []).append((f, r["n"]))
-    return out
-
-
-def dai_of_question(inp, q, sids, turn=None):
-    """質問（iq の ID）と、出すものに付いた段落の発言の sid の集まり → 台帳の題の (from, n) の並び（SCHEMA.md 7.11）。
-    質問の発言を含む議員の区切り（台帳の from）の題のうち、sids の発言を turns に含む題。当たる題が無いときは、質問の発言が
-    from なら、その区切りの題の全部（テーマの定義に無い質問の題と同じ決め方。SCHEMA.md 7.10）、from でなければ、質問の発言を
-    turns に含む題。台帳に無い質問は空。"""
-    turn = turn_index(inp) if turn is None else turn
-    ip = inp.ippan()
-    sid = keys.sid_of(q)
-    f = sid if sid in ip else (turn.get(sid) or [(None, None)])[0][0]
-    if f is None:
-        return []
-    rs = ip[f]
-    ate = inputs.Inputs.ippan_ate(rs, sids)
-    if not ate:
-        ate = rs if sid == f else [r for r in rs if (f, r["n"]) in turn.get(sid, [])]
-    return [(f, r["n"]) for r in ate]
+def dai_of_question(inp, q, paras):
+    """質問（iq の ID）と、出すものに付いた段落（発言の sid と段落の番号の組）の集まり → 台帳の題の (from, n) の並び
+    （SCHEMA.md 7.11）。論点の応答（issue）の題と同じ関数（tools/build_note.py の dai_gyo）で決める。台帳に無い質問は空。"""
+    return [(r["from"], r["n"]) for r in bn.dai_gyo(inp, q, paras)]
 
 
 def ronten_of_dai(inp, pages):
@@ -354,14 +332,13 @@ def ronten_of_dai(inp, pages):
     論点の (名前, ID, テーマ) の並び。論点の質問（Page.ronten の qs。確定済みの記録と、質問と事項の対応の表）のうち一般質問を、
     dai_of_question で題に結び付ける。論点ごとに、名前、ID、テーマ（その論点を最初に見つけたテーマ）。並びは、テーマの順と
     論点の順。同じ ID は1つにする。"""
-    turn = turn_index(inp)
     out = {}
     for theme, (T, pg) in pages.items():
         for P, slug, _, _ in T["topics"]:
             for q in pg.ronten(P)["qs"]:
                 if q["sitsugi"]:
                     continue
-                for k in dai_of_question(inp, q["question"], {sid for sid, _, _ in q["paras"]}, turn):
+                for k in dai_of_question(inp, q["question"], {(sid, i) for sid, i, _ in q["paras"]}):
                     if slug not in [s for _, s, _ in out.get(k, [])]:
                         out.setdefault(k, []).append((P, slug, theme))
     return out

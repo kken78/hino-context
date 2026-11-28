@@ -478,7 +478,8 @@ class TestReal(unittest.TestCase):
         t = self.bun("document", "document=doc:shingi-youho-teigen")
         # 提言（2024年2月）より前の質問は、提言に結び付けない（SCHEMA.md 7.10。2026-11-28）
         part = self.setsu(t, "## " + D.bun("mcp-midashi-konkyo", n=10))
-        self.assertIn("- 2025年3月10日　一般質問　「幼児教育保育施設再編整備計画（案）」\n  - "
+        # 題は、テーマの定義にある質問も、一般質問の台帳の題（SCHEMA.md 7.10。2026-11-28）
+        self.assertIn("- 2025年3月10日　一般質問　「幼児教育保育施設再編整備計画（案）について」\n  - "
                       + D.bun("shitsumon-kakutei") + "\n  - この資料に関する部分（8か所）（page：2）", part)
         self.assertEqual(part.count("  - " + D.kotoba("質問と事項の対応の表 question") + "\n"), 9)    # 読み取りの質問
         self.assertNotIn("2023年", part)
