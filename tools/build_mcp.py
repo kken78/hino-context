@@ -961,12 +961,18 @@ class Tsukuru:
         D.dasanai("分野に無い話題の名前の表 id")
         return self.kagi_ji(E(name), "field", self.bu["m2id"][name])
 
+    def bunya_hani(self):
+        """題の日付の範囲と、入っていないものの文（docs/design.md の bunya-hani）。日付は、台帳の date のいちばん古い日と新しい日。"""
+        D, m = self.D, self.bu
+        ds = sorted(r["date"] for r in m["dai"].values())
+        return D.bun("bunya-hani", a=E(bs.hi_str(D, ds[0])), z=E(bs.hi_str(D, ds[-1])), keikaku=S(m["kk"]["name"]))
+
     def field_ichiran(self):
         """field（引数なし）：分野（政策の柱ごと）と、話題（分野を付けなかった題）の一覧と、それぞれの題の数。"""
         D, m = self.D, self.bu
         kk = m["kk"]
         D.dasanai("質問の題と分野の対応の表 bunya")
-        intro = [D.bun("bunya-setsumei", keikaku=S(kk["name"])), D.bun("bunya-ichiran-setsumei", keikaku=S(kk["name"])),
+        intro = [D.bun("bunya-setsumei", keikaku=S(kk["name"])), self.bunya_hani(), D.bun("bunya-ichiran-setsumei", keikaku=S(kk["name"])),
                  E(D.bun("mcp-bunya-ichiran"))]
         blocks = []
         for h in kk["hashira"]:
@@ -982,7 +988,7 @@ class Tsukuru:
         """field に分野の番号か話題の ID：分野は基本施策（入力の字のまま）と、題の一覧。話題は題の一覧。"""
         D, m, inp = self.D, self.bu, self.inp
         kk = m["kk"]
-        intro = [D.bun("bunya-setsumei", keikaku=S(kk["name"]))]
+        intro = [D.bun("bunya-setsumei", keikaku=S(kk["name"])), self.bunya_hani()]
         blocks = []
         if fid in m["bunya"]:
             x = m["bunya"][fid]

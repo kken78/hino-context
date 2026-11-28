@@ -20,6 +20,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
 import build_note as bn  # noqa: E402
+import build_suji as bs  # noqa: E402
 import bunya as bu  # noqa: E402
 import inputs  # noqa: E402
 import keys  # noqa: E402
@@ -80,8 +81,10 @@ def render(D, m, ronten, today):
     D.dasanai("質問の題と分野の対応の表 from、n")
     D.dasanai("質問の題と分野の対応の表 chu")
     kazu = lambda f: E(D.bun("bunya-kazu", n=len(m["by"].get(f, []))))  # noqa: E731
+    ds = sorted(r["date"] for r in m["dai"].values())
+    hani = D.bun("bunya-hani", a=E(bs.hi_str(D, ds[0])), z=E(bs.hi_str(D, ds[-1])), keikaku=kei)
     top = [f"<h1>{D.bun('mcp-midashi-bunya', keikaku=kei)}</h1>", f"<p class='m'>{E(D.bun('mcp-atama'))}</p>",
-           f"<p class='lead'>{D.bun('bunya-setsumei', keikaku=kei)}</p>",
+           f"<p class='lead'>{D.bun('bunya-setsumei', keikaku=kei)}</p>", f"<p class='m'>{hani}</p>",
            f"<p class='m'>{D.bun('bunya-ichiran-setsumei', keikaku=kei)}</p>"]
     for h in kk["hashira"]:
         top.append(f"<h2>{S(h['no'] + ' ' + h['name'])}</h2><ul>"

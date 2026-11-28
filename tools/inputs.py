@@ -199,6 +199,32 @@ class Inputs:
             self._cache["ippan"] = out
         return self._cache["ippan"]
 
+    @staticmethod
+    def ippan_ate(rs, sids):
+        """台帳の1つの区切りの行 rs のうち、sids の発言が、題の発言の範囲に入る行（SCHEMA.md 7.10）。
+        題の発言の範囲は、その題の問いが始まる発言（start）から、次の題の問いが始まる発言まで（両端を含む。最後の題は、
+        区切りの終わりまで）。turns には質問した議員の発言しか無いので、答弁の発言は、この範囲で題に結び付ける。
+        start が空の行は、turns の発言で見る。"""
+        def idx(sid):
+            return int(sid.rsplit("_", 1)[1])
+
+        def head(sid):
+            return sid.rsplit("_", 1)[0]
+        st = [(r, r["start"].split(":")[0]) for r in rs if r.get("start")]
+        st.sort(key=lambda x: idx(x[1]))
+        out = []
+        for r in rs:
+            turns = {t.split(":")[0] for t in r["turns"].split(";") if t}
+            hit = bool(turns & set(sids))
+            pos = [i for i, (x, _) in enumerate(st) if x is r]
+            if pos and not hit:
+                a = st[pos[0]][1]
+                b = st[pos[0] + 1][1] if pos[0] + 1 < len(st) else None
+                hit = any(head(s) == head(a) and idx(s) >= idx(a) and (b is None or idx(s) <= idx(b)) for s in sids)
+            if hit:
+                out.append(r)
+        return out
+
     # ---- 町の資料（hino-town-docs） ----
 
     def docs(self):
