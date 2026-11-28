@@ -700,7 +700,8 @@ class Tsukuru:
         shurui = {"keikaku": D.kotoba("資料の一覧の表 shurui が「keikaku」"), "koho": D.kotoba("資料の一覧の表 shurui が「koho」"),
                   "yosan": D.kotoba("資料の一覧の表 shurui が「yosan」"), "hyoka": D.kotoba("資料の一覧の表 shurui が「hyoka」"),
                   "jigyo": D.kotoba("資料の一覧の表 shurui が「jigyo」"), "shingi": D.kotoba("資料の一覧の表 shurui が「shingi」"),
-                  "chiiki": D.kotoba("資料の一覧の表 shurui が「chiiki」")}
+                  "chiiki": D.kotoba("資料の一覧の表 shurui が「chiiki」"),
+                  "jinji": D.kotoba("資料の一覧の表 shurui が「jinji」")}
         if b["shurui"] not in shurui:
             self.problems.append(("(e) デザインシステムとの対応",
                                   f"資料の一覧の表の shurui「{b['shurui']}」の行が、docs/design.md 3節に無い（{bkey}）"))
