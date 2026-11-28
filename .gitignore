@@ -1,2 +1,4 @@
 build/
 __pycache__/
+# MCP の応答は、圧縮した mcp/data/outou.json.gz だけを置く（docs/mcp.md 4節）
+mcp/data/outou.json

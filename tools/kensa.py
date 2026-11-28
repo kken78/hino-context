@@ -28,8 +28,8 @@
   10. 資料の表のページの作成（tools/build_hyo.py doc:jigyo-shinkodomoen-kousou 4）
   11. 資料の表のページの作成（tools/build_hyo.py pt:kodomo/honpen 37）
   12. テーマのページの作成（tools/build_theme.py hoiku）
-  13. MCP の応答の作成と比較（tools/build_mcp.py。build/mcp/outou.json に作り、リポジトリの mcp/data/outou.json と
-      同じであることを確認する。リポジトリのファイルは書き換えない）
+  13. MCP の応答の作成と比較（tools/build_mcp.py。build/mcp/outou.json.gz に作り、展開した JSON が、リポジトリの
+      mcp/data/outou.json.gz を展開した JSON と同じであることを確認する。リポジトリのファイルは書き換えない）
 
 使い方：
   python3 -B tools/kensa.py
@@ -76,8 +76,8 @@ STEPS = [
      PY + [os.path.join(TOOLS, "build_hyo.py"), "pt:kodomo/honpen", "37"]),
     ("テーマのページの作成（幼保）", PY + [os.path.join(TOOLS, "build_theme.py"), "hoiku"]),
     ("MCP の応答の作成と比較", PY + [os.path.join(TOOLS, "build_mcp.py"), "--out",
-                                os.path.join(REPO, "build", "mcp", "outou.json"),
-                                "--hikaku", os.path.join(REPO, "mcp", "data", "outou.json")]),
+                                os.path.join(REPO, "build", "mcp", "outou.json.gz"),
+                                "--hikaku", os.path.join(REPO, "mcp", "data", "outou.json.gz")]),
 ]
 
 

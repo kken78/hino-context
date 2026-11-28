@@ -1,5 +1,6 @@
 """tools/hiku.py のテスト。"""
 import contextlib
+import gzip
 import io
 import json
 import os
@@ -40,6 +41,14 @@ class HikuTest(unittest.TestCase):
             self.assertEqual(out.getvalue(), "A2\n")
             with contextlib.redirect_stderr(io.StringIO()):
                 self.assertEqual(hiku.main(["--json", p, "x"]), 2)
+            # .gz で終わるファイルは展開して読む
+            g = os.path.join(d, "o.json.gz")
+            with gzip.open(g, "wt", encoding="utf-8") as f:
+                json.dump(DATA, f, ensure_ascii=False)
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                self.assertEqual(hiku.main(["--json", g, "issue", "a", "page=2"]), 0)
+            self.assertEqual(out.getvalue(), "A2\n")
 
 
 if __name__ == "__main__":

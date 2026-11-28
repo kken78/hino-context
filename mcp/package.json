@@ -2,7 +2,7 @@
   "name": "hino-context-mcp",
   "version": "0.1.0",
   "private": true,
-  "description": "hino-context の読み取り専用の MCP サーバー（Cloudflare Workers）。応答は data/outou.json から引いて返す",
+  "description": "hino-context の読み取り専用の MCP サーバー（Cloudflare Workers）。応答は data/outou.json.gz の JSON から引いて返す",
   "license": "AGPL-3.0-or-later",
   "type": "module",
   "scripts": {

@@ -1,4 +1,4 @@
-"""MCP の応答の JSON（mcp/data/outou.json）から、ツールと引数の組の応答の文を出す（docs/mcp.md 3節）。
+"""MCP の応答の JSON（mcp/data/outou.json.gz を展開したもの）から、ツールと引数の組の応答の文を出す（docs/mcp.md 3節）。
 
 MCP サーバー（mcp/src/index.ts）と同じ引き方をする：ツールの引数の順に、値がある引数を「名前=値」にして「&」でつないだ字で
 引き、無ければ、そのツールの該当する組が無いときの文を出す。直しの前と後で、同じ問いへの答えを比較するために使う。
@@ -11,15 +11,17 @@ MCP サーバー（mcp/src/index.ts）と同じ引き方をする：ツールの
   python3 -B tools/hiku.py issue b33-07
   python3 -B tools/hiku.py issue "b33-k1:職員の育成と人事評価"
   python3 -B tools/hiku.py --json /home/claude/an/outou-mae.json issue b33-07 page=2
+--json のファイルの名前が .gz で終わるときは展開して読み、ほかは圧縮していない JSON として読む。
 ツールの名前が違うか、引数の名前がツールに無いときは、終了コード 2。
 """
 import argparse
+import gzip
 import json
 import os
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT_PATH = os.path.join(os.path.dirname(HERE), "mcp", "data", "outou.json")
+OUT_PATH = os.path.join(os.path.dirname(HERE), "mcp", "data", "outou.json.gz")
 
 
 def kagi(tool, args):
@@ -59,14 +61,22 @@ def hikisu(tool, words):
     return out
 
 
+def yomu(path):
+    """応答の JSON を読む。名前が .gz で終わるときは展開する。"""
+    with open(path, "rb") as f:
+        b = f.read()
+    if path.endswith(".gz"):
+        b = gzip.decompress(b)
+    return json.loads(b.decode("utf-8"))
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description="MCP の応答の JSON から、応答の文を出す")
     p.add_argument("--json", default=OUT_PATH)
     p.add_argument("tool")
     p.add_argument("args", nargs="*")
     a = p.parse_args(sys.argv[1:] if argv is None else argv)
-    with open(a.json, encoding="utf-8") as f:
-        data = json.load(f)
+    data = yomu(a.json)
     tool = next((t for t in data["tools"] if t["name"] == a.tool), None)
     if tool is None:
         print(f"ツール {a.tool} が無い（{'、'.join(t['name'] for t in data['tools'])}）", file=sys.stderr)
