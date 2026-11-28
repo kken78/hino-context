@@ -43,6 +43,7 @@ import shogo  # noqa: E402
 TAIO_DIR = os.path.join(inputs.ROOT, "taio")
 YOMI_HEAD = "yomi-"          # 読み取りの結果の保存先は taio/yomi-<テーマ>/
 BUNYA = "bunya"              # taio/yomi-bunya/ は、一般質問の題に総合計画の分野を付けた読み取り（tools/bunya.py。SCHEMA.md 7.11）で、テーマではない
+KENSHO = "kensho"            # taio/yomi-kensho/ は、施策検証シートの読み取り（tools/kensho.py。SCHEMA.md 7.12）で、テーマではない
 PATH = os.path.join(inputs.ROOT, "taio", "shudai.tsv")
 NAMAE_PATH = os.path.join(inputs.ROOT, "teigi", "konkyo-namae.tsv")
 KOUHO_PATH = os.path.join(inputs.ROOT, "teigi", "kouho.tsv")
@@ -79,7 +80,8 @@ def themes(jiko_rows=None):
     jiko_rows = jiko.read() if jiko_rows is None else jiko_rows
     jun = jiko.theme_jun(jiko_rows)
     ths = sorted(d[len(YOMI_HEAD):] for d in os.listdir(TAIO_DIR)
-                 if d.startswith(YOMI_HEAD) and os.path.isdir(os.path.join(TAIO_DIR, d)) and d != YOMI_HEAD + BUNYA)
+                 if d.startswith(YOMI_HEAD) and os.path.isdir(os.path.join(TAIO_DIR, d))
+                 and d not in (YOMI_HEAD + BUNYA, YOMI_HEAD + KENSHO))
     bad = [t for t in ths if t not in jun]
     if bad:
         raise YomiError(f"読み取りの結果の保存先のテーマが、事項の表に無い（{'、'.join(bad)}）")
