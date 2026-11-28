@@ -1,18 +1,18 @@
 shu	name	hyo	chu
-mono	課題	teigi/jiko.tsv	幼保だけ。行はどれも案
-mono	取り組み	teigi/jiko.tsv	幼保だけ。行はどれも案
+mono	課題	teigi/jiko.tsv	4つのテーマ（幼保、介護、公共施設の再編、地域のあり方）。公共施設の再編と地域のあり方に共通の事項が3つある。行は案と決定
+mono	取り組み	teigi/jiko.tsv	4つのテーマ（幼保、介護、公共施設の再編、地域のあり方）。公共施設の再編と地域のあり方に共通の事項が3つある。行は案と決定
 mono	対象の属性と値	teigi/suji.tsv;teigi/atai.tsv	幼保だけ
 mono	資料と、資料の中の場所	teigi/bunsho.tsv;teigi/bubun.tsv	
 mono	過程の出来事	入力:hino-ronten/records/katei.tsv	
 mono	施設・地区・組織	入力:hino-ronten/ref/shisetsu.tsv	地区と組織は読んでいない
-mono	問い・質疑・報告	入力:hino-ronten/ref/themes.tsv;taio/yomi-hoiku/taba.json;taio/yomi-kaigo/taba.json	テーマの定義にある問いと質疑と、生成AIの2回の読み取りで読んだ一般質問（幼保41。テーマの定義の外の29を含む。介護22。テーマの定義の外の17を含む）
+mono	問い・質疑・報告	入力:hino-ronten/ref/themes.tsv;taio/yomi-hoiku/taba.json;taio/yomi-kaigo/taba.json;taio/yomi-kokyo/taba.json;taio/yomi-chiiki/taba.json	テーマの定義にある問いと質疑と、生成AIの2回の読み取りで読んだ一般質問（幼保41。テーマの定義の外の29を含む。介護22。テーマの定義の外の17を含む。公共施設の再編39。テーマの定義の外の23を含む。地域のあり方29。テーマの定義の外の9を含む。2つのテーマで読んだ質問が12ある）
 kankei	目的と手段（取り組みが、課題や目的に対処する）	入力:hino-ronten/records/tsunagari.tsv	確定済みの記録のうち、両端が事項の表にある組を、論点のページと MCP の応答（issue）に出す。このリポジトリの表は無い
 kankei	資料が、事項について記す	入力:hino-ronten/records/kotogara.tsv	確定済みの記録を読むだけ。数値は teigi/atai.tsv
 kankei	資料が、資料のもとになる	teigi/bunsho-kankei.tsv	
 kankei	出来事が、取り組み・資料の根拠になる	無い	
 kankei	取り組みに、予算の事業が当たる	無い	
-kankei	事項が、分類の体系の要素に入る	teigi/jiko.tsv	幼保だけ。再編整備計画の章立てだけ。行はどれも案
+kankei	事項が、分類の体系の要素に入る	teigi/jiko.tsv	幼保は再編整備計画の章立て、介護は第9期の計画の章立て。公共施設の再編と地域のあり方は、章立てが無く、資料の外のまとまり（matome）だけ。行は案と決定
 kankei	資料の数字が、別の資料から引かれている（確認してから足す）	無い	
-toi	主題にする	taio/shudai.tsv;入力:hino-ronten/records/taio.tsv	幼保と介護は、生成AIの2回の読み取りの行（幼保41問、介護22問。未確認の印を付けて出す）と、入力の確定済みの記録。ほかのテーマは、入力の確定済みの記録だけ
-toi	根拠・出典にする	taio/konkyo.tsv;teigi/konkyo-namae.tsv	幼保と介護。入力の確定済みの記録から作る行と、生成AIの2回の読み取りの行。資料の ID の行は MCP の応答（document）に、出来事の名前の行は MCP の応答（event）に出す。資料の ID を付けなかった行と、名前の表に無い名前の行は、表に持つが出していない
+toi	主題にする	taio/shudai.tsv;入力:hino-ronten/records/taio.tsv	4つのテーマとも、生成AIの2回の読み取りの行（幼保41問、介護22問、公共施設の再編39問、地域のあり方29問。未確認の印を付けて出す）と、入力の確定済みの記録
+toi	根拠・出典にする	taio/konkyo.tsv;teigi/konkyo-namae.tsv	4つのテーマ。入力の確定済みの記録から作る行と、生成AIの2回の読み取りの行。資料の ID の行は MCP の応答（document）に、出来事の名前の行は MCP の応答（event）に出す。資料の ID を付けなかった行と、名前の表に無い名前の行は、表に持つが出していない
 toi	言及する	持たない	docs/hoshin.md 4.2 で、持たないとしている

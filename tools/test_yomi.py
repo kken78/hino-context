@@ -41,7 +41,7 @@ class TestParts(unittest.TestCase):
 
     def test_kouho_ni_ireru(self):
         # 事項に入れる候補の段落は、入れる先の事項に読み手が付けた段落と合わせる。もとから事項に付いていた段落とも合わせる。
-        # 資料を取り上げた部分にする候補は konkyo に、ほかのテーマで扱う候補と決めていない候補は、どちらにも入れない
+        # 資料を取り上げた部分にする候補は konkyo に入れる。出さない扱いは無い（2026-11-28）
         kg = lambda y, n, h: dict(question=Q, hani=h, namae=n, yomite=y, taba=0)  # noqa: E731
         yomi = {"shudai": [gyo("a", "P", f"sp:{S}/1-2")], "konkyo": [],
                 "kouho": [kg("b", "候補1", f"sp:{S}/2-3"), kg("a", "候補2", f"sp:{S}/5"), kg("b", "候補3", f"sp:{S}/6"),
@@ -50,6 +50,10 @@ class TestParts(unittest.TestCase):
               dict(namae="候補2", atsukai="資料を取り上げた部分にする", saki="提言", chu=""),
               dict(namae="候補3", atsukai="ほかのテーマで扱う候補", saki="情報発信", chu=""),
               dict(namae="候補4", atsukai="決めていない", saki="", chu="")]
+        # 「ほかのテーマで扱う候補」と「決めていない」は、扱いの種類に無いので止まる
+        self.assertEqual(len(ym.check_kouho(kr, yomi, {"x1"}, [nm("提言", "資料", "")])), 2)
+        kr = kr[:2] + [dict(namae="候補3", atsukai="事項に入れる", saki="x1", chu=""),
+                       dict(namae="候補4", atsukai="事項に入れる", saki="x1", chu="")]
         jr = [dict(id="x1", name="P")]
         namae = [nm("提言", "資料", "")]
         self.assertEqual(ym.check_kouho(kr, yomi, {"x1"}, namae), [])
@@ -57,13 +61,22 @@ class TestParts(unittest.TestCase):
         self.assertEqual([r["aite"] for r in y2["konkyo"]], ["提言"])
         out = ym.kumi_gyo(y2["shudai"], "point", lambda x, q: x)
         self.assertEqual(out, [(Q, "P", f"sp:{S}/2", "一致", "", "", "b"),
-                               (Q, "P", f"sp:{S}/1", "1回だけ", "a", "", ""),
-                               (Q, "P", f"sp:{S}/3", "1回だけ", "b", "", "b")])
+                               (Q, "P", f"sp:{S}/1,sp:{S}/7", "1回だけ", "a", "", "a"),
+                               (Q, "P", f"sp:{S}/3,sp:{S}/6", "1回だけ", "b", "", "b")])
         # 表に無い候補の名前、読み取りに無い名前の行、saki が合わない行、atsukai が違う行は止まる
         bad = ym.check_kouho(kr[1:] + [dict(namae="候補5", atsukai="事項に入れる", saki="x9", chu=""),
                                        dict(namae="候補6", atsukai="あとで", saki="", chu="")],
                              yomi, {"x1"}, namae)
         self.assertEqual(len(bad), 5)
+
+    def test_yomi_awase(self):
+        # 2つのテーマの読み取りの行がある段落は、どちらかが一致なら一致（SCHEMA.md 7.10。2026-11-28）
+        self.assertEqual([ym.yomi_awase(a, b) for a, b in ((None, "1回だけ"), ("一致", "1回だけ"), ("1回だけ", "一致"),
+                                                           ("1回だけ", "1回だけ"))],
+                         ["1回だけ", "一致", "一致", "1回だけ"])
+        rows = [dict(question=Q, theme="k", jiko="x1"), dict(question=Q, theme="c", jiko="x1"),
+                dict(question=Q, theme="k", jiko="x2")]
+        self.assertEqual(ym.futatsu(rows, "jiko"), [(Q, "x1")])
 
     def test_shudai_rows_namae(self):
         yomi = {"shudai": [gyo("a", "無い名前", f"sp:{S}/1")]}
@@ -115,19 +128,29 @@ class TestRepo(unittest.TestCase):
             raise unittest.SkipTest("lock の版の入力が無い")
         self.assertEqual(ym.main(["--kensa"]), 0)
         rows = ym.read()
-        self.assertEqual(ym.themes(), ["hoiku", "kaigo"])
-        self.assertEqual(len(rows), 624)
-        self.assertEqual(sum(r["yomi"] == "一致" for r in rows), 339)
-        # 幼保の行は、テーマごとに読むようにする前（2026-11-28）と同じ482行で、表の頭に並ぶ
-        th = {r["id"]: r["theme"] for r in ym.jiko.read()}
-        self.assertEqual([th[r["jiko"]] for r in rows], ["hoiku"] * 482 + ["kaigo"] * 142)
-        self.assertEqual(sum(r["yomi"] == "一致" for r in rows[:482]), 247)
-        self.assertEqual(len({r["question"] for r in rows[:482]}), 41)
-        self.assertEqual(len({r["question"] for r in rows[482:]}), 21)
-        self.assertEqual([len(ym.shitsumon(t)) for t in ("hoiku", "kaigo")], [41, 22])
-        # 介護の2026年3月10日の質問（除雪・除草）は、読んだが、当たる論点が無かった（SKILL.md 4.4 の G5）
+        self.assertEqual(ym.themes(), ["hoiku", "kaigo", "kokyo", "chiiki"])
+        self.assertEqual(len(rows), 1069)
+        self.assertEqual(sum(r["yomi"] == "一致" for r in rows), 553)
+        # 行はテーマの順に並ぶ。幼保は、事項を2つ足す前（2026-11-28）の482行に2行を足した484行、介護は142行に2行を足した144行
+        self.assertEqual([r["theme"] for r in rows], ["hoiku"] * 484 + ["kaigo"] * 144 + ["kokyo"] * 232 + ["chiiki"] * 209)
+        self.assertEqual([sum(r["yomi"] == "一致" for r in rows if r["theme"] == t) for t in ("hoiku", "kaigo", "kokyo", "chiiki")],
+                         [249, 93, 117, 94])
+        self.assertEqual([len({r["question"] for r in rows if r["theme"] == t}) for t in ("hoiku", "kaigo", "kokyo", "chiiki")],
+                         [41, 21, 39, 29])
+        self.assertEqual([len(ym.shitsumon(t)) for t in ("hoiku", "kaigo", "kokyo", "chiiki")], [41, 22, 39, 29])
+        # 事項の theme の列に、行の theme がある（2つのテーマと共通の事項を含む）
+        th = {r["id"]: ym.jiko.themes_of(r) for r in ym.jiko.read()}
+        self.assertTrue(all(r["theme"] in th[r["jiko"]] for r in rows))
+        # 1つの質問を2つのテーマで読んだもの（12問）。同じ質問と事項の組に、2つのテーマの読み取りの行があるのは6組で、
+        # どれも公共施設の再編と地域のあり方に共通の事項
+        self.assertEqual(sum(len(x) > 1 for x in ym.shitsumon_theme().values()), 12)
+        f2 = ym.futatsu(rows, "jiko")
+        self.assertEqual(len(f2), 6)
+        self.assertTrue(all(th[j] == ["kokyo", "chiiki"] for _, j in f2))
+        # 介護の2026年3月10日の質問（除雪・除草）は、読んだが、当たる論点が無かった（SKILL.md 4.4 の G5）。
+        # 同じ質問を地域のあり方でも読み、地域のあり方の論点に付いた
         self.assertEqual(ym.nashi_shitsumon("kaigo", rows), ["iq:0000008942_20260310_0029"])
-        self.assertEqual(ym.nashi_shitsumon("hoiku", rows), [])
+        self.assertEqual([ym.nashi_shitsumon(t, rows) for t in ("hoiku", "kokyo", "chiiki")], [[], [], []])
         # 束7の注は、その質問の行の全部に付く
         q7 = "iq:0000008691_20251212_0378"
         self.assertTrue(all("読み手 a の結果のファイルを画面に出した" in r["chu"] for r in rows if r["question"] == q7))

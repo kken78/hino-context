@@ -88,11 +88,12 @@ def read_teigi(path, theme):
 
 def shudai_of(theme, jiko_rows=None, shudai=None):
     """質問と事項の対応の表（taio/shudai.tsv。生成AIの2回の読み取り）のうち、事項がそのテーマの行の行。
+    ほかのテーマと共通の事項（SCHEMA.md 7.9）は、どのテーマで読んだ行も入れる。
     行ごとに point（事項の name）を付ける。表が無ければ空。"""
     jiko_rows = jiko.read() if jiko_rows is None else jiko_rows
     if shudai is None:
         shudai = ym.read() if os.path.exists(ym.PATH) else []
-    names = {r["id"]: r["name"] for r in jiko_rows if r["theme"] == theme}
+    names = {r["id"]: r["name"] for r in jiko.of_theme(jiko_rows, theme)}
     return [dict(r, point=names[r["jiko"]]) for r in shudai if r["jiko"] in names]
 
 
@@ -126,7 +127,7 @@ def jiko_ni_suru(inp, teigi, theme, rows=None, shudai=None):
     short と setsumei は、仮の表の論点の行に同じ key があればその字、無ければ name。行が無いテーマは何もしない。
     合わないもの（仮の表の論点の key が事項の表に無いか name が違う、準備中の行がある）は InputError。"""
     rows = jiko.read() if rows is None else rows
-    rows = [r for r in rows if r["theme"] == theme]
+    rows = jiko.of_theme(rows, theme)
     teigi["jiko"] = None
     if not rows:
         return teigi
@@ -153,10 +154,14 @@ def jiko_matome(inp, teigi):
     """事項の表の行を、計画の章立ての要素ごとにまとめる（SCHEMA.md 7.9、docs/design.md 4節）。
     → (計画の名前（章立ての番号 0 の要素の name）, [(要素の行か None, 事項の行の並び)])。
     要素は章立ての順（n の順）。taikei が nashi の行は、最後に None のまとまりにする。
+    テーマの行の taikei が全部 nashi のとき（章立てが無いテーマ。kokyo と chiiki）は、計画の名前を None にし、
+    全部の行を None のまとまりにする（2026-11-28）。
     章立てが2つ以上の体系にまたがるときは InputError（計画の名前を1つに決められないため）。"""
     tk = ronten.taikei(inp)
     rows = teigi["jiko"]
     taikei = {tk[r["taikei"]]["taikei"] for r in rows if r["taikei"] != "nashi"}
+    if not taikei:
+        return None, [(None, rows)]
     if len(taikei) != 1 or f"tk:{next(iter(taikei))}/0" not in tk:
         raise inputs.InputError(f"事項の表の {rows[0]['theme']} の行の章立てが、1つの体系でないか、番号 0 の要素が無い（{sorted(taikei)}）")
     keikaku = tk[f"tk:{next(iter(taikei))}/0"]["name"]
@@ -168,12 +173,22 @@ def jiko_matome(inp, teigi):
     return keikaku, out
 
 
-def nashi_wake(rows):
-    """章立てに入らない事項の行 → [(まとまりの名前, 行の並び)]。matome が空の行を先に（名前は空）、そのあとに、
-    matome のある行を、まとまりごとに、表で最初に出る順に並べる（SCHEMA.md 7.9、docs/design.md 4節。2026-11-28）。"""
-    out = [("", [r for r in rows if not r.get("matome")])]
-    out += list(jiko.matome_jun(rows).items())
-    return out          # matome が空の行が無くても、見出しのために先頭を残す
+def nashi_wake(rows, matome_saki=False):
+    """章立てに入らない事項の行 → [(まとまりの名前, 行の並び)]（SCHEMA.md 7.9、docs/design.md 4節。2026-11-28）。
+    章立てがあるテーマ（matome_saki が偽）は、matome が空の行を先に（名前は空）、そのあとに、matome のある行を、まとまり
+    ごとに、表で最初に出る順に並べる。matome が空の行が無くても、見出しのために先頭を残す。
+    章立てが無いテーマ（matome_saki が真）は、まとまりを先に並べ、matome が空の行をそのあとに置く（行が無ければ置かない）。
+    どちらも、matome が jiko.HOKA の行は、最後に置く。"""
+    mt = jiko.matome_jun(rows)
+    hoka = mt.pop(jiko.HOKA, None)
+    kara = ("", [r for r in rows if not r.get("matome")])
+    if matome_saki:
+        out = list(mt.items()) + ([kara] if kara[1] else [])
+    else:
+        out = [kara] + list(mt.items())
+    if hoka:
+        out.append((jiko.HOKA, hoka))
+    return out
 
 
 def _words(cell):
@@ -493,7 +508,8 @@ class Page:
         for r in self.m.get("yomi", []):
             if r["point"] == P:
                 for p in keys.paras_of(r["hani"]):
-                    yq.setdefault(r["question"], {})[p] = r["yomi"]
+                    d = yq.setdefault(r["question"], {})
+                    d[p] = ym.yomi_awase(d.get(p), r["yomi"])     # 2つのテーマの読み取りの行（SCHEMA.md 7.10）
         for q, fl in yq.items():
             who = qhead_parts(self.m["qsrc"].get(q, ""))[0]
             paras = [(sid, i, inputs.paragraphs(self.inp.statement_text(sid))[i - 1]) for sid, i in sorted(fl)]
@@ -602,12 +618,15 @@ class Page:
         out = []
         D.dasanai("事項の表 matome")
         for youso, rs0 in matome:
-            mi = S(youso["name"]) if youso else E(D.bun("ronten-nashi", keikaku=keikaku))
-            out.append(f"<tr><th colspan='4'>{mi}</th></tr>")
-            for mt, rs in ([("", rs0)] if youso else nashi_wake(rs0)):
+            if keikaku is not None:
+                mi = S(youso["name"]) if youso else E(D.bun("ronten-nashi", keikaku=keikaku))
+                out.append(f"<tr><th colspan='4'>{mi}</th></tr>")
+            for mt, rs in ([("", rs0)] if youso else nashi_wake(rs0, keikaku is None)):
                 if mt:
                     out.append(f"<tr><th colspan='4'>{E(mt)}</th></tr>"
                                f"<tr><td colspan='4' class='m'>{E(D.bun('ronten-matome-setsumei'))}</td></tr>")
+                elif keikaku is None:
+                    out.append(f"<tr><th colspan='4'>{E(D.bun('ronten-matome-nashi'))}</th></tr>")
                 for r in rs:
                     shu = E({"kadai": D.kotoba("事項の表 shurui が「kadai」"), "torikumi": D.kotoba("事項の表 shurui が「torikumi」"),
                              "atai": D.kotoba("事項の表 shurui が「atai」")}[r["shurui"]])
@@ -615,6 +634,8 @@ class Page:
                         out.append(rows[r["id"]].replace("</td>", f"</td><td>{shu}</td>", 1))
                     else:
                         out.append(f"<tr><td>{E(r['name'])}</td><td>{shu}</td><td colspan='2'>{E(D.bun('ronten-mada'))}</td></tr>")
+        if keikaku is None:
+            return "".join(out), f"<p class='m'>{E(D.bun('ronten-matome-jiko-setsumei'))}</p>"
         return "".join(out), f"<p class='m'>{E(D.bun('ronten-jiko-setsumei', keikaku=keikaku))}</p>"
 
     def render(self, today):
