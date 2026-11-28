@@ -1,0 +1,85 @@
+[
+ null,
+ [
+  {
+   "shiryo": "pt:security/honpen/1",
+   "danraku": 1,
+   "sha256": "c755a799a30eb3d504fb9a2f75a26f916e7044628f67fd21d358f1acb0a559db",
+   "ji": 49,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-29-1.txt"
+  },
+  {
+   "shiryo": "pt:security/honpen/2",
+   "danraku": 1,
+   "sha256": "e74c26e1b3698b9d8fcea5a8712234b745e7bbb0b874fcffe62ab5daad1c3b51",
+   "ji": 140,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-29-1.txt"
+  },
+  {
+   "shiryo": "pt:security/honpen/3",
+   "danraku": 26,
+   "sha256": "e9e72bc938d3508c80bf38b7eeb37d64ee5bd7ece507d7dd5cba3eb3d9c30752",
+   "ji": 3884,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-29-1.txt"
+  },
+  {
+   "shiryo": "pt:security/honpen/4",
+   "danraku": 2,
+   "sha256": "42fb85d4dc31c8ebeb66182b0ce0f71eeaa4bad0c5a096ac0e40a9829c0d9e9c",
+   "ji": 635,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-29-1.txt"
+  },
+  {
+   "shiryo": "pt:security/honpen/5",
+   "danraku": 4,
+   "sha256": "d1959e590360ee6e0c60618c803a349792578e2328a90c1b7bbcb3deee327299",
+   "ji": 398,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-29-1.txt"
+  },
+  {
+   "shiryo": "pt:security/honpen/6",
+   "danraku": 17,
+   "sha256": "6ddc4c28bc2f385b042eb6b06520197ba2dfa33a0286ee31afb3d3b9ae6cc468",
+   "ji": 867,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-29-1.txt"
+  },
+  {
+   "shiryo": "pt:security/honpen/7",
+   "danraku": 20,
+   "sha256": "aa8c7b86721936c2ed22364c3148279a283f4d39153196786a80649480caa851",
+   "ji": 932,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-29-1.txt"
+  },
+  {
+   "shiryo": "pt:security/honpen/8",
+   "danraku": 25,
+   "sha256": "28602966a5c597ffe6c1b7941bfb2d7ab160ca422dd851355799c383f5a4ea2b",
+   "ji": 977,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-29-1.txt"
+  },
+  {
+   "shiryo": "pt:security/honpen/9",
+   "danraku": 16,
+   "sha256": "abc0152cf89cc559bd0e9be5eb26cd4f9d2cec6e8e72af3b10117aa6dc29c3fa",
+   "ji": 1009,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-29-1.txt"
+  },
+  {
+   "shiryo": "pt:security/honpen/10",
+   "danraku": 5,
+   "sha256": "3072bf0e591baec09aac5b2f94b8e4dc0666700498ad7571cf982953be50ab17",
+   "ji": 474,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-29-1.txt"
+  }
+ ]
+]

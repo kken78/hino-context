@@ -9,7 +9,8 @@
   },
   "shiga-hino-plans": {
     "sha": "ae24c58d6b0d1cf1bf994d072b232652a5ae6451",
-    "files": ["data/plans/*.json", "data/sources_index.tsv", "data/text/*/*.txt", "data/text_raw/*/*.txt"]
+    "files": ["data/plans/*.json", "data/sources_index.tsv", "data/text/*/*.txt", "data/text_raw/*/*.txt",
+              "data/audit_log/*.tsv"]
   },
   "hino-town-docs": {
     "sha": "8bdfba2a0c7165cb93c862e535227c9704e3203d",
