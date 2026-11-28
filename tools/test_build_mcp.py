@@ -871,10 +871,13 @@ class TestReal(unittest.TestCase):
             with self.subTest(slug=slug):
                 R = pg.ronten(P)
                 pages = self.issue_pages(slug)
-                k = next(i for i, x in enumerate(pages) if "\n### " in x)     # 質問ごとの部分は、新しい応答から始まる
+                # 質問ごとの部分は、新しい応答から始まる。質問の見出しは「### <日付>」（予算の事業の種類の見出しも「### 」なので、
+                # 日付で見分ける。2026-11-28）
+                q3 = re.compile(r"\n### [0-9]{4}年")
+                k = next(i for i, x in enumerate(pages) if q3.search(x))
                 first, rest = "\n".join(pages[:k]), "\n".join(pages[k:])
-                self.assertFalse(any("\n### " in x for x in pages[:k]))
-                self.assertTrue(all("\n### " in x for x in pages[k:]))
+                self.assertFalse(any(q3.search(x) for x in pages[:k]))
+                self.assertTrue(all(q3.search(x) for x in pages[k:]))
                 setsumei = self.setsu(first, f"## {D.bun('mcp-midashi-issue-setsumei')}")
                 self.assertEqual(setsumei.count("\n- 「"), nk)
                 for x in R["ko"]:
