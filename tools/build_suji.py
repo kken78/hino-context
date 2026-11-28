@@ -38,6 +38,7 @@ import build_note as bn  # noqa: E402
 import bunya  # noqa: E402
 import inputs  # noqa: E402
 import jiko  # noqa: E402
+import kisai  # noqa: E402
 import kensho  # noqa: E402
 import keys  # noqa: E402
 import konkyo  # noqa: E402
@@ -76,6 +77,7 @@ HYO_COLUMNS = (("項目の表", sj.SUJI_COLUMNS), ("数値と内容の表", sj.A
                ("施設の記録", inputs.SHISETSU_KIROKU_COLUMNS), ("過程の記録", KATEI_COLUMNS),
                ("事項の表", jiko.COLS), ("まとまりの表", jiko.MATOME_COLS), ("つながりの記録", ronten.TSUNAGARI_COLUMNS),
                ("質問が取り上げた資料と出来事の表", konkyo.COLS), ("質問と事項の対応の表", yomi.COLS),
+               ("資料の段落と事項の対応の表", kisai.COLS),
                ("資料と出来事の名前の表", yomi.NAMAE_COLS), ("候補の名前と扱いの対応の表", yomi.KOUHO_COLS),
                ("質問の題と分野の対応の表", bunya.COLS), ("分野に無い話題の名前の表", bunya.WADAI_COLS),
                ("施策検証シートの表", kensho.SHEET_COLS), ("施策検証シートの KPI の表", kensho.KPI_COLS),

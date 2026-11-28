@@ -24,6 +24,7 @@ sys.path.insert(0, HERE)
 import inputs  # noqa: E402
 import jiko  # noqa: E402
 import keys  # noqa: E402
+import kisai as ks  # noqa: E402
 import ronten  # noqa: E402
 import shogo  # noqa: E402
 import yomi as ym  # noqa: E402
@@ -174,6 +175,8 @@ def jiko_ni_suru(inp, teigi, theme, rows=None, shudai=None, matome=None):
         teigi["kihon"] = jiko.kihon_gyo(rows, jiko.kihon_names_of(inp))
         teigi["shudai"] = kihon_nokori(teigi["shudai"], teigi["kihon"], theme)
     aru |= {r["point"] for r in teigi["shudai"]}
+    teigi["kisai"] = ks.of_jiko(inp, rows)     # 生成AIが資料を2回読んで付けた記述（SCHEMA.md 7.13。2026-11-28）
+    aru |= {x["point"] for x in teigi["kisai"]}
     # matome は、このテーマの論点の一覧でのまとまりの名前にする（見出しごとにまとまりが違う行。SCHEMA.md 7.9。2026-11-28）
     teigi["jiko"] = [dict(r, aru=r["name"] in aru, matome=jiko.matome_of(r, theme)) for r in rows]
     teigi["matome"] = {m["matome"]: m for m in (jiko.read_matome() if matome is None else matome) if m["theme"] == theme}
@@ -385,6 +388,8 @@ def collect(inp, teigi, theme):
     problems = []
     yomi = teigi.get("shudai") or [] if teigi.get("jiko") else []
     points |= {r["point"] for r in yomi}
+    kisai = teigi.get("kisai") or [] if teigi.get("jiko") else []
+    points |= {x["point"] for x in kisai}
     hoka_src = {}
     for r in inp.ronten_tsv(ronten.THEMES):
         if r["kind"] in ("問い", "質疑"):
@@ -410,6 +415,8 @@ def collect(inp, teigi, theme):
              for r in ko]
     qrows += [dict(where=f"過程の記録 {theme} step {r['step']}", source=r["sources"].split(",")[0],
                    quote=r["quote"]) for r in katei]
+    qrows += [dict(where=f"資料の段落と事項の対応の表 {x['source']} {x['hani']} / {x['jiko']}", source=x["source"],
+                   quote=x["quote"]) for x in kisai]
     res = shogo.check_quotes(inp, qrows)
     pres = shogo.check_paras(inp, [dict(where=f"問いと事項の対応 {r['question']} / {r['point']}", hani=r["hani"])
                                    for r in ta])
@@ -433,6 +440,10 @@ def collect(inp, teigi, theme):
         n, u = named(r["source"]) if r["source"] else ("", "")
         if not (n and u):
             problems.append(("(b) 出典の無い記述", f"事柄の記録 {r['point']}：資料「{r['source']}」の名前か url が作れない"))
+    for x in kisai:
+        n, u = named(x["source"])
+        if not (n and u and x["source_date"]):
+            problems.append(("(b) 出典の無い記述", f"資料の段落と事項の対応の表 {x['source']}：資料の名前か url か日付が作れない"))
     for r in katei:
         srcs = [s for s in r["sources"].split(",") if s]
         if not srcs or any(not named(s)[0] for s in srcs[:2]):
@@ -465,7 +476,7 @@ def collect(inp, teigi, theme):
         cres = shogo.check_quotes(inp, [dict(where=where, source=c["moto"], quote=f) for f in frs])
         for m in cres.mismatched:
             problems.append(("(a) 引用がもとの資料に無い", f"{m['where']}：{m['reason']}（{m['source']}）「{m['quote']}」"))
-    return dict(ko=ko, katei=katei, ta=ta, qsrc=qsrc, mokuteki=moku, yomi=yomi), problems, (res, pres)
+    return dict(ko=ko, katei=katei, ta=ta, qsrc=qsrc, mokuteki=moku, yomi=yomi, kisai=kisai), problems, (res, pres)
 
 
 # ---- ページ ----
@@ -494,6 +505,16 @@ def yomi_go(D, yomi):
         return D.kotoba("質問と事項の対応の表 yomi が「一致」")
     if yomi == ym.IKKAI:
         return D.kotoba("質問と事項の対応の表 yomi が「1回だけ」")
+    raise ValueError(f"yomi が違う（{yomi}）")
+
+
+def kisai_go(D, yomi):
+    """資料の段落と事項の対応の表の yomi → 言葉（docs/design.md 3節）。MCP の応答（tools/build_mcp.py）も使う。"""
+    D.dasanai("資料の段落と事項の対応の表 chu")
+    if yomi == ks.ICCHI:
+        return D.kotoba("資料の段落と事項の対応の表 yomi が「一致」")
+    if yomi == ks.IKKAI:
+        return D.kotoba("資料の段落と事項の対応の表 yomi が「1回だけ」")
     raise ValueError(f"yomi が違う（{yomi}）")
 
 
@@ -594,7 +615,11 @@ class Page:
 
     def _ronten_atsume(self, P):
         ko = sorted([x for x in self.m["ko"] if x["point"] == P], key=lambda x: x["source_date"], reverse=True)
-        docs = sorted([x for x in ko if not x["source"].startswith("sp:")], key=lambda x: x["source_date"], reverse=True)
+        # 町の資料の記述：確定済みの事柄の記録と、生成AIが資料を2回読んで付けた記述（SCHEMA.md 7.13）。資料の日付の新しい順。
+        # 同じ日付の、生成AIが付けた記述は、資料、ページ、段落の順
+        docs = sorted([x for x in ko if not x["source"].startswith("sp:")]
+                      + sorted([x for x in self.m.get("kisai", []) if x["point"] == P], key=lambda x: x["jun"]),
+                      key=lambda x: x["source_date"], reverse=True)
         tome = [x for x in ko if self.pat and self.pat.search(x["quote"])]
         ta = [r for r in self.m["ta"] if r["point"] == P]
         qs = []
@@ -641,8 +666,11 @@ class Page:
         R = self.ronten(P)
         ko, docs = R["ko"], R["docs"]
         sec1 = "".join(f"<div class='now'><div>「{S(x['quote'])}」</div><div class='m'>{keys.ymd(x['source_date'])}の資料　"
-                       f"{self.link(x)}{'　' + self.atai(x) if self.atai(x) else ''}</div></div>" for x in docs) \
+                       f"{self.link(x)}{'　' + self.atai(x) if self.atai(x) else ''}"
+                       f"{'　' + E(self.kisai_go(x['yomi'])) if x.get('yomi') else ''}</div></div>" for x in docs) \
             or "<p class='m'>町の資料の記述は、まだ整理できていません。</p>"
+        if any(x.get("yomi") for x in docs):
+            sec1 = f"<p class='m'>{E(self.D.bun('kisai-yomi-setsumei', short=short))}</p>" + sec1
         rows2 = "".join(f"<tr><td class='nw'>{keys.ymd(x['source_date'])}</td><td class='nw'>{self.doko(x)}</td>"
                         f"<td>「{S(x['quote'])}」{'<br><span class=m>' + self.atai(x) + '</span>' if self.atai(x) else ''}{self.chu(x['source'], x['quote'])}</td>"
                         f"<td>{self.link(x)}</td></tr>" for x in ko)
@@ -693,6 +721,9 @@ class Page:
 
     def yomi_go(self, yomi):
         return yomi_go(self.D, yomi)
+
+    def kisai_go(self, yomi):
+        return kisai_go(self.D, yomi)
 
     def kakunin_go(self, q):
         return kakunin_go(self.D, q)

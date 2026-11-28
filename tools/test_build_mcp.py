@@ -435,8 +435,9 @@ class TestReal(unittest.TestCase):
         # field ㉝ の論点の一覧に、まとまりの ID がある
         f = "\n".join(self.data["bun"][i] for k, i in sorted(self.data["outou"]["field"].items()) if k.startswith("field=㉝&page="))
         self.assertIn(f"#### 職員の育成と人事評価（issue：{mid}）", f)
-        # 論点の issue：質問の一覧のあとに、同じまとまりの論点と、同じ題で取り上げられた論点（ほかのテーマの論点も含む）
-        i = self.issue_pages("b33-07")[0]
+        # 論点の issue：質問の一覧のあとに、同じまとまりの論点と、同じ題で取り上げられた論点（ほかのテーマの論点も含む）。
+        # b33-07 は、町の資料の記述（SCHEMA.md 7.13）が多く、1回めの応答の中身が2つの応答に分かれるので、続きもつないで見る
+        i = "\n".join(self.issue_pages("b33-07"))
         a, b, c = (i.index("## " + x) for x in (D.bun("mcp-midashi-issue-gikai", n=6), D.bun("mcp-midashi-issue-matome"),
                                                 D.bun("mcp-midashi-issue-issho")))
         self.assertTrue(a < b < c, (a, b, c))
@@ -449,6 +450,21 @@ class TestReal(unittest.TestCase):
         self.assertIn("（issue：b33-k1:窓口）", i)
         # 確定済みの記録だけの論点にも、同じまとまりの論点を出す
         self.assertIn("## " + D.bun("mcp-midashi-issue-matome"), self.issue_pages("hoiku33")[0])
+
+    def test_kisai(self):
+        """生成AIが資料を2回読んで付けた記述（SCHEMA.md 7.13、docs/design.md 4節。2026-11-28）：町の資料の記述に、説明の文を1回と、
+        記述ごとに読みの言葉を出す。第6次日野町総合計画の段落は、字を確認した記録が無い間は出さない。"""
+        i = "\n".join(self.issue_pages("b33-09"))
+        s = self.setsu(i, "## " + D.bun("mcp-midashi-issue-shiryo"))
+        self.assertEqual(s.count(D.bun("kisai-yomi-setsumei", short="人事評価")), 1)
+        self.assertIn("「〇人事評価制度に基づく人事\n  人事評価制度を通じて", s)
+        self.assertIn("  - " + D.kotoba("資料の段落と事項の対応の表 yomi が「一致」"), s)
+        self.assertIn("  - " + D.kotoba("資料の段落と事項の対応の表 yomi が「1回だけ」"), s)
+        self.assertIn("日野町人材育成基本方針（2021年4月）　18ページ", s)
+        # 基本施策の行（b33-k1）の記述は、総合計画の段落だけなので、出ない
+        k = self.setsu("\n".join(self.issue_pages("b33-k1")), "## " + D.bun("mcp-midashi-issue-shiryo"))
+        self.assertIn(D.bun("mcp-issue-shiryo-nashi"), k)
+        self.assertNotIn("主な取組", k)
 
     def test_matome_tsunagari(self):
         """まとまりどうしのつながり（SCHEMA.md 7.10、docs/design.md 4節。2026-11-28）：まとまりの応答の最後に、同じ題で取り上げられた
@@ -472,8 +488,8 @@ class TestReal(unittest.TestCase):
         f = "\n".join(self.data["bun"][i] for k, i in sorted(self.data["outou"]["field"].items()) if k.startswith("field=㉝&page="))
         self.assertIn(D.bun("ronten-matome-tsunagari", matome="職員数と採用（issue：b33-k1:職員数と採用）、"
                             "業務改善とデジタル化（issue：b33-k1:業務改善とデジタル化）、職員の育成と人事評価（issue：b33-k1:職員の育成と人事評価）"), f)
-        # 論点の issue の、同じ題で取り上げられた論点
-        i = self.issue_pages("b33-07")[0]
+        # 論点の issue の、同じ題で取り上げられた論点（b33-07 は、続きもつないで見る。test_matome）
+        i = "\n".join(self.issue_pages("b33-07"))
         self.assertIn("- 職員の時間外勤務（issue：b33-01）　" + D.bun("mcp-issue-issho-kazu", n=2) + "　"
                       + D.bun("mcp-matome-mei", matome="働き方（issue：b33-k1:働き方）"), i)
 
