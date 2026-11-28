@@ -700,7 +700,8 @@ class Tsukuru:
         shurui = {"keikaku": D.kotoba("資料の一覧の表 shurui が「keikaku」"), "koho": D.kotoba("資料の一覧の表 shurui が「koho」"),
                   "yosan": D.kotoba("資料の一覧の表 shurui が「yosan」"), "hyoka": D.kotoba("資料の一覧の表 shurui が「hyoka」"),
                   "jigyo": D.kotoba("資料の一覧の表 shurui が「jigyo」"), "shingi": D.kotoba("資料の一覧の表 shurui が「shingi」"),
-                  "chiiki": D.kotoba("資料の一覧の表 shurui が「chiiki」")}
+                  "chiiki": D.kotoba("資料の一覧の表 shurui が「chiiki」"),
+                  "jinji": D.kotoba("資料の一覧の表 shurui が「jinji」")}
         if b["shurui"] not in shurui:
             self.problems.append(("(e) デザインシステムとの対応",
                                   f"資料の一覧の表の shurui「{b['shurui']}」の行が、docs/design.md 3節に無い（{bkey}）"))
@@ -834,9 +835,12 @@ class Tsukuru:
         D = self.D
         nm, url = self.moto(x["source"], x["quote"])
         jiki = E(bs.hi_str(D, x["source_date"]))
-        lines = [f"- 「{S(x['quote'])}」",
+        lines = [f"- 「{S(x['quote']).replace(chr(10), chr(10) + '  ')}」",
                  "  - " + (D.bun("mcp-issue-jiki-kubun", jiki=jiki, kubun=E(self.kubun_of(x["source"]))) if kubun
                            else D.bun("mcp-issue-jiki", jiki=jiki))]
+        if x.get("yomi"):
+            # 生成AIが資料を2回読んで付けた記述（SCHEMA.md 7.13）の、読みの言葉
+            lines.append("  - " + E(bn.kisai_go(D, x["yomi"])))
         a = pg.atai_shu(x)
         if a and a[0] == "kingaku":
             lines.append("  - " + D.bun("mcp-issue-kingaku", atai=S(a[1])))
@@ -911,7 +915,8 @@ class Tsukuru:
             hani = self.issue_hani(theme)
             if any(r["point"] == P and jiko.is_bunya(r["theme"]) for r in pg.m.get("yomi", [])):
                 hani = hani + [D.bun("mcp-issue-hani-bunya-hoka", keikaku=S(self.bu["kk"]["name"]))]
-        blocks = [([f"## {E(D.bun('mcp-midashi-issue-shiryo'))}"],
+        blocks = [([f"## {E(D.bun('mcp-midashi-issue-shiryo'))}"]
+                   + ([E(D.bun("kisai-yomi-setsumei", short=E(short)))] if any(x.get("yomi") for x in R["docs"]) else []),
                    [self.kijutsu(pg, x, False) for x in R["docs"]] or [E(D.bun("mcp-issue-shiryo-nashi"))])]
         items = [self.kijutsu(pg, x) for x in R["ko"]]
         blocks.append(([f"## {E(D.bun('mcp-midashi-issue-setsumei'))}"], items))

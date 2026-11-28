@@ -12,7 +12,7 @@
     "files": ["data/plans/*.json", "data/sources_index.tsv", "data/text/*/*.txt", "data/text_raw/*/*.txt"]
   },
   "hino-town-docs": {
-    "sha": "56604b183eec6c712bd894d7397f69aa13fd5f88",
+    "sha": "8bdfba2a0c7165cb93c862e535227c9704e3203d",
     "files": ["data/sources.tsv", "data/text/*.txt", "data/text_raw/*.txt", "data/struct/senryaku-sheet.tsv",
               "data/struct/senryaku-kpi.tsv", "data/struct/senryaku-bun.tsv", "data/struct/audit/senryaku.tsv"]
   },
