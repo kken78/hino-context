@@ -142,7 +142,7 @@ def dai_of(inp, q, qsrc, paras, nashi):
     return qhead_parts(qsrc.get(q, ""))[1]
 
 
-def jiko_ni_suru(inp, teigi, theme, rows=None, shudai=None):
+def jiko_ni_suru(inp, teigi, theme, rows=None, shudai=None, matome=None):
     """事項の表にそのテーマの行があれば、論点の一覧を事項の表から作る（SCHEMA.md 7.9。2026-11-27 の依頼者の決定）。
 
     teigi["jiko"] に、事項の表の行（表の順）を入れ、行ごとに aru（確定済みの事柄の記録か、そのテーマの質問・質疑との
@@ -152,6 +152,7 @@ def jiko_ni_suru(inp, teigi, theme, rows=None, shudai=None):
     rows = jiko.read() if rows is None else rows
     rows = jiko.of_theme(rows, theme)
     teigi["jiko"] = None
+    teigi["matome"] = {}
     if not rows:
         return teigi
     by = {r["id"]: r for r in rows}
@@ -173,7 +174,9 @@ def jiko_ni_suru(inp, teigi, theme, rows=None, shudai=None):
         teigi["kihon"] = jiko.kihon_gyo(rows, jiko.kihon_names_of(inp))
         teigi["shudai"] = kihon_nokori(teigi["shudai"], teigi["kihon"], theme)
     aru |= {r["point"] for r in teigi["shudai"]}
-    teigi["jiko"] = [dict(r, aru=r["name"] in aru) for r in rows]
+    # matome は、このテーマの論点の一覧でのまとまりの名前にする（見出しごとにまとまりが違う行。SCHEMA.md 7.9。2026-11-28）
+    teigi["jiko"] = [dict(r, aru=r["name"] in aru, matome=jiko.matome_of(r, theme)) for r in rows]
+    teigi["matome"] = {m["matome"]: m for m in (jiko.read_matome() if matome is None else matome) if m["theme"] == theme}
     teigi["topics"] = [(r["name"], r["id"]) + nagai.get(r["id"], (r["name"], r["name"])) for r in rows if r["name"] in aru]
     return teigi
 
@@ -218,6 +221,47 @@ def jiko_matome(inp, teigi):
     if nashi:
         out.append((None, nashi))
     return keikaku, out
+
+
+def hi_ji(D, h):
+    """YYYY-MM-DD → 画面の字（docs/design.md の nengappi）。"""
+    p = [int(x) for x in h.split("-")]
+    return D.bun("nengappi", nen=p[0], tsuki=p[1], hi=p[2])
+
+
+def ronten_kazu(D, qs):
+    """論点の質問の並び（Page.ronten の qs）→ 論点の一覧に添える文（質問の数と、いちばん古い日付といちばん新しい日付。
+    docs/design.md 4節。2026-11-28）。質問が無ければ ronten-kazu-nashi の文。文はエスケープしていない。"""
+    ds = sorted(q["date"] for q in qs if q["date"])
+    if not qs or not ds:
+        return D.bun("ronten-kazu-nashi")
+    a, z = hi_ji(D, ds[0]), hi_ji(D, ds[-1])
+    return D.bun("ronten-kazu", n=len(qs), kikan=a if a == z else D.bun("kikan", a=a, z=z))
+
+
+def matome_moto_ji(D, inp, moto, S_=None):
+    """まとまりの表の moto → (場所の文（HTML。資料からの字は印を付ける）, url)。"""
+    S_ = S_ or S
+    if moto.startswith("node:"):
+        import bunya as bu
+        x = jiko.sogo6_tori(inp, moto.split("/", 1)[1])
+        name = inp.plan(bu.PLAN)["meta"]["name"]
+        return D.bun("matome-moto-kihon", keikaku=S_(name), kihon=S_(x[0] + x[1])), ""
+    return S_(keys.source_name(inp, moto)), keys.source_url(inp, moto)
+
+
+def matome_bun(D, inp, m):
+    """まとまりの表の行 m（無ければ None）→ (まとまりの見出しの下の文（HTML）, url)。docs/design.md 4節（2026-11-28。言葉は案）。"""
+    D.dasanai("まとまりの表 moto、jotai")
+    D.dasanai("まとまりの表 chu")
+    if m is not None and m["moto"]:
+        ji, url = matome_moto_ji(D, inp, m["moto"])
+        if m["jotai"] == "決定":
+            return D.bun("ronten-matome-setsumei-moto-kettei", moto=ji), url
+        return D.bun("ronten-matome-setsumei-moto", moto=ji), url
+    if m is not None and m["jotai"] == "案":
+        return E(D.bun("ronten-matome-setsumei-an")), ""
+    return E(D.bun("ronten-matome-setsumei")), ""
 
 
 def nashi_wake(rows, matome_saki=False):
@@ -542,6 +586,13 @@ class Page:
                who、dai、paras（(sid, 段落の番号, 段落の文) の並び）,
                mokuteki：目的と手段の相手ごとに、gawa（相手の側。"upper" は目的、"lower" は手段）、name（相手の名前）、
                slug（相手の論点の ID。論点のページと issue が無い相手は空）、rows（つながりの記録の行。資料の日付の新しい順）)"""
+        if not hasattr(self, "_ronten"):
+            self._ronten = {}
+        if P not in self._ronten:
+            self._ronten[P] = self._ronten_atsume(P)
+        return self._ronten[P]
+
+    def _ronten_atsume(self, P):
         ko = sorted([x for x in self.m["ko"] if x["point"] == P], key=lambda x: x["source_date"], reverse=True)
         docs = sorted([x for x in ko if not x["source"].startswith("sp:")], key=lambda x: x["source_date"], reverse=True)
         tome = [x for x in ko if self.pat and self.pat.search(x["quote"])]
@@ -676,8 +727,10 @@ class Page:
                 out.append(f"<tr><th colspan='4'>{mi}</th></tr>")
             for mt, rs in ([("", rs0)] if youso else nashi_wake(rs0, keikaku is None)):
                 if mt:
+                    bun, url = matome_bun(D, self.inp, T["matome"].get(mt))
+                    link = f"　<a href='{E(url)}' target='_blank'>{E(D.bun('matome-moto-link'))}</a>" if url else ""
                     out.append(f"<tr><th colspan='4'>{E(mt)}</th></tr>"
-                               f"<tr><td colspan='4' class='m'>{E(D.bun('ronten-matome-setsumei'))}</td></tr>")
+                               f"<tr><td colspan='4' class='m'>{bun}{link}</td></tr>")
                 elif keikaku is None:
                     out.append(f"<tr><th colspan='4'>{E(D.bun('ronten-matome-nashi'))}</th></tr>")
                 for r in rs:
@@ -687,9 +740,10 @@ class Page:
                         out.append(rows[r["id"]].replace("</td>", f"</td><td>{shu}</td>", 1))
                     else:
                         out.append(f"<tr><td>{E(r['name'])}</td><td>{shu}</td><td colspan='2'>{E(D.bun('ronten-mada'))}</td></tr>")
+        kazu = f"<p class='m'>{E(D.bun('ronten-kazu-setsumei'))}</p>"
         if keikaku is None:
-            return "".join(out), f"<p class='m'>{E(D.bun('ronten-matome-jiko-setsumei'))}</p>"
-        return "".join(out), f"<p class='m'>{E(D.bun('ronten-jiko-setsumei', keikaku=keikaku))}</p>"
+            return "".join(out), f"<p class='m'>{E(D.bun('ronten-matome-jiko-setsumei'))}</p>" + kazu
+        return "".join(out), f"<p class='m'>{E(D.bun('ronten-jiko-setsumei', keikaku=keikaku))}</p>" + kazu
 
     def render(self, today):
         T, qsrc = self.t, self.m["qsrc"]
@@ -699,7 +753,9 @@ class Page:
             h, nk, nt, qs = self.topic(P, slug, short, setsumei)
             pages.append(h)
             counts.append((P, nk, nt))
-            rows[slug] = f"<tr><td><a href='#{slug}'>{E(P)}</a></td><td>{nk}件</td><td>{nt}件</td></tr>"
+            kazu = ronten_kazu(self.D, self.ronten(P)["qs"])
+            rows[slug] = (f"<tr><td><a href='#{slug}'>{E(P)}</a></td><td>{nk}件</td>"
+                          f"<td>{E(kazu)}</td></tr>")
             for q, sids in qs:
                 qmap.setdefault(q, []).append((P, slug))
                 qsids.setdefault(q, set()).update(sids)

@@ -126,11 +126,15 @@ class TestReal(unittest.TestCase):
         self.assertIn("", o["theme"])
         self.assertEqual(sorted(k for k in o["theme"] if re.fullmatch(r"theme=[a-z]+", k)),
                          ["theme=chiiki", "theme=hoiku", "theme=kaigo", "theme=kokyo"])
-        issue = [k for k in o["issue"] if "page" not in k and not re.fullmatch(r"issue=b[0-9]{2}-.+", k)]
+        issue = [k for k in o["issue"] if "page" not in k and ":" not in k and not re.fullmatch(r"issue=b[0-9]{2}-.+", k)]
         # 幼保57、介護45、公共施設56、地域のあり方41（共通の事項4は、公共施設で作る。2回めの読み取りのあと。2026-11-28）
         self.assertEqual(len(issue), 199)
+        # まとまりの ID（見出しの ID とまとまりの名前を「:」でつないだ字。2026-11-28）も issue で引く
+        self.assertEqual(sum(1 for k in o["issue"] if "page" not in k and ":" in k), 265)
+        self.assertIn("b33-k1:職員の育成と人事評価", d["tools"][1]["args"][0]["erabu"])
         # 総合計画の分野の論点（2026-11-28）は 1176。ID は b と分野の番号で始まる
-        self.assertEqual(sum(1 for k in o["issue"] if "page" not in k and re.fullmatch(r"issue=b[0-9]{2}-.+", k)), 1176)
+        self.assertEqual(sum(1 for k in o["issue"] if "page" not in k and ":" not in k and re.fullmatch(r"issue=b[0-9]{2}-.+", k)),
+                         1176)
         ev = sorted(k for k in o["event"] if "page" not in k and not re.fullmatch(r"event=b[0-9]{2}-.+", k))
         self.assertEqual(len(ev), 33)
         self.assertEqual(sum(1 for k in o["event"] if "page" not in k and re.fullmatch(r"event=b[0-9]{2}-.+", k)), 295)
@@ -416,6 +420,51 @@ class TestReal(unittest.TestCase):
         n = sum(1 for k in o if k.startswith(f"issue={slug}&page="))
         return [self.data["bun"][o[f"issue={slug}&page={i}"]] for i in range(1, n + 1)]
 
+    def test_matome(self):
+        """まとまり（SCHEMA.md 7.9、docs/design.md 4節。2026-11-28）：issue にまとまりの ID を付けると、まとまりの論点の全部と、
+        取り上げた質問の一覧を返す。論点の issue には、質問の一覧のあとに、同じまとまりの論点と、同じ題で取り上げられた論点を出す。"""
+        mid = "b33-k1:職員の育成と人事評価"
+        t = "\n".join(self.issue_pages(mid))
+        self.assertIn(f"# 職員の育成と人事評価（issue：{mid}）", t)
+        self.assertIn(D.bun("ronten-matome-setsumei-an"), t)
+        ronten = [x for x in t.split("\n") if x.startswith("## ")]
+        self.assertEqual([re.sub("（issue：.*", "", x[3:]) for x in ronten],
+                         ["職員研修とOJT", "メンター制度", "人事評価", "職員のメンタルヘルス", "職場の風土づくり", "職員のやりがい",
+                          "職員の知識と経験の組織での共有", "職員の配置と異動"])
+        self.assertIn("- 2017年12月13日　一般質問　「人材育成の方針」　" + D.bun("mcp-matome-bubun", n=13), t)
+        # field ㉝ の論点の一覧に、まとまりの ID がある
+        f = "\n".join(self.data["bun"][i] for k, i in sorted(self.data["outou"]["field"].items()) if k.startswith("field=㉝&page="))
+        self.assertIn(f"#### 職員の育成と人事評価（issue：{mid}）", f)
+        # 論点の issue：質問の一覧のあとに、同じまとまりの論点と、同じ題で取り上げられた論点（ほかのテーマの論点も含む）
+        i = self.issue_pages("b33-07")[0]
+        a, b, c = (i.index("## " + x) for x in (D.bun("mcp-midashi-issue-gikai", n=6), D.bun("mcp-midashi-issue-matome"),
+                                                D.bun("mcp-midashi-issue-issho")))
+        self.assertTrue(a < b < c, (a, b, c))
+        self.assertIn("- メンター制度（issue：b33-08）\n", i)
+        self.assertIn("- 適切な行政運営（issue：b33-k1）　" + D.bun("mcp-issue-issho-kazu", n=6), i)
+        self.assertIn("（テーマ：公共施設の再編）", i)
+        # 2つの分野の一覧で違うまとまりに入る論点は、両方のまとまりを出す
+        i = self.issue_pages("b29-14")[0]
+        self.assertIn("（issue：b29-k2:行政手続とキャッシュレス決済）", i)
+        self.assertIn("（issue：b33-k1:窓口）", i)
+        # 確定済みの記録だけの論点にも、同じまとまりの論点を出す
+        self.assertIn("## " + D.bun("mcp-midashi-issue-matome"), self.issue_pages("hoiku33")[0])
+
+    def test_issho_of(self):
+        """同じ質問の同じ題で一緒に取り上げられた論点の数（題の数の多い順。同じ数は事項の表の順）。"""
+        class Inp:
+            def ippan_dai(self, sid, paras):
+                return sid, [dict(n="1")] if ("0000000001_20250310_0002", 1) in paras else [dict(n="2")]
+        Q = "iq:0000000001_20250310_0001"
+        rows = [dict(question=Q, n="", jiko="a", hani="sp:0000000001_20250310_0002/1"),
+                dict(question=Q, n="", jiko="b", hani="sp:0000000001_20250310_0002/1-2"),
+                dict(question=Q, n="", jiko="c", hani="sp:0000000001_20250310_0002/3"),
+                dict(question=Q, n="2", jiko="a", hani="sp:0000000001_20250310_0002/3"),
+                dict(question="sq:0000000001_20250305_0001", n="", jiko="d", hani="sp:0000000001_20250305_0001/1")]
+        j = [dict(id=x) for x in "abcd"]
+        self.assertEqual(bm.issho_of(Inp(), rows, j), {"a": [("b", 1), ("c", 1)],
+                                                       "b": [("a", 1)], "c": [("a", 1)]})
+
     @staticmethod
     def setsu(t, midashi):
         """応答の文の、見出しの行から次の見出しの前まで。"""
@@ -438,6 +487,7 @@ class TestReal(unittest.TestCase):
         self.assertEqual(mi[:2], ["３ 計画の期間", "７ 日野町の幼児教育・保育をめぐる課題"])
         self.assertEqual(mi[-1], D.bun("ronten-nashi", keikaku=keikaku))
         self.assertEqual(len(mi), 9)
+        self.assertIn(D.bun("ronten-kazu-setsumei"), part)
         gyo = [x for x in part.split("\n") if x.startswith("- ")]
         self.assertEqual(len(gyo), 57)
         # 生成AIの2回の読み取りの行を入れたので、全部に ID がある（2026-11-28。候補から足した11と2と、2回めの読み取りの候補から
@@ -447,21 +497,28 @@ class TestReal(unittest.TestCase):
             self.assertIn(f"issue=hoiku{i}", self.data["outou"]["issue"])
         # 章立てに入らない論点のうち、資料の外のまとまりがあるものは、まとまりの名前の見出しにまとめる（2026-11-28）
         nashi = part[part.index("### " + D.bun("ronten-nashi", keikaku=keikaku)):]
-        self.assertIn("\n#### 園の安全\n" + D.bun("ronten-matome-setsumei") + "\n", nashi)
-        anzen = nashi[nashi.index("#### 園の安全"):nashi.index(f"#### {bn.jiko.HOKA}")]
-        self.assertEqual([x for x in anzen.split("\n") if x.startswith("- ")],
+        # 依頼者が決めたまとまり（園の安全）と、生成AIの案のまとまり（地域と子育てなど）で、見出しの下の文が違う。まとまりの名前の
+        # あとに、まとまりの ID を付ける（2026-11-28）
+        self.assertIn("\n#### 園の安全（issue：hoiku:園の安全）\n" + D.bun("ronten-matome-setsumei") + "\n", nashi)
+        self.assertIn("\n#### 地域と子育て（issue：hoiku:地域と子育て）\n" + D.bun("ronten-matome-setsumei-an") + "\n", nashi)
+        anzen = nashi[nashi.index("#### 園の安全"):nashi.index("#### 保育士の勤務と配置")]
+        self.assertEqual([re.sub("　質問 .*", "", x) for x in anzen.split("\n") if x.startswith("- ")],
                          ["- 園の施設の修繕と安全対策（issue：hoiku33）　種類：取り組み",
                           "- 園での感染症対策（issue：hoiku34）　種類：取り組み",
                           "- 園児の安全対策（issue：hoiku42）　種類：取り組み"])
         # 「ほかの分野にかかわる話題」のまとまりは、最後に置く（2026-11-28）
-        hoka = nashi[nashi.index(f"#### {bn.jiko.HOKA}\n"):]
+        hoka = nashi[nashi.index(f"#### {bn.jiko.HOKA}"):]
         self.assertNotIn("\n#### ", hoka)
-        self.assertIn(f"#### {bn.jiko.HOKA}\n" + D.bun("ronten-matome-setsumei")
-                      + "\n- 子育て施策の情報発信（issue：hoiku48）　種類：取り組み\n", hoka)
-        self.assertIn("- 給食のアレルギー対応（issue：hoiku40）　種類：取り組み", gyo)
+        self.assertIn(f"#### {bn.jiko.HOKA}（issue：hoiku:{bn.jiko.HOKA}）\n" + D.bun("ronten-matome-setsumei")
+                      + "\n- 子育て施策の情報発信（issue：hoiku48）　種類：取り組み　質問 ", hoka)
+        self.assertTrue(any(x.startswith("- 給食のアレルギー対応（issue：hoiku40）　種類：取り組み　質問 ") for x in gyo))
         self.assertEqual(sum(x.endswith(f"（{D.bun('ronten-mada')}）") for x in gyo), 0)
-        self.assertIn("- 新こども園の定員（issue：teiin）　種類：数・時期・場所・費用", gyo)
-        self.assertIn("- 保育士等の不足（issue：hoiku17）　種類：課題", gyo)
+        self.assertTrue(any(x.startswith("- 新こども園の定員（issue：teiin）　種類：数・時期・場所・費用") for x in gyo))
+        # 論点ごとに、質問の数と、いちばん古い日といちばん新しい日を添える（2026-11-28）
+        self.assertTrue(all(re.search("　質問 [0-9]+件（[0-9]+年[0-9]+月[0-9]+日(〜[0-9]+年[0-9]+月[0-9]+日)?）$", x)
+                            or x.endswith("　" + D.bun("ronten-kazu-nashi")) for x in gyo), [x for x in gyo if "　質問 " not in x])
+        # 議会での質問が無く、町の資料の記述だけがある論点は、質問の数を0と出す
+        self.assertIn("- 認定こども園3園への再編整備の時期（issue：hoiku04）　種類：数・時期・場所・費用　" + D.bun("ronten-kazu-nashi"), gyo)
         for P in ("子育て環境の未来に向けての提言", "日野町幼児教育保育施設再編整備計画（案）", "日野町認定こども園整備基本構想",
                   "小規模保育施設の整備"):
             self.assertFalse(any(P in x for x in gyo), P)
@@ -638,13 +695,19 @@ class TestReal(unittest.TestCase):
         t = self.bun("theme", "theme=kokyo")
         part = self.setsu(t, f"## {D.bun('mcp-midashi-ronten')}")
         self.assertIn(D.bun("mcp-ronten-setsumei-matome"), part)
-        self.assertEqual([x[4:] for x in part.split("\n") if x.startswith("### ")],
-                         ["施設の全体の管理", "公民館", "学校の施設", "跡地と使わなくなった施設", "公園の施設",
-                          D.bun("ronten-matome-nashi")])
+        # まとまりは、表で最初に出る順（2026-11-28 の案で、前のまとまりを分けた。まとまりに入れていない論点は無い）
+        self.assertEqual([re.sub("（issue：.*", "", x[4:]) for x in part.split("\n") if x.startswith("### ")][:7],
+                         ["総合管理計画と基本方針", "老朽化と更新費用", "公民館の施設と利用", "公民館の制度と運営", "学校の施設",
+                          "跡地と使わなくなった施設", "公園の施設"])
+        self.assertNotIn(D.bun("ronten-matome-nashi"), part)
+        self.assertIn("### 学校の施設（issue：kokyo:学校の施設）\n" + D.bun("ronten-matome-setsumei") + "\n", part)
         self.assertEqual(part.count(f"（{D.bun('ronten-mada')}）"), 4)
+        # 共通の事項は、テーマごとに違うまとまりに入る（事項の表の matome の「<テーマ>=<名前>」の形）
         c = self.setsu(self.bun("theme", "theme=chiiki"), f"## {D.bun('mcp-midashi-ronten')}")
-        self.assertEqual([x[4:] for x in c.split("\n") if x.startswith("### ")],
-                         ["公民館", D.bun("ronten-matome-nashi"), bn.jiko.HOKA])
+        mi = [re.sub("（issue：.*", "", x[4:]) for x in c.split("\n") if x.startswith("### ")]
+        self.assertEqual((mi[0], mi[-1]), ("公民館", bn.jiko.HOKA))
+        self.assertIn("kokyo10", self.setsu(c, "### 公民館（issue：chiiki:公民館）"))
+        self.assertIn("kokyo10", self.setsu(part, "### 公民館の制度と運営（issue：kokyo:公民館の制度と運営）"))
         for slug in ("kokyo10", "kokyo11", "kokyo35"):
             self.assertIn(f"（issue：{slug}）", part)
             self.assertIn(f"（issue：{slug}）", c)
@@ -856,10 +919,14 @@ class TestReal(unittest.TestCase):
         t = "\n".join(self.data["bun"][i] for k, i in sorted(o["field"].items()) if k.startswith("field=㉕&page="))
         a, b, c = t.index("## 基本施策"), t.index("## " + D.bun("mcp-midashi-ronten")), t.index("## " + D.bun("kensho-midashi"))
         self.assertTrue(a < b < c < t.index("## 一般質問の題"))
-        self.assertIn(D.bun("mcp-ronten-setsumei-bunya", keikaku=kei) + "\n### (1)利用しやすい公共交通の充実\n"
-                      "- 利用しやすい公共交通の充実（issue：b25-k1）　" + D.bun("ronten-kihon-jishin") + "\n", t)
-        self.assertIn("#### 地域の輸送資源の総動員\n" + D.bun("ronten-matome-setsumei") + "\n", t)
-        self.assertIn("- チョイソコひのの導入（issue：b25-23）　種類：取り組み\n", t)
+        self.assertIn(D.bun("mcp-ronten-setsumei-bunya", keikaku=kei) + "\n" + D.bun("ronten-kazu-setsumei")
+                      + "\n### (1)利用しやすい公共交通の充実\n"
+                      "- 利用しやすい公共交通の充実（issue：b25-k1）　" + D.bun("ronten-kihon-jishin") + "　質問 ", t)
+        # まとまりの名前が計画の見出しの字のものは、その資料とページを示す（2026-11-28）
+        self.assertIn("#### 運賃体系の再編（issue：b25-k1:運賃体系の再編）\n"
+                      + D.bun("ronten-matome-setsumei-moto", moto="日野町地域公共交通計画 38ページ") + "\n", t)
+        self.assertIn("#### チョイソコひのの運行（issue：b25-k1:チョイソコひのの運行）\n" + D.bun("ronten-matome-setsumei-an") + "\n", t)
+        self.assertIn("- チョイソコひのの導入（issue：b25-23）　種類：取り組み　質問 ", t)
         self.assertIn("## " + D.kotoba("資料と出来事の名前の表 shu が「出来事」"), t)
         self.assertIn("（event：b25-e", t)
         # 読んでいない分野（①）は、題の一覧の題に付いたテーマの論点を、テーマごとに並べる

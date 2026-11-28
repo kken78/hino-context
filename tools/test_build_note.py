@@ -407,20 +407,23 @@ class TestReal(unittest.TestCase):
         top = page[page.index("<section id='top'"):page.index("</section>")]
         self.assertEqual(top.count("議会での質問と町の資料の記述は、まだ入れていません</td>"), 44)
         self.assertIn("<th colspan='4'>日野町幼児教育保育施設再編整備計画の章立てに入らない論点</th>", top)
-        # 資料の外のまとまり（事項の表の matome）は、章立てに入らない論点の中で、matome の無い論点のあとに、
-        # まとまりの名前の見出しと、作成者が決めたことの文を付けてまとめる（2026-11-28）
+        # 資料の外のまとまり（事項の表の matome）は、章立てに入らない論点の中で、まとまりの名前の見出しと、誰が決めたかの文を
+        # 付けてまとめる（2026-11-28）。依頼者が決めたまとまり（園の安全）と、生成AIの案のまとまりで、文が違う
         D = bs_design()
         m = top.index("<tr><th colspan='4'>園の安全</th></tr>"
                       f"<tr><td colspan='4' class='m'>{D.bun('ronten-matome-setsumei')}</td></tr>")
-        self.assertLess(top.index("章立てに入らない論点</th>"), top.index("<td>幼稚園・保育所と小学校の連携</td>"))
-        self.assertLess(top.index("<td>幼稚園・保育所と小学校の連携</td>"), m)
+        a = top.index("<tr><th colspan='4'>地域と子育て</th></tr>"
+                      f"<tr><td colspan='4' class='m'>{D.bun('ronten-matome-setsumei-an')}</td></tr>")
+        self.assertLess(top.index("章立てに入らない論点</th>"), a)
+        self.assertLess(a, m)
         for P in ("園の施設の修繕と安全対策", "園での感染症対策", "園児の安全対策"):
             self.assertGreater(top.index(f"<td>{P}</td>"), m)
+        self.assertIn(f"<p class='m'>{D.bun('ronten-kazu-setsumei')}</p>", top)
         # 「ほかの分野にかかわる話題」のまとまりは、最後に置く（2026-11-28）
         h = top.index(f"<tr><th colspan='4'>{bn.jiko.HOKA}</th></tr>")
         self.assertGreater(h, top.index("<td>園児の安全対策</td>"))
         self.assertGreater(top.index("<td>子育て施策の情報発信</td>"), h)
-        self.assertLess(top.index("<td>園児の制服・帽子の統一</td>"), m)
+        self.assertGreater(top.index("<td>園児の制服・帽子の統一</td>"), m)
         self.assertLess(top.index("３ 計画の期間"), top.index("７ 日野町の幼児教育・保育をめぐる課題"))
         # 目的と手段（両端が事項の表にある、入力の確定済みの組）
         sec = page[page.index("<section id='hoiku10'"):]
@@ -445,13 +448,16 @@ class TestReal(unittest.TestCase):
             self.assertIn(f"<p class='m'>{D.bun('ronten-matome-jiko-setsumei')}</p>", tops[th])
             self.assertNotIn("章立てに入らない論点", tops[th])
         k = tops["kokyo"]
-        heads = ["施設の全体の管理", "公民館", "学校の施設", "跡地と使わなくなった施設", "公園の施設", D.bun("ronten-matome-nashi")]
+        heads = ["総合管理計画と基本方針", "老朽化と更新費用", "公民館の施設と利用", "公民館の制度と運営", "学校の施設",
+                 "跡地と使わなくなった施設", "公園の施設"]
         idx = [k.index(f"<tr><th colspan='4'>{x}</th></tr>") for x in heads]
         self.assertEqual(idx, sorted(idx))
-        self.assertGreater(k.index("#kokyo45'"), idx[-1])        # 図書館の役割と運営（まとまりが無い）
+        self.assertNotIn(D.bun("ronten-matome-nashi"), k)        # 2026-11-28 の案で、全部の論点がまとまりに入った
+        # 名前が計画の見出しの字のまとまりは、資料とページと、もとの資料へのリンクを出す
+        self.assertIn(D.bun("ronten-matome-setsumei-moto", moto="日野町公共施設等総合管理計画（改定） 38ページ"), k)
         c = tops["chiiki"]
         i1, i2, i3 = (c.index(f"<tr><th colspan='4'>{x}</th></tr>")
-                      for x in ("公民館", D.bun("ronten-matome-nashi"), bn.jiko.HOKA))
+                      for x in ("公民館", "協働のまちづくり", bn.jiko.HOKA))
         self.assertLess(i1, i2)
         self.assertLess(i2, i3)
         for slug in ("kokyo10", "kokyo11", "kokyo35"):

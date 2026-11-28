@@ -102,6 +102,54 @@ def ronten_ichiran(m, fid, notes, ronten):
     return True, out
 
 
+def kihon_midashi_id(th, jishin, no):
+    """基本施策の見出しの ID（まとまりの ID の頭。SCHEMA.md 7.9）。基本施策そのものの行の ID。行が無ければ、テーマの ID と番号。"""
+    return jishin["id"] if jishin else f"{th}-k{no.strip('()')}"
+
+
+def midashi_gun(inp, notes, m):
+    """論点を並べる所（MCP の theme と field の応答、試作のページ）の、いちばん下の見出しごとの論点の並び（docs/design.md 4節。2026-11-28）。
+    notes は、テーマ → (論点の表, Page か None)（分野のテーマを含む）。m は、分野の番号 → 分野（tools/bunya.py の keikaku の分野）を
+    m["bunya"] に持つもの。→ dict(theme, ue, mt, id, rows) の並び。ue は上の見出し（("youso", 章立ての要素の行)、
+    ("nashi", 計画の名前)、("theme",)、("kihon", (番号, 名前))、("kihon-nashi",)、("theme-ronten",)、("hoka",)）、mt はまとまりの
+    名前（まとまりでない見出しは空）、id はまとまりの ID（まとまりでない見出しは None）、rows は事項の行の並び（並べる順）。
+    行の無い見出しは入れない。"""
+    out = []
+
+    def add(th, ue, mt, mid, rows):
+        if rows:
+            out.append(dict(theme=th, ue=ue, mt=mt, id=jiko.matome_id(mid, mt) if mt else None, rows=rows))
+    for th, (T, _) in notes.items():
+        if not T.get("jiko"):
+            continue
+        if not jiko.is_bunya(th):
+            keikaku, gs = bn.jiko_matome(inp, T)
+            for youso, rs0 in gs:
+                if youso:
+                    add(th, ("youso", youso), "", None, rs0)
+                    continue
+                for mt, rs in bn.nashi_wake(rs0, keikaku is None):
+                    add(th, ("theme",) if keikaku is None else ("nashi", keikaku), mt, th, rs)
+            continue
+        yonda, secs = ronten_ichiran(m, T["bunya"], notes, {})
+        for kind, mi, rs in secs:
+            if kind == "kihon":
+                jishin, subs = rs[0], rs[1:]
+                mid = kihon_midashi_id(th, jishin, mi[0])
+                for mt, xs in subs:
+                    add(th, ("kihon", mi), mt, mid, ([jishin] if jishin and not mt else []) + xs)
+                if jishin and not any(not mt for mt, _ in subs):
+                    add(th, ("kihon", mi), "", mid, [jishin])
+            elif kind == "nashi":
+                for mt, xs in rs:
+                    add(th, ("kihon-nashi",), mt, th, xs)
+            elif kind == "theme":
+                add(th, ("theme-ronten",), "", th, rs)
+            else:
+                add(th, ("hoka",), jiko.HOKA, th, rs)
+    return out
+
+
 def page_id(m, fid):
     """分野の番号か話題の ID → ページの中の場所の ID（英字と数字）。"""
     if fid in m["bunya"]:
@@ -131,14 +179,24 @@ def ronten_html(D, m, fid, notes, ronten):
     def li(r, ato=""):
         name = ronten_link(r["name"], r["id"], jiko_th.get(r["id"], "")) if r["aru"] else E(r["name"])
         mada = "" if r["aru"] else f"（{E(D.bun('ronten-mada'))}）"
-        return f"<li>{name}{mada}{ato}</li>"
+        kazu = ""
+        if r["aru"]:
+            k = bn.ronten_kazu(D, notes[jiko_th[r["id"]]][1].ronten(r["name"])["qs"])
+            kazu = f"　<span class='m'>{E(k)}</span>" if k else ""
+        return f"<li>{name}{mada}{ato}{kazu}</li>"
+
+    def matome_p(th, mt):
+        bun, url = bn.matome_bun(D, m["inp"], notes[th][0]["matome"].get(mt))
+        link = f"　<a href='{E(url)}' target='_blank'>{E(D.bun('matome-moto-link'))}</a>" if url else ""
+        return f"<p class='m'>{bun}{link}</p>"
+    th = jiko.bunya_theme(fid)
     if not yonda:
         out.append(f"<p class='m'>{E(D.bun('mcp-ronten-bunya-yomanai'))}</p>")
         for _, t, ps in secs:
             out.append(f"<h3>{S(bt.Theme(m['inp'], t).namae[0])}</h3><ul>"
                        + "".join(f"<li>{ronten_link(P, slug, t)}</li>" for P, slug in ps) + "</ul>")
         return "".join(out)
-    out.append(f"<p class='m'>{D.bun('mcp-ronten-setsumei-bunya', keikaku=kei)}</p>")
+    out.append(f"<p class='m'>{D.bun('mcp-ronten-setsumei-bunya', keikaku=kei)}</p><p class='m'>{E(D.bun('ronten-kazu-setsumei'))}</p>")
     for kind, mi, rs in secs:
         if kind == "kihon":
             jishin, subs = rs[0], rs[1:]
@@ -149,13 +207,13 @@ def ronten_html(D, m, fid, notes, ronten):
             out.append("</ul>")
             for mt, xs in subs:
                 if mt and xs:
-                    out.append(f"<h4>{E(mt)}</h4><p class='m'>{E(D.bun('ronten-matome-setsumei'))}</p><ul>"
+                    out.append(f"<h4>{E(mt)}</h4>{matome_p(th, mt)}<ul>"
                                + "".join(li(r) for r in xs) + "</ul>")
         elif kind == "nashi":
             out.append(f"<h3>{E(D.bun('ronten-kihon-nashi', keikaku=kei))}</h3>")
             for mt, xs in rs:
                 if mt:
-                    out.append(f"<h4>{E(mt)}</h4><p class='m'>{E(D.bun('ronten-matome-setsumei'))}</p>")
+                    out.append(f"<h4>{E(mt)}</h4>{matome_p(th, mt)}")
                 elif len(rs) > 1:
                     out.append(f"<h4>{E(D.bun('ronten-matome-nashi'))}</h4>")
                 out.append("<ul>" + "".join(li(r) for r in xs) + "</ul>")
@@ -163,7 +221,7 @@ def ronten_html(D, m, fid, notes, ronten):
             out.append(f"<h3>{E(D.bun('ronten-theme-ronten'))}</h3><p class='m'>{E(D.bun('ronten-theme-ronten-setsumei'))}</p><ul>"
                        + "".join(li(r, "　" + D.bun("ronten-theme-mei", theme=S(theme_namae(m, r)))) for r in rs) + "</ul>")
         else:
-            out.append(f"<h3>{E(mi)}</h3><p class='m'>{E(D.bun('ronten-matome-setsumei'))}</p><ul>"
+            out.append(f"<h3>{E(mi)}</h3>{matome_p(th, mi)}<ul>"
                        + "".join(li(r) for r in rs) + "</ul>")
     return "".join(out)
 
