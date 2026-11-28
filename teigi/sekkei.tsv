@@ -11,7 +11,7 @@ kankei	資料が、事項について記す	入力:hino-ronten/records/kotogara.
 kankei	資料が、資料のもとになる	teigi/bunsho-kankei.tsv	
 kankei	出来事が、取り組み・資料の根拠になる	無い	
 kankei	取り組みに、予算の事業が当たる	無い	
-kankei	事項が、分類の体系の要素に入る	teigi/jiko.tsv	幼保は再編整備計画の章立て、介護は第9期の計画の章立て。公共施設の再編と地域のあり方は、章立てが無く、資料の外のまとまり（matome）だけ。行は案と決定。総合計画の分野の論点は、kihon の列で、第6次日野町総合計画の基本施策に入る（2026-11-28。案）
+kankei	事項が、分類の体系の要素に入る	teigi/jiko.tsv;teigi/matome.tsv	幼保は再編整備計画の章立て、介護は第9期の計画の章立て。公共施設の再編と地域のあり方は、章立てが無く、資料の外のまとまり（matome）だけ。行は案と決定。総合計画の分野の論点は、kihon の列で、第6次日野町総合計画の基本施策に入る（2026-11-28。案）。資料の外のまとまりは、見出しごとに matome に持ち、まとまりごとの状態と名前の出所は、まとまりの表に持つ（265。案259、決定6。2026-11-28）
 kankei	資料の数字が、別の資料から引かれている（確認してから足す）	無い	
 kankei	質問の題が、分類の体系の要素に入る	taio/bunya.tsv;teigi/bunya-wadai.tsv;入力:shiga-hino-plans/data/plans/sogo6.json	一般質問の台帳の題の全部（964）と、第6次日野町総合計画の基本計画の分野（34）。生成AIの2回の読み取り（未確認）。分野に無い話題は、まとめた名前（案）で持つ。事項の表の「事項が、分類の体系の要素に入る」とは別
 kankei	総合戦略の取り組みが、分類の体系の要素に入る	taio/kensho-bunya.tsv;入力:shiga-hino-plans/data/plans/senryaku2.json;入力:shiga-hino-plans/data/plans/sogo6.json	総合戦略の取り組み（40）と、第6次日野町総合計画の分野と基本施策。生成AIの2回の読み取り（未確認）。最初に書いた分野は、40の取り組みとも2回の読みで同じ（SCHEMA.md 7.12）
