@@ -130,11 +130,11 @@ class TestReal(unittest.TestCase):
         # 幼保57、介護45、公共施設56、地域のあり方41（共通の事項4は、公共施設で作る。2回めの読み取りのあと。2026-11-28）
         self.assertEqual(len(issue), 199)
         # まとまりの ID（見出しの ID とまとまりの名前を「:」でつないだ字。2026-11-28）も issue で引く
-        self.assertEqual(sum(1 for k in o["issue"] if "page" not in k and ":" in k), 265)
+        self.assertEqual(sum(1 for k in o["issue"] if "page" not in k and ":" in k), 268)   # 2026-11-28 に資料の段落の候補のまとまり3を足した
         self.assertIn("b33-k1:職員の育成と人事評価", d["tools"][1]["args"][0]["erabu"])
         # 総合計画の分野の論点（2026-11-28）は 1176。ID は b と分野の番号で始まる
         self.assertEqual(sum(1 for k in o["issue"] if "page" not in k and ":" not in k and re.fullmatch(r"issue=b[0-9]{2}-.+", k)),
-                         1176)
+                         1194)   # 2026-11-28 に資料の段落の候補から18の論点の issue ができた（広域行政と行政評価は、出す記述が無い）
         ev = sorted(k for k in o["event"] if "page" not in k and not re.fullmatch(r"event=b[0-9]{2}-.+", k))
         self.assertEqual(len(ev), 33)
         self.assertEqual(sum(1 for k in o["event"] if "page" not in k and re.fullmatch(r"event=b[0-9]{2}-.+", k)), 295)
@@ -430,7 +430,9 @@ class TestReal(unittest.TestCase):
         ronten = [x for x in t.split("\n") if x.startswith("## ") and x != "## " + D.bun("mcp-midashi-matome-tsunagari")]
         self.assertEqual([re.sub("（issue：.*", "", x[3:]) for x in ronten],
                          ["職員研修とOJT", "メンター制度", "人事評価", "職員のメンタルヘルス", "職場の風土づくり", "職員のやりがい",
-                          "職員の知識と経験の組織での共有", "職員の配置と異動"])
+                          "職員の知識と経験の組織での共有", "職員の配置と異動",
+                          # 資料の段落の候補から足した論点（SCHEMA.md 7.9・7.13。2026-11-28）
+                          "「業務目標」の取組", "管理監督者のマネジメント能力", "能力開発と連携した人事", "派遣研修および人事交流の推進"])
         self.assertIn("- 2017年12月13日　一般質問　「人材育成の方針」　" + D.bun("mcp-matome-bubun", n=13), t)
         # field ㉝ の論点の一覧に、まとまりの ID がある
         f = "\n".join(self.data["bun"][i] for k, i in sorted(self.data["outou"]["field"].items()) if k.startswith("field=㉝&page="))

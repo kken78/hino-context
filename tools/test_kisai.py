@@ -77,6 +77,25 @@ class TestParts(unittest.TestCase):
             ("b33-09", "2", "1回だけ", "読み手 a だけが付けた")])
         self.assertEqual(ks.kouho(yomi), {"候補": [("b", P, "1", "", "")]})
 
+    def test_kouho(self):
+        # 候補の段落は、資料の段落の候補の名前と扱いの対応の表の入れる先の事項の段落として、point の行と合わせる（SCHEMA.md 7.13）
+        jiko_rows = [dict(id="b33-07", theme="b33", name="職員研修とOJT"), dict(id="b33-72", theme="b33", name="対話の場の設定")]
+        taba = [dict(shiryo=P, danraku=8, sha256="")]
+        kr = [dict(theme="b33", namae="対話の場の設定", atsukai="事項に入れる", saki="b33-72", chu=""),
+              dict(theme="b33", namae="対話の場", atsukai="事項に入れる", saki="b33-72", chu="")]
+        yomi = [gyo("a", "", "3-4", kouho="対話の場の設定", mayoi="1"), gyo("b", "", "4", kouho="対話の場"),
+                gyo("b", "職員研修とOJT", "1")]
+        self.assertEqual(ks.check_kouho(kr, yomi, {"b33-07", "b33-72"}), [])
+        rows = ks.make_rows(yomi, taba, jiko_rows, ["doc:jinji-ikusei-hoshin"], kr)
+        self.assertEqual([(r["jiko"], r["hani"], r["yomi"], r["chu"]) for r in rows], [
+            ("b33-07", "1", "1回だけ", "読み手 b だけが付けた"),
+            ("b33-72", "4", "一致", "候補の名前から入れた段落がある：読み手 a、b"),
+            ("b33-72", "3", "1回だけ", "読み手 a だけが付けた。候補の名前から入れた段落がある：読み手 a")])
+        # 表に無い候補の名前、読み取りの結果に無い名前、事項の表に無い入れる先は、止まる
+        bad = ks.check_kouho(kr[:1] + [dict(theme="b33", namae="無い名前", atsukai="事項に入れる", saki="b33-99", chu="")],
+                             yomi, {"b33-07", "b33-72"})
+        self.assertEqual(len(bad), 3)
+
     def test_check_yomi(self):
         taba = [dict(shiryo=P, danraku=8, sha256="")]
         bad = ks.check_yomi([gyo("a", "職員研修とOJT", "3-9"), gyo("a", "無い論点", "1"),
@@ -99,7 +118,9 @@ class TestReal(unittest.TestCase):
         with open(os.path.join(inputs.ROOT, "teigi", "bunsho.tsv"), encoding="utf-8") as f:
             import suji as sj
             bunsho = [r["bunsho"] for r in sj.read_bunsho(f.read())[0]]
-        rows = ks.make_rows(yomi, taba, jiko_rows, bunsho)
+        kr = ks.read_kouho()
+        self.assertEqual(ks.check_kouho(kr, yomi, {r["id"] for r in jiko.of_theme(jiko_rows, ks.THEME)}), [])
+        rows = ks.make_rows(yomi, taba, jiko_rows, bunsho, kr)
         with open(ks.PATH, encoding="utf-8") as f:
             self.assertEqual(ks.dumps(rows), f.read())
         # 出す記述の字は、もとの資料の文字と照合して合う（§3）。総合計画の行は出さない

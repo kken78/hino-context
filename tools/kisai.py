@@ -8,6 +8,7 @@
 読むもの（taio/yomi-kisai/）：
   taba.json          読んだページの並び（ページごとに shiryo、danraku（段落の数）、sha256（段落の字を改行でつないだもの））
   <読み手>-kisai.tsv 列 shiryo、hani、point、kouho、mayoi、riyu（読み手は a と b）
+teigi/kisai-kouho.tsv（資料の段落の候補の名前と扱いの対応の表）で、候補の段落を、入れる先の事項の段落として合わせる。
 
 行を作る決まり（SCHEMA.md 7.13）：
   資料のページと事項の組ごとに、段落を1つずつに分け、2回とも付けた段落を yomi「一致」の行に、片方だけが付けた段落を、
@@ -34,6 +35,9 @@ import jiko  # noqa: E402
 
 YOMI_DIR = os.path.join(inputs.ROOT, "taio", "yomi-kisai")
 PATH = os.path.join(inputs.ROOT, "taio", "kisai.tsv")
+KOUHO_PATH = os.path.join(inputs.ROOT, "teigi", "kisai-kouho.tsv")
+KOUHO_COLS = ["theme", "namae", "atsukai", "saki", "chu"]
+JIKO_NI = "事項に入れる"
 COLS = ["shiryo", "theme", "jiko", "hani", "yomi", "chu"]
 FILE_COLS = ["shiryo", "hani", "point", "kouho", "mayoi", "riyu"]
 YOMITE = ("a", "b")
@@ -285,37 +289,79 @@ def check_yomi(yomi, taba, names):
     return bad
 
 
-def chu_of(yomite, mayoi):
+def chu_of(yomite, mayoi, kouho=""):
     out = []
     if yomite:
         out.append(f"読み手 {yomite} だけが付けた")
     if mayoi:
         out.append(f"迷いの印：読み手 {mayoi}")
+    if kouho:
+        out.append(f"候補の名前から入れた段落がある：読み手 {kouho}")
     return "。".join(out)
 
 
-def make_rows(yomi, taba, jiko_rows, bunsho_jun):
-    """読み手の行 → 表の行（SCHEMA.md 7.13）。並びは、資料の一覧の表の順、ページの順、事項の表の順。"""
+def read_kouho(path=KOUHO_PATH):
+    """資料の段落の候補の名前と扱いの対応の表（SCHEMA.md 7.13）の行。表が無ければ空。"""
+    if not os.path.exists(path):
+        return []
+    with open(path, encoding="utf-8") as f:
+        return inputs.read_tsv(f.read(), os.path.relpath(path, inputs.ROOT), KOUHO_COLS)
+
+
+def check_kouho(rows, yomi, jiko_ids):
+    """資料の段落の候補の名前と扱いの対応の表の検査 → 問題の並び。jiko_ids は、THEME の事項の表の id の集まり。"""
+    bad = []
+    seen = set()
+    for i, r in enumerate(rows, 2):
+        w = f"teigi/kisai-kouho.tsv {i} 行目"
+        if r["namae"] in seen or not r["namae"]:
+            bad.append(f"{w}：namae が重なっているか空（{r['namae']}）")
+        seen.add(r["namae"])
+        if r["theme"] != THEME:
+            bad.append(f"{w}：theme が {THEME} でない（{r['theme']}）")
+        if r["atsukai"] != JIKO_NI:
+            bad.append(f"{w}：atsukai が「{JIKO_NI}」でない（{r['atsukai']}）")
+        elif r["saki"] not in jiko_ids:
+            bad.append(f"{w}：saki が事項の表の {THEME} の行の id に無い（{r['saki']}）")
+    yn = {r["kouho"].strip() for r in yomi if r["kouho"].strip()}
+    bad += [f"候補の名前「{n}」が、teigi/kisai-kouho.tsv に無い" for n in sorted(yn - seen)]
+    bad += [f"teigi/kisai-kouho.tsv の「{n}」が、読み取りの結果に無い" for n in sorted(seen - yn)]
+    return bad
+
+
+def make_rows(yomi, taba, jiko_rows, bunsho_jun, kouho_rows=()):
+    """読み手の行 → 表の行（SCHEMA.md 7.13）。並びは、資料の一覧の表の順、ページの順、事項の表の順。
+    候補の行は、資料の段落の候補の名前と扱いの対応の表（kouho_rows）の入れる先の事項に、読み手が付けた段落として合わせる。"""
     ids = {r["name"]: r["id"] for r in jiko.of_theme(jiko_rows, THEME)}
+    saki = {r["namae"]: r["saki"] for r in kouho_rows}
     jiko_jun = [r["id"] for r in jiko_rows]
-    paras, mayoi = {}, {}
+    paras, mayoi, kps = {}, {}, {}
     for r in yomi:
-        if not r["point"].strip():
+        if r["point"].strip():
+            k = (r["shiryo"], ids[r["point"]])
+        elif r["kouho"].strip() in saki:
+            k = (r["shiryo"], saki[r["kouho"].strip()])
+            kps.setdefault(k, {y: set() for y in YOMITE})[r["yomite"]] |= set(bangou(r["hani"]))
+        else:
             continue
-        k = (r["shiryo"], ids[r["point"]])
         paras.setdefault(k, {y: set() for y in YOMITE})[r["yomite"]] |= set(bangou(r["hani"]))
-        if r["mayoi"] == "1":
+        if r["point"].strip() and r["mayoi"] == "1":
             mayoi.setdefault(k, set()).add(r["yomite"])
     out = []
     for (s, j), ps in paras.items():
         m = "、".join(sorted(mayoi.get((s, j), ())))
+        ko = kps.get((s, j), {y: set() for y in YOMITE})
+
+        def kw(gyo):
+            return "、".join(y for y in YOMITE if ko[y] & gyo)
         both = ps["a"] & ps["b"]
         if both:
-            out.append(dict(shiryo=s, theme=THEME, jiko=j, hani=matomeru(both), yomi=ICCHI, chu=chu_of("", m)))
+            out.append(dict(shiryo=s, theme=THEME, jiko=j, hani=matomeru(both), yomi=ICCHI, chu=chu_of("", m, kw(both))))
         for y in YOMITE:
             only = ps[y] - ps[[x for x in YOMITE if x != y][0]]
             if only:
-                out.append(dict(shiryo=s, theme=THEME, jiko=j, hani=matomeru(only), yomi=IKKAI, chu=chu_of(y, m)))
+                out.append(dict(shiryo=s, theme=THEME, jiko=j, hani=matomeru(only), yomi=IKKAI,
+                                chu=chu_of(y, m, kw(only))))
     page_no = {t["shiryo"]: i for i, t in enumerate(taba)}
 
     def jun(r):
@@ -426,7 +472,13 @@ def main(argv=None):
         print(f"止めた：lock と入力、または読み取りの結果と表を読めない\n{e}", file=sys.stderr)
         return 1
     names = {r["name"] for r in jiko.of_theme(jiko_rows, THEME)}
-    bad = check_taba(inp, taba) + check_yomi(yomi, taba, names)
+    try:
+        kouho_rows = read_kouho()
+    except inputs.InputError as e:
+        print(f"止めた：資料の段落の候補の名前と扱いの対応の表を読めない\n{e}", file=sys.stderr)
+        return 1
+    bad = check_taba(inp, taba) + check_yomi(yomi, taba, names) \
+        + check_kouho(kouho_rows, yomi, {r["id"] for r in jiko.of_theme(jiko_rows, THEME)})
     if bad:
         print(f"止めた：合わないものがある（{len(bad)} 件）", file=sys.stderr)
         print("\n".join("  - " + b for b in bad), file=sys.stderr)
@@ -437,7 +489,7 @@ def main(argv=None):
             for y, s, h, m, riyu in xs:
                 print(f"  {y}　{s}　{h}" + (f"　迷い：{riyu}" if m == "1" else ""))
         return 0
-    rows = make_rows(yomi, taba, jiko_rows, bunsho)
+    rows = make_rows(yomi, taba, jiko_rows, bunsho, kouho_rows)
     bad = check(inp, rows, jiko_rows, set(bunsho))
     if bad:
         print(f"止めた：合わないものがある（{len(bad)} 件）", file=sys.stderr)
@@ -448,7 +500,8 @@ def main(argv=None):
     nd = sum(not kakunin_ari(r["shiryo"]) for r in rows)
     ko = kouho(yomi)
     print(f"資料の段落と事項の対応 {len(rows)} 行（一致 {n[ICCHI]}、1回だけ {n[IKKAI]}）。ページ {len({r['shiryo'] for r in rows})}、"
-          f"事項 {len({r['jiko'] for r in rows})}。字を確認した記録が無いので出さない行 {nd}。候補の名前 {len(ko)}（表には入れない）")
+          f"事項 {len({r['jiko'] for r in rows})}。字を確認した記録が無いので出さない行 {nd}。候補の名前 {len(ko)}"
+          f"（事項に入れた {len(kouho_rows)}）")
     if a.kensa:
         cur = None
         if os.path.exists(PATH):
