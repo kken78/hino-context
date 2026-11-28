@@ -1363,22 +1363,25 @@ def konkyo_problems(inp, tk, tables, rows, namae=None, yomi_qs=None):
             k = ("event", ev[(r["theme"], r["aite"])]["id"])
         else:
             continue
-        x = kumi.setdefault(k, {}).setdefault(q, dict(yomi={}, mikakunin=False, ys=set()))
+        x = kumi.setdefault(k, {}).setdefault(q, dict(yomi={}, kakutei={}, mikakunin=False, ys=set()))
         kumi_th.setdefault((k, q), r["theme"])
         x["ys"].add(r["yomi"])
         for p in keys.paras_of(r["hani"]):
-            x["yomi"][p] = ym.yomi_awase(x["yomi"].get(p), r["yomi"])
+            if r["yomi"] == konkyo.NYURYOKU:
+                x["kakutei"][p] = r["yomi"]
+            else:
+                x["yomi"][p] = ym.yomi_awase(x["yomi"].get(p), r["yomi"])
     for (shu, aite), qd in kumi.items():
         out = []
         for q, x in qd.items():
             who = bn.qhead_parts(qsrc[q])[0]
+            # 同じ資料（出来事）と質問に、入力の確定済みの行と読み取りの行があるときは、確定済みの行だけを出す
+            # （SCHEMA.md 7.10。論点の応答の、確定済みの対応の記録と同じ扱い。案）
+            mi = konkyo.NYURYOKU not in x["ys"]
+            if not mi:
+                x["yomi"] = x["kakutei"]
             # 題は、aite に付いた段落が範囲に入る題の題名（SCHEMA.md 7.10。2026-11-28）
             dai = bn.dai_of(inp, q, qsrc, set(x["yomi"]), tk.D.bun("bunya-dai-nashi"))
-            ys = x["ys"]
-            if konkyo.NYURYOKU in ys and len(ys) > 1:
-                problems.append(("(i) 質問が取り上げた資料", f"{q} / {aite}：入力の確定済みの行と、読み取りの行がある"))
-                continue
-            mi = konkyo.NYURYOKU not in ys
             paras = [(sid, i, inputs.paragraphs(inp.statement_text(sid))[i - 1]) for sid, i in sorted(x["yomi"])]
             out.append(dict(question=q, date=bn.qdate(q), sitsugi=q.startswith("sq:"), who=who, dai=dai, paras=paras,
                             mikakunin=mi, yomi=x["yomi"] if mi else {}, theme=kumi_th[((shu, aite), q)]))

@@ -129,28 +129,32 @@ class TestRepo(unittest.TestCase):
         self.assertEqual(ym.main(["--kensa"]), 0)
         rows = ym.read()
         self.assertEqual(ym.themes(), ["hoiku", "kaigo", "kokyo", "chiiki"])
-        self.assertEqual(len(rows), 1069)
-        self.assertEqual(sum(r["yomi"] == "一致" for r in rows), 553)
-        # 行はテーマの順に並ぶ。幼保は、事項を2つ足す前（2026-11-28）の482行に2行を足した484行、介護は142行に2行を足した144行
-        self.assertEqual([r["theme"] for r in rows], ["hoiku"] * 484 + ["kaigo"] * 144 + ["kokyo"] * 232 + ["chiiki"] * 209)
+        self.assertEqual(len(rows), 1413)
+        self.assertEqual(sum(r["yomi"] == "一致" for r in rows), 727)
+        # 行はテーマの順に並ぶ（2回めの読み取り（2026-11-28）のあと。前は、幼保484行、介護144行、公共施設232行、
+        # 地域のあり方209行の1069行で、前からの質問の行は変わっていない）
+        self.assertEqual([r["theme"] for r in rows], ["hoiku"] * 609 + ["kaigo"] * 221 + ["kokyo"] * 269 + ["chiiki"] * 314)
         self.assertEqual([sum(r["yomi"] == "一致" for r in rows if r["theme"] == t) for t in ("hoiku", "kaigo", "kokyo", "chiiki")],
-                         [249, 93, 117, 94])
+                         [308, 137, 138, 144])
         self.assertEqual([len({r["question"] for r in rows if r["theme"] == t}) for t in ("hoiku", "kaigo", "kokyo", "chiiki")],
-                         [41, 21, 39, 29])
-        self.assertEqual([len(ym.shitsumon(t)) for t in ("hoiku", "kaigo", "kokyo", "chiiki")], [41, 22, 39, 29])
+                         [63, 32, 49, 42])
+        # 2回めの読み取りは、束の番号を続けて置いた（幼保35問、介護11問、公共施設10問、地域のあり方13問。SCHEMA.md 7.10）
+        self.assertEqual([len(ym.shitsumon(t)) for t in ("hoiku", "kaigo", "kokyo", "chiiki")], [76, 33, 49, 42])
         # 事項の theme の列に、行の theme がある（2つのテーマと共通の事項を含む）
         th = {r["id"]: ym.jiko.themes_of(r) for r in ym.jiko.read()}
         self.assertTrue(all(r["theme"] in th[r["jiko"]] for r in rows))
-        # 1つの質問を2つのテーマで読んだもの（12問）。同じ質問と事項の組に、2つのテーマの読み取りの行があるのは6組で、
-        # どれも公共施設の再編と地域のあり方に共通の事項
-        self.assertEqual(sum(len(x) > 1 for x in ym.shitsumon_theme().values()), 12)
+        # 1つの質問を2つのテーマで読んだもの（28問。2回めの読み取りの前は12問）。同じ質問と事項の組に、2つのテーマの
+        # 読み取りの行があるのは12組（前は6組）で、どれも公共施設の再編と地域のあり方に共通の事項
+        self.assertEqual(sum(len(x) > 1 for x in ym.shitsumon_theme().values()), 28)
         f2 = ym.futatsu(rows, "jiko")
-        self.assertEqual(len(f2), 6)
+        self.assertEqual(len(f2), 12)
         self.assertTrue(all(th[j] == ["kokyo", "chiiki"] for _, j in f2))
         # 介護の2026年3月10日の質問（除雪・除草）は、読んだが、当たる論点が無かった（SKILL.md 4.4 の G5）。
         # 同じ質問を地域のあり方でも読み、地域のあり方の論点に付いた
         self.assertEqual(ym.nashi_shitsumon("kaigo", rows), ["iq:0000008942_20260310_0029"])
-        self.assertEqual([ym.nashi_shitsumon(t, rows) for t in ("hoiku", "kokyo", "chiiki")], [[], [], []])
+        # 幼保の2回めの読み取りの35問のうち13問は、2人の読み手とも、どの論点にも付けなかった（2026-11-28）
+        self.assertEqual(len(ym.nashi_shitsumon("hoiku", rows)), 13)
+        self.assertEqual([ym.nashi_shitsumon(t, rows) for t in ("kokyo", "chiiki")], [[], []])
         # 束7の注は、その質問の行の全部に付く
         q7 = "iq:0000008691_20251212_0378"
         self.assertTrue(all("読み手 a の結果のファイルを画面に出した" in r["chu"] for r in rows if r["question"] == q7))
