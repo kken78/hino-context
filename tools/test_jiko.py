@@ -53,6 +53,31 @@ class JikoTest(unittest.TestCase):
                          {"M2": ["a", "d"], "M1": ["c"]})
         self.assertEqual(list(jiko.matome_jun(rows)), ["M2", "M1"])
 
+    def test_matome_theme(self):
+        # 見出しごとにまとまりが違う行は、matome に「<テーマ>=<名前>」を「;」でつないで書く（SCHEMA.md 7.9。2026-11-28）
+        r = row(theme="b29,b33", matome="b29=行政手続;b33=窓口")
+        self.assertEqual(jiko.check([r], set()), [])
+        self.assertEqual((jiko.matome_of(r, "b29"), jiko.matome_of(r, "b33"), jiko.matome_of(r, "b02")), ("行政手続", "窓口", ""))
+        self.assertEqual(jiko.matome_of(row(theme="b29,b33", matome="窓口"), "b29"), "窓口")
+        for m in ("b29=", "=窓口", "b29=a;b29=b", "b29=a;", "b02=a"):
+            self.assertEqual(len(jiko.check([row(theme="b29,b33", matome=m)], set())), 1, m)
+        # まとまりを付けて並ぶテーマ：分野だけの行は全部の分野、いまの4つのテーマの行は分野でないテーマ
+        self.assertEqual(jiko.ichiran_themes(row(theme="kokyo,chiiki,b04")), ["kokyo", "chiiki"])
+        self.assertEqual(jiko.ichiran_themes(row(theme="b29,b33")), ["b29", "b33"])
+        self.assertEqual(jiko.matome_id("b33-k1", "窓口"), "b33-k1:窓口")
+
+    def test_check_matome(self):
+        # 事項の表の (テーマ, まとまり) の組と、まとまりの表の組が同じであること。jotai は案か決定（2026-11-28）
+        rows = [row(id="a", theme="b29,b33", matome="b29=行政手続;b33=窓口"), row(id="b", name="B", matome="M")]
+        m = [dict(theme="b29", matome="行政手続", moto="", jotai="案", chu=""),
+             dict(theme="b33", matome="窓口", moto="", jotai="案", chu=""),
+             dict(theme="hoiku", matome="M", moto="", jotai="決定", chu="")]
+        self.assertEqual(jiko.check_matome(rows, m), [])
+        self.assertEqual(len(jiko.check_matome(rows, m[:2])), 1)
+        self.assertEqual(len(jiko.check_matome(rows, m + [dict(m[0], matome="X")])), 1)
+        self.assertEqual(len(jiko.check_matome(rows, m + [m[0]])), 1)
+        self.assertEqual(len(jiko.check_matome(rows, [dict(m[0], jotai="確定")] + m[1:])), 1)
+
     def test_repo(self):
         self.assertEqual(jiko.main(), 0)
 
