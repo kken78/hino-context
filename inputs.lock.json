@@ -13,7 +13,7 @@
               "data/audit_log/*.tsv"]
   },
   "hino-town-docs": {
-    "sha": "8bdfba2a0c7165cb93c862e535227c9704e3203d",
+    "sha": "f64ce29da9eb4b8aec13a049b7eb7025fd7b6ec1",
     "files": ["data/sources.tsv", "data/text/*.txt", "data/text_raw/*.txt", "data/struct/senryaku-sheet.tsv",
               "data/struct/senryaku-kpi.tsv", "data/struct/senryaku-bun.tsv", "data/struct/audit/senryaku.tsv"]
   },
