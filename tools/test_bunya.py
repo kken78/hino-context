@@ -69,6 +69,10 @@ class TestRows(unittest.TestCase):
         self.assertTrue(any("知らない話題" in b for b in bad))
         # 表の名前で、読み取りの結果に無いもの（出さない名前を作らない）
         self.assertTrue(any("「選挙」が、読み取りの結果に無い" in b for b in bad))
+        # 議案への質疑の候補の入れ先の話題（2026-11-28）は、一般質問の読み取りの結果に無くてよい
+        bad2 = bu.check_yomi(yomi, dai, set(JUN), W, {r["id"] for r in W if r["matome"] == "選挙"})
+        self.assertFalse(any("「選挙」が、読み取りの結果に無い" in b for b in bad2))
+        self.assertEqual(len(bad2), 7)
 
     def test_check_wadai(self):
         self.assertEqual(bu.check_wadai(W), [])

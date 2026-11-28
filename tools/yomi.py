@@ -25,6 +25,7 @@
   段落は、入れる先の事項に読み手が付けた段落として、「資料を取り上げた部分にする」の候補の段落は、入れる先の資料の名前に
   読み手が付けた段落として、ほかの段落と合わせてから行を作る（kouho_ni_ireru）。出さない扱いは置かない。
   表に無い候補の名前があれば止まる。
+  議案への質疑の読み取り（taio/yomi-shitsugi/）の行は、tools/shitsugi.py が作り、一般質問の行のあとに置く（SCHEMA.md 7.10）。
 """
 import argparse
 import csv
@@ -46,6 +47,7 @@ BUNYA = "bunya"              # taio/yomi-bunya/ は、一般質問の題に総�
 KENSHO = "kensho"            # taio/yomi-kensho/ は、施策検証シートの読み取り（tools/kensho.py。SCHEMA.md 7.12）で、テーマではない
 KISAI = "kisai"              # taio/yomi-kisai/ は、資料の段落の読み取り（tools/kisai.py。SCHEMA.md 7.13）で、テーマではない
 YOSAN = "yosan"              # taio/yomi-yosan/ は、予算の事業の読み取り（tools/yosan.py。SCHEMA.md 7.16）で、テーマではない
+SHITSUGI = "shitsugi"        # taio/yomi-shitsugi/ は、議案への質疑の読み取り（tools/shitsugi.py。SCHEMA.md 7.10）で、テーマではない
 PATH = os.path.join(inputs.ROOT, "taio", "shudai.tsv")
 NAMAE_PATH = os.path.join(inputs.ROOT, "teigi", "konkyo-namae.tsv")
 KOUHO_PATH = os.path.join(inputs.ROOT, "teigi", "kouho.tsv")
@@ -85,7 +87,8 @@ def themes(jiko_rows=None):
     jun = jiko.theme_jun(jiko_rows)
     ths = sorted(d[len(YOMI_HEAD):] for d in os.listdir(TAIO_DIR)
                  if d.startswith(YOMI_HEAD) and os.path.isdir(os.path.join(TAIO_DIR, d))
-                 and d not in (YOMI_HEAD + BUNYA, YOMI_HEAD + KENSHO, YOMI_HEAD + KISAI, YOMI_HEAD + YOSAN))
+                 and d not in (YOMI_HEAD + BUNYA, YOMI_HEAD + KENSHO, YOMI_HEAD + KISAI, YOMI_HEAD + YOSAN,
+                               YOMI_HEAD + SHITSUGI))
     bad = [t for t in ths if t not in jun]
     if bad:
         raise YomiError(f"読み取りの結果の保存先のテーマが、事項の表に無い（{'、'.join(bad)}）")
@@ -382,8 +385,8 @@ def check_namae(rows, bunsho, hiduke=None):
 
 
 def q_hi(q):
-    """質問の ID → 質問の日（質問の ID の発言の日。YYYY-MM-DD）。"""
-    return keys.sid_date(keys.sid_of(q))
+    """質問の ID → 質問の日（質問の ID の発言の日。YYYY-MM-DD。inputs.hatsugen_hi）。"""
+    return inputs.hatsugen_hi(keys.sid_of(q))
 
 
 def aite_of(namae_rows, hiduke=None):
@@ -523,6 +526,17 @@ def main(argv=None):
         r, b = shudai_rows(per[th][0], jiko.of_theme(jiko_rows, th), per[th][2], th)
         rows += r
         bad += [f"{th}：{x}" for x in b]
+    # 議案への質疑の読み取りの行（SCHEMA.md 7.10。2026-11-28）。読み手は全部の分野を読んだので、どのテーマの行も置ける
+    import shitsugi as st
+    try:
+        sx = st.tsukuru(inp, jiko_rows, namae, hiduke)
+    except (st.ShitsugiError, inputs.InputError) as e:
+        print(f"止めた：議案への質疑の読み取りの結果と表が合わない\n{e}", file=sys.stderr)
+        return 1
+    rows += sx["shudai"]
+    zen = jiko.theme_jun(jiko_rows)
+    for q in sx["qs"]:
+        qth[q] = zen
     bad += check_namae(namae, bunsho, hiduke)
     if not bad:
         bad += check(inp, rows, qth, {r["id"]: jiko.themes_of(r) for r in jiko_rows})
@@ -565,6 +579,10 @@ def main(argv=None):
         ko = kouho(yomi)
         at = {r["namae"]: r["atsukai"] for r in kouho_rows}
         print(f"[{th}] 候補（事項の表に無い話題）{len(ko)}：" + "、".join(f"{x} {sum(at[k] == x for k in ko)}" for x in ATSUKAI))
+    ns = {y: sum(r["yomi"] == y for r in sx["shudai"]) for y in YOMI}
+    print(f"[議案への質疑] 読んだ区切り {len(sx['qs'])}。質問と事項の対応 {len(sx['shudai'])} 行（一致 {ns[ICCHI]}、"
+          f"1回だけ {ns[IKKAI]}）。区切りと議案の組 {len({(r['question'], r['n']) for r in sx['shudai']})}、"
+          f"事項 {len({r['jiko'] for r in sx['shudai']})}（入れなかった読み手の行は tools/shitsugi.py が出す）")
     n = {y: sum(r["yomi"] == y for r in rows) for y in YOMI}
     print(f"質問と事項の対応 {len(rows)} 行（一致 {n[ICCHI]}、1回だけ {n[IKKAI]}）")
     f2 = futatsu(rows, "jiko")

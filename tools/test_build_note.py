@@ -349,13 +349,14 @@ class TestReal(unittest.TestCase):
         確定済みの質問の4を除いた数）。"""
         _, info = self.build(self.inp)
         # 計画の読み取りの候補を論点に入れたあと（2026-11-28）は 126
-        self.assertEqual(len(info["counts"]), 126)
+        self.assertEqual(len(info["counts"]), 150)     # 議案への質疑の読み取りの候補から24を足した（2026-11-28）
         # 総合計画の分野の読み取り（2026-11-28）で、新こども園の整備費用と財源（hiyo）に、分野の読み取りの質問が3件加わった
         # （前は (13, 9)）
         # 構造にしていない記載（SCHEMA.md 7.14。2026-11-28）で、記述が (13, 12) → (15, 12)、(8, 9) → (17, 9)
-        self.assertEqual([(n, k) for _, n, k in info["counts"][:4]], [(15, 12), (9, 6), (17, 9), (6, 8)])
+        # 議案への質疑の読み取り（2026-11-28）で、質問が (12, 6, 9, 8) → (16, 6, 13, 9)
+        self.assertEqual([(n, k) for _, n, k in info["counts"][:4]], [(15, 16), (9, 6), (17, 13), (6, 9)])
         # 分野の読み取りの質問が、幼保の論点（分野の読み取りの候補を入れた論点）に7件加わった（前は 66。2026-11-28）
-        self.assertEqual(info["questions"], 73)
+        self.assertEqual(info["questions"], 169)     # 議案への質疑の読み取り（2026-11-28。区切りと議案ごとに数える）の前は 73
         self.assertEqual(info["paras"].mismatched, [])
 
     def test_kihon_nokori(self):
@@ -401,11 +402,13 @@ class TestReal(unittest.TestCase):
         sec = sec[:sec.index("</section>")]
         # 2回めの読み取り（2026-11-28）で、2025年9月12日の質問が足された。確定済みの3件の質問にも読み取りの行があるが、
         # 確定済みの記録だけを出す（SCHEMA.md 7.10）
-        self.assertEqual(sec.count(f"<p class='m'>{D.kotoba('質問と事項の対応の表 question')}</p>"), 5)
+        # 議案への質疑の読み取り（2026-11-28）で、2024年3月7日の議第29号の質疑が足された
+        self.assertEqual(sec.count(f"<p class='m'>{D.kotoba('質問と事項の対応の表 question')}</p>"), 6)
         self.assertEqual(sec.count(f"<p class='m'>{D.bun('shitsumon-kakutei')}</p>"), 3)
         n1 = sec.count(f"（{D.kotoba('質問と事項の対応の表 yomi が「一致」')}）")
         n2 = sec.count(f"（{D.kotoba('質問と事項の対応の表 yomi が「1回だけ」')}）")
-        self.assertEqual(n1 + n2, 3 + 3 + 10 + 7 + 2)
+        self.assertEqual(n1 + n2, 3 + 3 + 10 + 7 + 2 + 2)
+        self.assertIn("2024年3月7日　議案への質疑　議第29号 令和６年度日野町一般会計予算</h3>", sec)
         self.assertIn(D.bun("keisai-yomi", short="定員"), sec)
         self.assertIn(D.bun("yomi-setsumei", short="定員"), sec)
         # 一般質問の題は、付いた段落が範囲に入る台帳の題名だけ（段落の単位。SCHEMA.md 7.10。2026-11-28）。
@@ -420,15 +423,17 @@ class TestReal(unittest.TestCase):
         2回めの読み取りの候補から7を足して57）。"""
         # 計画の読み取りの候補を論点に入れたあと（2026-11-28）は 126。生成AIの2回の読み取りの行を入れない形でも、計画の記述が
         # ある論点は記録がある（13 → 109）。予算の資料の事業（SCHEMA.md 7.16。2026-11-28）が付いた論点も記録がある（109 → 115）
-        self.assertEqual(sum(r["aru"] for r in self.teigi["jiko"]), 126)
+        # 議案への質疑の読み取りの候補から24を足して 150（2026-11-28）
+        self.assertEqual(sum(r["aru"] for r in self.teigi["jiko"]), 150)
         T = self.teigi0
-        self.assertEqual(len(T["jiko"]), 126)
+        self.assertEqual(len(T["jiko"]), 150)
         self.assertEqual(sum(r["aru"] for r in T["jiko"]), 115)
         for P in ("子育て環境の未来に向けての提言", "日野町幼児教育保育施設再編整備計画（案）", "日野町認定こども園整備基本構想"):
             self.assertNotIn(P, [x[0] for x in T["topics"]])
         page, _ = self.build(self.inp, T)
         top = page[page.index("<section id='top'"):page.index("</section>")]
-        self.assertEqual(top.count("議会での質問と町の資料の記述は、まだ入れていません</td>"), 11)   # 2026-11-28 の計画の読み取りの前は 44。予算の資料の事業を入れる前は 17
+        # 議案への質疑の読み取りの候補から足した24は、読み取りの行を入れない形では、まだ入れていない（2026-11-28）
+        self.assertEqual(top.count("議会での質問と町の資料の記述は、まだ入れていません</td>"), 35)   # 2026-11-28 の計画の読み取りの前は 44。予算の資料の事業を入れる前は 17
         self.assertIn("<th colspan='4'>日野町幼児教育保育施設再編整備計画の章立てに入らない論点</th>", top)
         # 資料の外のまとまり（事項の表の matome）は、章立てに入らない論点の中で、まとまりの名前の見出しと、誰が決めたかの文を
         # 付けてまとめる（2026-11-28）。依頼者が決めたまとまり（園の安全）と、生成AIの案のまとまりで、文が違う

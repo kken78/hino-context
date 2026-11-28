@@ -57,6 +57,7 @@ import kensho as ks  # noqa: E402
 import konkyo  # noqa: E402
 import ronten  # noqa: E402
 import ronten_kisai as rk  # noqa: E402
+import shitsugi as st  # noqa: E402
 import shogo  # noqa: E402
 import suji as sj  # noqa: E402
 import yomi as ym  # noqa: E402
@@ -904,6 +905,8 @@ class Tsukuru:
         tz = [q for q in toi if q in zumi]
         tn = [q for q in toi if q not in zumi and q not in yomi_toi]
         sz = [q for q in shitsugi if q in zumi]
+        # 質疑は、台帳の全部の区切りを読んだ（SCHEMA.md 7.10。2026-11-28）。読んだ区切りの質疑は、残りに数えない
+        sn = [q for q in shitsugi if q not in zumi and q not in getattr(self, "shitsugi_q", [])]
         if not (tz or sz):
             return []
         # 記録がある問いか質疑が0のテーマでも、文として読める形にする（docs/design.md 4節。2026-11-27）
@@ -925,9 +928,19 @@ class Tsukuru:
                 out.append(E(D.bun("mcp-issue-hani-yomi-nashi", n=len(nashi))))
         if tn:
             out.append(E(D.bun("mcp-issue-hani-toi", n=len(tn), kikan=E(kikan(tn)))))
-        if len(sz) < len(shitsugi):
-            out.append(E(D.bun("mcp-issue-hani-shitsugi", n=len(shitsugi) - len(sz))))
+        if sn:
+            out.append(E(D.bun("mcp-issue-hani-shitsugi", n=len(sn))))
+        out += Tsukuru.issue_hani_shitsugi(self)
         return out
+
+    def issue_hani_shitsugi(self):
+        """質疑の台帳の区切りの読み取りの範囲の文（docs/design.md 4節。2026-11-28）。数と時期はデータから数える。"""
+        D = self.D
+        if not getattr(self, "shitsugi_q", None):
+            return []
+        ym_ = sorted(bn.qdate(q)[:7] for q in self.shitsugi_q)
+        a, z = (D.bun("nengetsu", nen=int(x[:4]), tsuki=int(x[5:7])) for x in (ym_[0], ym_[-1]))
+        return [E(D.bun("mcp-issue-hani-shitsugi-yomi", n=len(self.shitsugi_q), kikan=E(a if a == z else D.bun("kikan", a=a, z=z))))]
 
     def issue(self, theme, P, slug, short, setsumei):
         """論点1つ。試作のページの論点のページと同じ集め方（Page.ronten）で、同じ見出しで返す。
@@ -1137,7 +1150,7 @@ class Tsukuru:
         nashi = ym.nashi_dai(theme, self.yomi_rows)
         if nashi:
             out.append(E(D.bun("mcp-issue-hani-bunya-nashi", n=len(nashi))))
-        return out
+        return out + Tsukuru.issue_hani_shitsugi(self)
 
     def mokuteki(self, a):
         """つながりの記録の相手1つ（Page.ronten の mokuteki の1つ）→ 項目。相手の名前のあとに、issue があれば ID を付ける。"""
@@ -1174,9 +1187,13 @@ class Tsukuru:
         def kakunin(q):
             return E(bn.kakunin_go(D, q))
 
+        def ji(q):
+            """質疑の台帳の区切りの読み取りの質問で、読み手が段落の字は別の議案の話と書いた部分があるときの文の並び（2026-11-28）。"""
+            return [E(bn.shitsugi_ji_go(D, q))] if q.get("ji") else []
+
         tsuzuki = []
         for q in qs:
-            head = [gikai, f"### {shitsumon(q)}　{bubun(q)}", kakunin(q), f"{zentai}：{E(keys.source_url(inp, q['question']))}"]
+            head = [gikai, f"### {shitsumon(q)}　{bubun(q)}", kakunin(q)] + ji(q) + [f"{zentai}：{E(keys.source_url(inp, q['question']))}"]
             items = []
             pg = pg_of(q)
             for sid, i, para in q["paras"]:
@@ -1194,7 +1211,8 @@ class Tsukuru:
 
         def tsukuru(bango):
             nm = len(mae_blocks)
-            items = [f"- {shitsumon(q)}\n  - {kakunin(q)}\n  - {self.kagi_ji(bubun(q), TSUZUKI, str(n))}"
+            items = [f"- {shitsumon(q)}\n  - {kakunin(q)}" + "".join(f"\n  - {x}" for x in ji(q))
+                     + f"\n  - {self.kagi_ji(bubun(q), TSUZUKI, str(n))}"
                      f"\n  - {zentai}：{E(keys.source_url(inp, q['question']))}" for q, n in zip(qs, bango[nm:])]
             setsumei = [E(D.bun("mcp-issue-gikai-setsumei", short=E(short)))]
             if qs:
@@ -1960,7 +1978,10 @@ def konkyo_problems(inp, tk, tables, rows, namae=None, yomi_qs=None):
     kumi, kumi_th = {}, {}
     for r in rows:
         q = r["question"]
-        if q not in qsrc or not bn.qhead_parts(qsrc[q])[1]:
+        # 質疑の台帳の区切りの読み取りの行（n に議案の番号。SCHEMA.md 7.10。2026-11-28）は、区切りと議案ごとに1つの質問にする。
+        # 題は議案の番号と題（tools/shitsugi.py の dai）
+        sn = r["n"] if q.startswith("sq:") and r["yomi"] != konkyo.NYURYOKU else ""
+        if not sn and (q not in qsrc or not bn.qhead_parts(qsrc[q])[1]):
             problems.append(("(i) 質問が取り上げた資料", f"{q}：どのテーマの定義の問い・質疑にも、読んだ質問にも無いか、題が無い"))
             continue
         if r["aite"] in bunsho:
@@ -1969,8 +1990,8 @@ def konkyo_problems(inp, tk, tables, rows, namae=None, yomi_qs=None):
             k = ("event", ev[(r["theme"], r["aite"])]["id"])
         else:
             continue
-        x = kumi.setdefault(k, {}).setdefault(q, dict(yomi={}, kakutei={}, mikakunin=False, ys=set()))
-        kumi_th.setdefault((k, q), r["theme"])
+        x = kumi.setdefault(k, {}).setdefault((q, sn), dict(yomi={}, kakutei={}, mikakunin=False, ys=set()))
+        kumi_th.setdefault((k, (q, sn)), r["theme"])
         x["ys"].add(r["yomi"])
         for p in keys.paras_of(r["hani"]):
             if r["yomi"] == konkyo.NYURYOKU:
@@ -1979,20 +2000,25 @@ def konkyo_problems(inp, tk, tables, rows, namae=None, yomi_qs=None):
                 x["yomi"][p] = ym.yomi_awase(x["yomi"].get(p), r["yomi"])
     for (shu, aite), qd in kumi.items():
         out = []
-        for q, x in qd.items():
-            who = bn.qhead_parts(qsrc[q])[0]
+        # 同じ区切りに、入力の確定済みの行（議案は空）があるときは、確定済みの行だけを出す（下の決まりと同じ。2026-11-28）
+        kakutei_q = {q for (q, sn), x in qd.items() if not sn and konkyo.NYURYOKU in x["ys"]}
+        for (q, sn), x in qd.items():
+            if sn and q in kakutei_q:
+                continue
+            who = "" if sn else bn.qhead_parts(qsrc[q])[0]
             # 同じ資料（出来事）と質問に、入力の確定済みの行と読み取りの行があるときは、確定済みの行だけを出す
             # （SCHEMA.md 7.10。論点の応答の、確定済みの対応の記録と同じ扱い。案）
             mi = konkyo.NYURYOKU not in x["ys"]
             if not mi:
                 x["yomi"] = x["kakutei"]
             # 題は、aite に付いた段落が範囲に入る題の題名（SCHEMA.md 7.10。2026-11-28）
-            dai = bn.dai_of(inp, q, qsrc, set(x["yomi"]), tk.D.bun("bunya-dai-nashi"))
+            dai = st.dai(inp, q, sn) if sn else bn.dai_of(inp, q, qsrc, set(x["yomi"]), tk.D.bun("bunya-dai-nashi"))
             paras = [(sid, i, inputs.paragraphs(inp.statement_text(sid))[i - 1]) for sid, i in sorted(x["yomi"])]
             out.append(dict(question=q, date=bn.qdate(q), sitsugi=q.startswith("sq:"), who=who, dai=dai, paras=paras,
-                            mikakunin=mi, yomi=x["yomi"] if mi else {}, theme=kumi_th[((shu, aite), q)]))
-            if qtheme[q] in tk.note:
-                tk.konkyo_pg[q] = tk.note[qtheme[q]][1]
+                            mikakunin=mi, yomi=x["yomi"] if mi else {}, theme=kumi_th[((shu, aite), (q, sn))], gian=sn))
+            th_q = kumi_th[((shu, aite), (q, sn))] if sn else qtheme[q]
+            if th_q in tk.note and q not in tk.konkyo_pg:
+                tk.konkyo_pg[q] = tk.note[th_q][1]
         out.sort(key=lambda x: x["date"], reverse=True)
         if shu == "bunsho":
             tk.konkyo[aite] = out
@@ -2077,6 +2103,7 @@ def build(inp, tables, kotoba, read_problems=(), design=None, skill=None, notes=
         raise Stop([("(i) 質問が取り上げた資料", str(e))])
     yomi_rows = ym.read() if os.path.exists(ym.PATH) else []
     tk.yomi_rows = yomi_rows
+    tk.shitsugi_q = st.shitsumon()       # 質疑の台帳の区切りの読み取りで読んだ区切り（SCHEMA.md 7.10。2026-11-28）
     for q, qths in yomi_qs.items():
         for th in qths:
             tk.yomi_q.setdefault(th, []).append(q)

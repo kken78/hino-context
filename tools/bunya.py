@@ -131,6 +131,15 @@ def wadai_ichiran(rows):
     return list(dict.fromkeys((r["id"], r["matome"]) for r in rows))
 
 
+def shitsugi_wadai():
+    """議案への質疑の候補の名前と入れ先の表（teigi/shitsugi-kouho.tsv）の saki のうち、話題の ID の集まり。表が無ければ空。"""
+    path = os.path.join(inputs.ROOT, "teigi", "shitsugi-kouho.tsv")
+    if not os.path.exists(path):
+        return set()
+    with open(path, encoding="utf-8") as f:
+        return {r["saki"] for r in inputs.read_tsv(f.read(), "teigi/shitsugi-kouho.tsv") if r["saki"].startswith("wadai-")}
+
+
 def read_taba(path=None):
     with open(path or os.path.join(YOMI_DIR, "taba.json"), encoding="utf-8") as f:
         return json.load(f)
@@ -163,7 +172,7 @@ def bunya_list(r):
     return [x.strip() for x in r["bunya"].split(",") if x.strip()]
 
 
-def check_yomi(yomi, dai, nos, wadai_rows):
+def check_yomi(yomi, dai, nos, wadai_rows, shitsugi_ids=()):
     """読み取りの結果の検査 → 問題の並び。dai は台帳の題の (from, n) の並び、nos は入力の分野の番号の集まり。
     台帳の題の全部に、2人の読み手の行があり、台帳に無い題の行が無いこと。分野の番号が入力にあり、重ならず、BUNYA_MAX
     までであること。分野が空の行に話題があり、その名前が分野に無い話題の名前の表にあること。表の名前の全部が読み取りの結果に
@@ -186,6 +195,9 @@ def check_yomi(yomi, dai, nos, wadai_rows):
                 if r["wadai"] not in names:
                     bad.append(f"題 {k} 読み手 {y}：話題「{r['wadai']}」が、分野に無い話題の名前の表に無い")
                 used.add(r["wadai"])
+    # 議案への質疑の候補の入れ先として足した話題（shitsugi_ids。teigi/shitsugi-kouho.tsv の saki の ID。SCHEMA.md 7.10・7.11。
+    # 2026-11-28）は、一般質問の読み取りの結果に無くてよい
+    used |= {r["namae"] for r in wadai_rows if r["id"] in shitsugi_ids}
     bad += [f"分野に無い話題の名前の表の「{n}」が、読み取りの結果に無い" for n in sorted(names - used)]
     return bad
 
@@ -266,7 +278,7 @@ def tsukuru(inp):
     bad = check_wadai(wadai_rows)
     yomi = read_yomi()
     dai = dai_list(inp)
-    bad += check_yomi(yomi, dai, nos, wadai_rows)
+    bad += check_yomi(yomi, dai, nos, wadai_rows, shitsugi_wadai())
     bad += start_problems(inp)
     if bad:
         return [], bad, kk
@@ -294,7 +306,8 @@ def matome(inp, rows, wadai_rows, kk):
         by[f].sort(key=lambda k: jun[k])
         by[f].sort(key=lambda k: ip[k]["date"], reverse=True)
     bunya = {x["no"]: dict(x, hashira=h) for h in kk["hashira"] for x in h["bunya"]}
-    return dict(dai=ip, of=of, by=by, bunya=bunya, wadai=wadai_ichiran(wadai_rows), m2id=m2id)
+    # field の話題は、一般質問の題がある話題だけ（議案への質疑の候補の入れ先として足した話題は、題が無いので出さない。2026-11-28）
+    return dict(dai=ip, of=of, by=by, bunya=bunya, wadai=[x for x in wadai_ichiran(wadai_rows) if x[0] in by], m2id=m2id)
 
 
 def start_of(r):

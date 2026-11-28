@@ -12,7 +12,7 @@ class MidashiTest(unittest.TestCase):
         zen, ooi = midashi.kazoeru(inputs.Inputs())
         self.assertEqual(jiko.MIDASHI_JOGEN, 12)
         self.assertEqual(ooi, [])
-        self.assertEqual(zen, 460)   # 2026-11-28 に資料の段落の候補のまとまり3を足した（379）。計画の読み取りの候補のまとまりを足した
+        self.assertEqual(zen, 480)   # 議案への質疑の読み取りの論点とまとまりを足した（2026-11-28）。前は 460   # 2026-11-28 に資料の段落の候補のまとまり3を足した（379）。計画の読み取りの候補のまとまりを足した
 
 
 if __name__ == "__main__":

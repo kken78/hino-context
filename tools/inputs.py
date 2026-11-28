@@ -199,6 +199,29 @@ class Inputs:
             self._cache["ippan"] = out
         return self._cache["ippan"]
 
+    def shitsugi(self):
+        """議案への質疑の台帳（data/shitsugi.tsv。1行は、議員の区切り（from）× 議案（bill））→ (from, bill) → 行
+        （SCHEMA.md §1・7.10。2026-11-28）。同じ (from, bill) の行が2つあれば InputError。"""
+        if "shitsugi" not in self._cache:
+            out = {}
+            for r in read_tsv(self.read_bytes(HS, "data/shitsugi.tsv"), f"{HS} data/shitsugi.tsv"):
+                k = (r["from"], r["bill"])
+                if k in out:
+                    raise InputError(f"{HS} data/shitsugi.tsv：from と bill の組が2行ある（{k}）")
+                out[k] = r
+            self._cache["shitsugi"] = out
+        return self._cache["shitsugi"]
+
+    def gian_title(self, sid, no):
+        """発言の sid と議案の番号（「議第18号」など）→ 議案の一覧（public/data/gian.json）の、その発言の会議の議案の題。
+        12月の決算の議案は、番号ごとの題（title。範囲の題 rangeTitle は使わない）。会議か議案が無ければ None。"""
+        if "gian" not in self._cache:
+            self._cache["gian"] = self.read_json(HS, "public/data/gian.json")
+        m = self._cache["gian"].get(sid.split("_")[0])
+        if not m:
+            return None
+        return next((a["title"] for a in m.get("agenda", []) if a["no"] == no), None)
+
     def ippan_turn(self):
         """発言の sid → その発言を turns に含む台帳の題の (from, n) の並び。"""
         if "ippan_turn" not in self._cache:
@@ -356,6 +379,20 @@ class Inputs:
             rows = read_tsv(self.read_bytes(RT, SHISETSU_KIROKU), f"{RT} {SHISETSU_KIROKU}", SHISETSU_KIROKU_COLUMNS)
             self._cache["shisetsu_kiroku"] = [r for r in rows if r["status"] == CONFIRMED]
         return self._cache["shisetsu_kiroku"]
+
+
+_HI = {}
+
+
+def hatsugen_hi(sid):
+    """発言の sid → 発言の日（YYYY-MM-DD）。sid の2つめの部分が日付で始まればその字。始まらない sid（「0000005484_11gijiroku_0010」
+    など。議案への質疑の区切りの一部。2026-11-28）は、lock の版の会議録の索引の発言の date。無ければ空。"""
+    s = sid.split("_")[1] if "_" in sid else ""
+    if re.fullmatch(r"[0-9]{8}", s[:8]):
+        return f"{s[:4]}-{s[4:6]}-{s[6:8]}"
+    if "st" not in _HI:
+        _HI["st"] = {k: e.get("date") or "" for k, e in Inputs().statements().items()}
+    return _HI["st"].get(sid, "")
 
 
 def paragraphs(text):
