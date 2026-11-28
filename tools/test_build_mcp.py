@@ -151,8 +151,8 @@ class TestReal(unittest.TestCase):
             self.assertIn(k, issue)
         self.assertEqual(sum(1 for k in o["item"] if re.fullmatch(r"item=[a-z0-9-]+", k)), 27)
         self.assertEqual(sum(1 for k in o["facility"] if "page" not in k), 13)
-        # 2026-11-28 に2つと、施策検証結果報告書（令和7年度）と、「いま、私たちができること 2025」を足した
-        self.assertEqual(sum(1 for k in o["document"] if re.fullmatch(r"document=[^&]+", k)), 30)
+        # 2026-11-28 に2つと、施策検証結果報告書（令和7年度）と、「いま、私たちができること 2025」と、日野町人材育成基本方針を足した
+        self.assertEqual(sum(1 for k in o["document"] if re.fullmatch(r"document=[^&]+", k)), 31)
         self.assertEqual(sum(1 for k in o["document"] if re.fullmatch(r"document=[^&]+&table=[0-9]+", k)), 17)
         # 続きの1は、続きを付けない組と同じ
         for v in o.values():
