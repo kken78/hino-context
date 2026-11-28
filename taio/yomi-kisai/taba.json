@@ -1,0 +1,107 @@
+[
+ {
+  "shiryo": "doc:jinji-ikusei-hoshin/1",
+  "danraku": 1,
+  "sha256": "f303f9c90d8af3e90cb88e7905c893f062f5324684c53f744ec6bc2c81836539"
+ },
+ {
+  "shiryo": "doc:jinji-ikusei-hoshin/2",
+  "danraku": 14,
+  "sha256": "f0c44f22fee45df0c48201e1c59d512bc60bb4f281439acd4fdbe3e679d1d7e7"
+ },
+ {
+  "shiryo": "doc:jinji-ikusei-hoshin/3",
+  "danraku": 8,
+  "sha256": "5a4771a99b35950c4e0a034c30d454ac8faac08dce42c6011b4d56edfd3aadec"
+ },
+ {
+  "shiryo": "doc:jinji-ikusei-hoshin/4",
+  "danraku": 4,
+  "sha256": "58b0acf84869578b92c6e7bc8c62d6348692c2211d800f95a2e70ccef44e338c"
+ },
+ {
+  "shiryo": "doc:jinji-ikusei-hoshin/5",
+  "danraku": 13,
+  "sha256": "5e6a801f4cd6c3235a3fd2fc89e44a904b0ebc5b53f2f40a1b25929d4a27a8bc"
+ },
+ {
+  "shiryo": "doc:jinji-ikusei-hoshin/6",
+  "danraku": 16,
+  "sha256": "9de3c49c93566c90860aecac92ff013eca618474bb36062655d3d4ea229b9d6b"
+ },
+ {
+  "shiryo": "doc:jinji-ikusei-hoshin/7",
+  "danraku": 32,
+  "sha256": "1b664ce6ce4a5e59bdf15fc2a8f0058fd16b6c69bd5ccae9c561a1360624c6da"
+ },
+ {
+  "shiryo": "doc:jinji-ikusei-hoshin/8",
+  "danraku": 26,
+  "sha256": "b3b71a6e8421d259534730c9f6af2258e38dc9e6c9a902c1963ea8ea9e092c0b"
+ },
+ {
+  "shiryo": "doc:jinji-ikusei-hoshin/9",
+  "danraku": 29,
+  "sha256": "4babad9187efb0809bd47f1d9c1000385d3d00b92e786717f06d8dd1b6db1f8c"
+ },
+ {
+  "shiryo": "doc:jinji-ikusei-hoshin/10",
+  "danraku": 26,
+  "sha256": "de9dcff5ddb6810a8e754a8fb4c1a6c3f3a7d6c20b08d4990e80b379dd649e5c"
+ },
+ {
+  "shiryo": "doc:jinji-ikusei-hoshin/11",
+  "danraku": 13,
+  "sha256": "877603352c62c413ec22e5c7245e614ea7f28a256c42838de500b6669dbf8a83"
+ },
+ {
+  "shiryo": "doc:jinji-ikusei-hoshin/12",
+  "danraku": 15,
+  "sha256": "77b51674bf8c2cff18babd32d362f6a48ba4614fea7d1e9b80a80fb17b6c615f"
+ },
+ {
+  "shiryo": "doc:jinji-ikusei-hoshin/13",
+  "danraku": 9,
+  "sha256": "3b9f10b2f74af7de50afa893a9153035931c15cccef4e775446201d26ddee02e"
+ },
+ {
+  "shiryo": "doc:jinji-ikusei-hoshin/14",
+  "danraku": 14,
+  "sha256": "329e539f4028fec179f9e87cbf86e489200a1815a1be51dd950946cfc7e4e77c"
+ },
+ {
+  "shiryo": "doc:jinji-ikusei-hoshin/15",
+  "danraku": 17,
+  "sha256": "714086caa9643b569fa746063a0dba9af8925040e901c17af40a3d0bac1d2943"
+ },
+ {
+  "shiryo": "doc:jinji-ikusei-hoshin/16",
+  "danraku": 9,
+  "sha256": "7b5aa392268bd367b5feffd1e7bbbef20df46a3deae6fba1dc7f5eed027827b6"
+ },
+ {
+  "shiryo": "doc:jinji-ikusei-hoshin/17",
+  "danraku": 11,
+  "sha256": "6a18867bfc55975eb6ba9172671e9f09e1d4e2b17f98f021d4c765017747ff2d"
+ },
+ {
+  "shiryo": "doc:jinji-ikusei-hoshin/18",
+  "danraku": 12,
+  "sha256": "36339d13f0396d611746c8c0f09cadf31affca41d21a9888d4637e09a50eb4af"
+ },
+ {
+  "shiryo": "doc:jinji-ikusei-hoshin/19",
+  "danraku": 17,
+  "sha256": "26d47c4f3430cf3210656bee160c3be1a7816f996864b800e7cdcae2b8dc537f"
+ },
+ {
+  "shiryo": "doc:jinji-ikusei-hoshin/20",
+  "danraku": 3,
+  "sha256": "18f503eff4f0c6231fb3de671dedd6fcb4e7eb31e8dfaaae0fb03dbe289476ec"
+ },
+ {
+  "shiryo": "pt:sogo6/honpen-05/24",
+  "danraku": 8,
+  "sha256": "e0cc940fcc7585f1ed5042a219b46bfb25c50e874bd9673d79f432cf6b1691ae"
+ }
+]
