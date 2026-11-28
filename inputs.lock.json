@@ -12,7 +12,7 @@
     "files": ["data/plans/*.json", "data/sources_index.tsv", "data/text/*/*.txt", "data/text_raw/*/*.txt"]
   },
   "hino-town-docs": {
-    "sha": "bd8323c6ae022ad3f7df12c882a9777df0693fd2",
+    "sha": "dc7ad0515880b616d65ae12f61ddae8c679994d6",
     "files": ["data/sources.tsv", "data/text/*.txt", "data/text_raw/*.txt"]
   },
   "hino-ronten": {

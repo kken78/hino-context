@@ -11,6 +11,7 @@
   (c) 画面に出る文に、docs/design.md 2節の「使わない」言葉が残っている（資料からの文は除く）
   (d) lock と入力が合わない
   (e) docs/design.md 3節の表と、このツールが合わない（tools/build_suji.py の design_problems）
+  (k) 施策検証結果報告書の記述の表が、読み取りの結果から作り直した行と同じでない（tools/kensho.py の check）
 """
 import datetime
 import os
@@ -21,7 +22,9 @@ sys.path.insert(0, HERE)
 
 import build_note as bn  # noqa: E402
 import build_suji as bs  # noqa: E402
+import build_theme as bt  # noqa: E402
 import bunya as bu  # noqa: E402
+import kensho as ks  # noqa: E402
 import inputs  # noqa: E402
 import keys  # noqa: E402
 
@@ -105,6 +108,7 @@ def render(D, m, ronten, today):
                         + "</ul>")
             body.append(f"<p class='m'>{E(D.kotoba('資料の一覧の表 namae と、shiryo のページ'))}："
                         f"<a href='{E(keys.source_url(m['inp'], t[0]))}' target='_blank'>{kei}　{E(D.bun('page', n=pp))}</a></p>")
+            body.append(kensho_html(D, m, fid))
         else:
             body.append(f"<p class='m'>{E(D.bun('bunya-wadai-setsumei'))}</p>")
         dai = m["by"].get(fid, [])
@@ -141,6 +145,63 @@ window.addEventListener('hashchange',show);show();
 </script></body></html>"""
 
 
+def kensho_html(D, m, fid):
+    """分野のページの町の検証（docs/design.md 4節の field の7。MCP の応答と同じ中身。ID は出さない）。"""
+    K, x, nm = m["ks"], m["bunya"][fid], m["namae"]
+    D.dasanai("施策検証の取り組みと分野の対応の表 saisho")
+    D.dasanai("施策検証の取り組みと分野の対応の表 bunya、shisaku")
+    D.dasanai("施策検証の取り組みの表 no、name")
+    D.dasanai("施策検証の取り組みの表 tantou、houkou")
+    D.dasanai("施策検証の取り組みの表 tasseido、kekka")
+    D.dasanai("施策検証の欄の表 midashi")
+    yomi = {ks.ICCHI: D.kotoba("施策検証の取り組みと分野の対応の表 yomi が「一致」"),
+            ks.IKKAI: D.kotoba("施策検証の取り組みと分野の対応の表 yomi が「1回だけ」")}
+    sh = dict(x["shisaku"])
+
+    def shisaku(k):
+        return "、".join(D.bun("kensho-shisaku-yomi", shisaku=S(r["shisaku"] + sh[r["shisaku"]]), yomi=E(yomi[r["yomi"]]))
+                        for r in K["bunya"][k] if r["bunya"] == fid)
+
+    def namae(k):
+        t = K["tori"][k]
+        return D.bun("kensho-torikumi", no=S(t["no"]), name=S(t["name"]))
+
+    def link(name, url):
+        return f"<a href='{E(url)}' target='_blank'>{name}</a>" if url else name
+
+    def ran(t, r):
+        p = int(t["shiryo"].rsplit("/", 1)[1])
+        return (D.bun("hyo-kijutsu-ran", midashi=S(ks.kohos(K["ran"][r])[0]), atai=S(t[r]))
+                + f"（{E(D.bun('page', n=D.bun('kikan', a=p, z=p + 1)))}）")
+    o = [f"<h2>{E(D.bun('kensho-midashi'))}</h2>", f"<p class='m'>{E(D.bun('kensho-setsumei'))}</p>",
+         f"<p class='m'>{E(D.bun('kensho-mikakunin'))}</p>", f"<p class='m'>{E(D.bun('kensho-nendo'))}</p>"]
+    aru = {r["shisaku"] for rs in K["bunya"].values() for r in rs if r["bunya"] == fid}
+    nai = [f"<li>{D.bun('kensho-nai', shisaku=S(no + name))}</li>" for no, name in x["shisaku"] if no not in aru]
+    if nai:
+        o.append("<ul>" + "".join(nai) + "</ul>")
+    for k in K["tori"]:
+        if K["naka"].get(k) != fid:
+            continue
+        t, sr = K["tori"][k], K["sr"][k]
+        hn, hu = nm.shiryo(t["honpen"])
+        p = int(t["shiryo"].rsplit("/", 1)[1])
+        sn = (f"{nm.bunsho(t['shiryo'].rsplit('/', 1)[0])}　"
+              f"{E(D.bun('page', n=D.bun('kikan', a=p, z=p + 1)))}")
+        o.append(f"<h3>{namae(k)}</h3><ul>"
+                 f"<li>{D.bun('kensho-tantou', tantou=S(sr['dept']))}</li>"
+                 f"<li>{D.bun('kensho-ichi', kihon_no=S(t['kihon_no']), kihon=S(sr['kihon']), houkou=S(sr['houkou']))}"
+                 f"<br><span class='m'>{D.bun('kensho-honpen', shiryo=link(hn, hu))}</span></li>"
+                 f"<li>{D.bun('kensho-shisaku', shisaku=shisaku(k))}</li>"
+                 f"<li>{ran(t, 'kekka')}</li><li>{ran(t, 'tasseido')}</li>"
+                 f"<li>{E(D.kotoba('資料の一覧の表 namae と、shiryo のページ'))}："
+                 f"{link(sn, keys.source_url(m['inp'], t['shiryo']))}</li></ul>")
+    hoka = [k for k in K["tori"] if K["naka"].get(k) != fid and any(r["bunya"] == fid for r in K["bunya"].get(k, []))]
+    if hoka:
+        o.append(f"<h3>{E(D.bun('kensho-hoka'))}</h3><ul>"
+                 + "".join(f"<li>{namae(k)}　{D.bun('kensho-shisaku', shisaku=shisaku(k))}</li>" for k in hoka) + "</ul>")
+    return "".join(o)
+
+
 def bu_page(t):
     """基本施策のページの pt の ID の並びの最初 → ページの番号。"""
     return int(t[0].rsplit("/", 1)[1])
@@ -160,9 +221,15 @@ def build(inp, D, kotoba, today, notes=None):
         model, more, _ = bn.collect(inp, T, theme)
         problems += more
         pages[theme] = (T, bn.Page(inp, T, model, D))
+    m["ks"], more = ks.matome(inp)
+    problems += [("(k) 施策検証", x) for x in more]
     if problems:
         raise Stop(list(dict.fromkeys(problems)))
     m["inp"] = inp
+    tables, more = bt.read_tables()
+    if more:
+        raise Stop([("(k) 施策検証", bs.mondai_str(x)) for x in more])
+    m["namae"] = bt.Namae(D, inp, {r["bunsho"]: r for r in tables["bunsho"]})
     ronten = bu.ronten_of_dai(inp, pages)
     page = render(D, m, ronten, today)
     problems = bn.kotoba_problems(page, *kotoba)
@@ -176,7 +243,7 @@ def main(argv=None):
     try:
         inp = inputs.Inputs()
         page, info = build(inp, bs.read_design(), bn.read_kotoba(), datetime.date.today())
-    except (inputs.InputError, bu.BunyaError, OSError) as e:
+    except (inputs.InputError, bu.BunyaError, ks.KenshoError, OSError) as e:
         print(f"止めた：(d) lock と入力、または表を読めない\n{e}", file=sys.stderr)
         return 1
     except Stop as e:

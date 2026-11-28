@@ -26,6 +26,8 @@
       資料と出来事の名前の表（teigi/konkyo-namae.tsv）の検査（tools/yomi.py の check_namae）
   (j) 質問の題と分野の対応の表（taio/bunya.tsv）と、分野に無い話題の名前の表（teigi/bunya-wadai.tsv）の検査
       （tools/bunya.py の check と check_wadai）。台帳の題の start の発言と段落が会議録にあること
+  (k) 施策検証結果報告書の記述の表（taio/kensho*.tsv。SCHEMA.md 7.12）が、読み取りの結果から作り直した行と同じであること
+      （tools/kensho.py の check）
 """
 import argparse
 import datetime
@@ -47,6 +49,7 @@ import build_theme as bt  # noqa: E402
 import inputs  # noqa: E402
 import jiko  # noqa: E402
 import keys  # noqa: E402
+import kensho as ks  # noqa: E402
 import konkyo  # noqa: E402
 import ronten  # noqa: E402
 import shogo  # noqa: E402
@@ -77,7 +80,8 @@ TOOLS = (("theme", (("theme", "string", False), (TSUZUKI, "integer", False))),
          ("facility", (("facility", "string", True), (TSUZUKI, "integer", False))),
          ("document", (("document", "string", True), ("table", "integer", False), (TSUZUKI, "integer", False))),
          ("event", (("event", "string", True), (TSUZUKI, "integer", False))),
-         ("field", (("field", "string", False), (TSUZUKI, "integer", False))))
+         ("field", (("field", "string", False), (TSUZUKI, "integer", False))),
+         ("review", (("review", "string", True), (TSUZUKI, "integer", False))))
 
 
 def design_problems(D, src=None):
@@ -180,6 +184,7 @@ class Tsukuru:
         self.event = {}                  # 出来事の ID → (資料と出来事の名前の表の行, 質問の並び（konkyo と同じ形）, テーマの集まり)
         self.bu = None                   # 分野と題（tools/bunya.py の matome に、計画 kk を足したもの）。build で入れる
         self.bunya_ronten = {}           # 題の (from, n) → 論点の (名前, ID, テーマ) の並び（tools/bunya.py の ronten_of_dai）。build で入れる
+        self.ks = None                   # 施策検証結果報告書の記述（tools/kensho.py の matome）。build で入れる
 
     # 資料の名前と url
     def moto(self, key, quote=""):
@@ -1001,6 +1006,7 @@ class Tsukuru:
             items.append(f"{E(D.kotoba('資料の一覧の表 namae と、shiryo のページ'))}：{self.bunsho_kagi(kk['id'])}"
                          f"　{E(D.bun('page', n=pp))}　{E(keys.source_url(inp, t[0]))}")
             blocks.append(([f"## {S(x['midashi'])}"], items))
+            blocks += self.kensho_bunya(fid)
         else:
             name = next(n for i, n in m["wadai"] if i == fid)
             title = self.wadai_kagi(name)
@@ -1030,6 +1036,148 @@ class Tsukuru:
         lines.append(f"  - {E(D.bun('bunya-link'))}：{E(keys.search_url(sid, p))}")
         return "\n".join(lines)
 
+    # 施策検証結果報告書の記述（SCHEMA.md 7.12、docs/design.md 4節の field の7と review）
+    def kensho_namae(self, k):
+        """torikumi（施策検証の取り組みの表）→ kensho-torikumi の文（シートの番号と名前）。"""
+        t = self.ks["tori"][k]
+        self.D.dasanai("施策検証の取り組みの表 no、name")
+        return self.D.bun("kensho-torikumi", no=S(t["no"]), name=S(t["name"]))
+
+    def kensho_kagi(self, k):
+        self.D.dasanai("施策検証の取り組みの表 torikumi")
+        return self.kagi_ji(self.kensho_namae(k), "review", k)
+
+    def kensho_shisaku(self, r):
+        """施策検証の取り組みと分野の対応の表の行 → 基本施策の番号と名前（入力の字）に、読みの言葉を添えたもの。"""
+        D = self.D
+        name = dict(self.bu["bunya"][r["bunya"]]["shisaku"])[r["shisaku"]]
+        D.dasanai("施策検証の取り組みと分野の対応の表 bunya、shisaku")
+        D.dasanai("施策検証の取り組みと分野の対応の表 chu")
+        y = {ks.ICCHI: D.kotoba("施策検証の取り組みと分野の対応の表 yomi が「一致」"),
+             ks.IKKAI: D.kotoba("施策検証の取り組みと分野の対応の表 yomi が「1回だけ」")}[r["yomi"]]
+        return D.bun("kensho-shisaku-yomi", shisaku=S(r["shisaku"] + name), yomi=E(y))
+
+    def kensho_midashi(self, ran):
+        """欄の ID → 欄の見出しの字（報告書の字。施策検証の欄の表の最初の候補）。"""
+        self.D.dasanai("施策検証の欄の表 midashi")
+        return S(ks.kohos(self.ks["ran"][ran])[0])
+
+    def kensho_pages(self, t):
+        """施策検証の取り組みの表の行 → シートの2ページ（46〜47 など）。"""
+        D = self.D
+        p = sj.page_no(t["shiryo"])
+        return E(D.bun("page", n=D.bun("kikan", a=p, z=p + 1)))
+
+    def kensho_sheet(self, t):
+        """施策検証の取り組みの表の行 → 報告書の名前と ID、シートの2ページ、URL の行。"""
+        D = self.D
+        return (f"{E(D.kotoba('資料の一覧の表 namae と、shiryo のページ'))}：{self.bunsho_kagi(sj.bunsho_of(t['shiryo']))}"
+                f"　{self.kensho_pages(t)}　{E(keys.source_url(self.inp, t['shiryo']))}")
+
+    def kensho_ichi(self, k):
+        """kensho-tantou、kensho-ichi、kensho-honpen の行の並び。字は総合戦略の本編の字（SCHEMA.md 7.12）。"""
+        D = self.D
+        t, x = self.ks["tori"][k], self.ks["sr"][k]
+        D.dasanai("施策検証の取り組みの表 tantou、houkou")
+        D.dasanai("施策検証の取り組みの表 chu")
+        nm, url = self.moto(t["honpen"])
+        return [f"- {D.bun('kensho-tantou', tantou=S(x['dept']))}",
+                f"- {D.bun('kensho-ichi', kihon_no=S(t['kihon_no']), kihon=S(x['kihon']), houkou=S(x['houkou']))}",
+                f"  - {D.bun('kensho-honpen', shiryo=nm + (('　' + E(url)) if url else ''))}"]
+
+    def kensho_ran(self, t, ran):
+        """施策検証の取り組みの表の列（tasseido か kekka）→ 欄の見出しの字とシートの字に、シートのページを添えたもの。"""
+        self.D.dasanai("施策検証の取り組みの表 tasseido、kekka")
+        return (self.D.bun("hyo-kijutsu-ran", midashi=self.kensho_midashi(ran), atai=S(t[ran]))
+                + f"（{self.kensho_pages(t)}）")
+
+    def kensho_bunya(self, fid):
+        """field に分野の番号：町の検証のブロックの並び（docs/design.md 4節の field の7）。"""
+        D, K = self.D, self.ks
+        x = self.bu["bunya"][fid]
+        head = [f"## {E(D.bun('kensho-midashi'))}", E(D.bun("kensho-setsumei")), E(D.bun("kensho-mikakunin")),
+                E(D.bun("kensho-nendo"))]
+        aru = {r["shisaku"] for rs in K["bunya"].values() for r in rs if r["bunya"] == fid}
+        D.dasanai("施策検証の取り組みと分野の対応の表 saisho")
+        items = [f"- {D.bun('kensho-nai', shisaku=S(no + name))}" for no, name in x["shisaku"] if no not in aru]
+        items += [self.kensho_item(k, fid) for k in K["tori"] if K["naka"].get(k) == fid]
+        hoka = [k for k in K["tori"] if K["naka"].get(k) != fid and any(r["bunya"] == fid for r in K["bunya"].get(k, []))]
+        hh = [f"### {E(D.bun('kensho-hoka'))}", E(D.bun("kensho-hoka-setsumei"))]
+        hi = [f"- {self.kensho_kagi(k)}　" + D.bun("kensho-shisaku", shisaku="、".join(
+            self.kensho_shisaku(r) for r in K["bunya"][k] if r["bunya"] == fid)) for k in hoka]
+        if not items:
+            return [(head + hh, hi)]
+        return [(head, items)] + ([(hh, hi)] if hi else [])
+
+    def kensho_item(self, k, fid):
+        """field の町の検証で、中身を出す torikumi 1つ → 項目。"""
+        D, K = self.D, self.ks
+        t = K["tori"][k]
+        lines = [f"### {self.kensho_kagi(k)}"] + self.kensho_ichi(k)
+        lines.append("- " + D.bun("kensho-shisaku", shisaku="、".join(
+            self.kensho_shisaku(r) for r in K["bunya"][k] if r["bunya"] == fid)))
+        lines.append("- " + self.kensho_ran(t, "kekka"))
+        lines.append("- " + self.kensho_ran(t, "tasseido"))
+        lines.append("- " + self.kensho_sheet(t))
+        return "\n".join(lines)
+
+    def review(self, k):
+        """review に torikumi の ID：施策検証シートの記述（docs/design.md 4節の review）。"""
+        D, K = self.D, self.ks
+        t = K["tori"][k]
+        bunya = "、".join(f"{self.field_kagi(r['bunya'])} {self.kensho_shisaku(r)}" for r in K["bunya"][k])
+        intro = ([E(D.bun("kensho-review-lead"))] + self.kensho_ichi(k)
+                 + ["- " + D.bun("kensho-bunya", bunya=bunya), E(D.bun("kensho-mikakunin")), "- " + self.kensho_sheet(t),
+                    E(D.bun("kensho-nendo"))])
+
+        def page(key):
+            return E(D.bun("page", n=sj.page_no(key)))
+        D.dasanai("施策検証の KPI の表 shihyo、kijun_midashi、kijun")
+        D.dasanai("施策検証の KPI の表 nendo_ji、mokuhyo、jisseki、tasseiritsu")
+        D.dasanai("施策検証の KPI の表 chu")
+        D.dasanai("施策検証の文の表 yomi、施策検証の KPI の表 yomi")
+        D.dasanai("検証結果の説明の表 inyo、tokoro")
+        kara = E(D.kotoba("施策検証の KPI の表 mokuhyo、jisseki、tasseiritsu が空"))
+        items = []
+        for r0, rows in K["kpi"].get(k, []):
+            lines = [f"### {D.bun('hyo-kijutsu-ran', midashi=self.kensho_midashi('shihyo'), atai=S(r0['shihyo']))}"
+                     f"（{page(r0['shiryo'])}）",
+                     f"- {D.bun('hyo-kijutsu-ran', midashi=S(r0['kijun_midashi']), atai=S(r0['kijun']))}"]
+            for r in rows:
+                lines.append(f"- {S(r['nendo_ji'])}　" + "　".join(
+                    D.bun("kensho-kpi-ran", midashi=self.kensho_midashi(c), atai=S(r[c]) if r[c] else kara)
+                    for c in ("mokuhyo", "jisseki", "tasseiritsu")))
+            items.append("\n".join(lines))
+
+        def setsumei(shu, ran):
+            return ([f"  - {D.bun('kensho-setsumei-moto', midashi=self.kensho_midashi(ran))}"]
+                    + [f"    - 「{S(r['inyo'])}」（{page(r['tokoro'])}）" for r in K["kekka"] if r["shu"] == shu])
+        items.append("\n".join(["- " + self.kensho_ran(t, "tasseido")] + setsumei("tasseido", "tasseido")))
+        blocks = [([f"## {self.kensho_midashi('kpi')}", E(D.bun("kensho-kpi-chu"))], items)]
+        D.dasanai("施策検証の文の表 midashi")
+        D.dasanai("施策検証の文の表 bun")
+        D.dasanai("施策検証の文の表 chu")
+        bun = {ran: (mi, rows) for ran, mi, rows in K["bun"].get(k, [])}
+        dare = {"naibu": D.bun("kensho-dare", midashi=self.kensho_midashi("naibu"),
+                               dare=E(D.kotoba("施策検証の欄の表 kubun が「naibu」"))),
+                "gaibu": D.bun("kensho-dare", midashi=self.kensho_midashi("gaibu"),
+                               dare=E(D.kotoba("施策検証の欄の表 kubun が「gaibu」")))}
+        top = [f"## {dare['naibu']}"]
+        for ran in ks.NAIBU:
+            if ran not in bun:
+                continue
+            mi, rows = bun[ran]
+            blocks.append((top + [f"### {S(mi)}"], [f"- 「{S(r['bun'])}」（{page(r['shiryo'])}）" for r in rows]))
+            top = []
+        blocks.append(([f"## {dare['gaibu']}"],
+                       ["\n".join(["- " + self.kensho_ran(t, "kekka")] + setsumei("kekka", "kekka"))]))
+        for ran in ks.GAIBU:
+            if ran in bun:
+                mi, rows = bun[ran]
+                blocks.append(([f"### {S(mi)}"], [f"- 「{S(r['bun'])}」（{page(r['shiryo'])}）" for r in rows]))
+        blocks.append(([], [E(D.bun("kensho-owari"))]))
+        return Outou(self.kensho_kagi(k), intro, blocks)
+
     # ツールの説明
     def tools(self, themes):
         D = self.D
@@ -1043,6 +1191,9 @@ class Tsukuru:
         is_erabu = list(is_namae)
         fi_erabu = list(self.bu["bunya"]) + [i for i, _ in self.bu["wadai"]]
         fi_mei = {i: n for i, n in self.bu["wadai"]}
+        rv_erabu = list(self.ks["tori"])
+        # torikumi の名前はシートの字なので、使わない言葉の検査では、資料からの文の印を残した文（kensa）を使う
+        rv_desc = D.bun("mcp-hikisu-review", erabu="、".join(f"{k}（{self.kensho_namae(k)}）" for k in rv_erabu))
 
         def fi_namae(k):
             x = self.bu["bunya"].get(k)
@@ -1077,6 +1228,9 @@ class Tsukuru:
             "field": (owari(D.bun("mcp-tool-field", keikaku=S(self.bu["kk"]["name"]))), [
                 dict(name="field", type="string", required=False, erabu=fi_erabu,
                      description=owari(fi_desc), kensa=fi_desc)]),
+            "review": (owari(E(D.bun("mcp-tool-review"))), [
+                dict(name="review", type="string", required=True, erabu=rv_erabu, description=owari(rv_desc),
+                     kensa=rv_desc)]),
             "document": (owari(E(D.bun("mcp-tool-shiryo"))), [
                 dict(name="document", type="string", required=True, erabu=b_erabu, description=owari(E(D.bun(
                     "mcp-hikisu-bunsho", erabu=namae_tsuki(b_erabu, self.namae.bunsho))))),
@@ -1310,6 +1464,12 @@ def build(inp, tables, kotoba, read_problems=(), design=None, skill=None, notes=
     except (bu.BunyaError, inputs.InputError) as e:
         raise Stop([("(j) 分野", str(e))])
     problems += [("(j) 分野", m) for m in more]
+    # (k) 施策検証結果報告書の記述（SCHEMA.md 7.12）
+    try:
+        tk.ks, more = ks.matome(inp)
+    except (ks.KenshoError, bu.BunyaError, inputs.InputError) as e:
+        raise Stop([("(k) 施策検証", str(e))])
+    problems += [("(k) 施策検証", m) for m in more]
     if problems:
         raise Stop(list(dict.fromkeys(problems)))
     tk.bunya_ronten = bu.ronten_of_dai(inp, tk.note)
@@ -1357,6 +1517,8 @@ def build(inp, tables, kotoba, read_problems=(), design=None, skill=None, notes=
     ireru("field", [], tk.field_ichiran())
     for k in list(tk.bu["bunya"]) + [i for i, _ in tk.bu["wadai"]]:
         ireru("field", [("field", k)], tk.field(k))
+    for k in tk.ks["tori"]:
+        ireru("review", [("review", k)], tk.review(k))
     for b in tk.by:
         ireru("document", [("document", b)], tk.shiryo(b))
         for p in tables["bubun"]:

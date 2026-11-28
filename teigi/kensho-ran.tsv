@@ -1,0 +1,21 @@
+ran	kubun	midashi	chu
+kihon	sheet	基本目標	
+houkou	sheet	取り組みの方向	
+tantou	sheet	担当部署	
+kpi	kpi	KPI（重要業績評価指標）	
+shihyo	kpi	指標名	
+mokuhyo	kpi	目標	
+jisseki	kpi	実績	
+tasseiritsu	kpi	達成率	
+tasseido	kpi	KPIの達成度【KPIが複数の場合は、平均点】	
+naibu	naibu	内部検証	
+jokyo	naibu	取り組み状況	
+kongo	naibu	今後の取り組み	
+seika	naibu	実施したことの成果や効果;実施していること	「実施していること」は、64ページと88ページから始まるシートの見出し（PDF のページ）
+dekiteinai	naibu	実施できていないこと;実施できていないこと・困難なこと	「実施できていないこと・困難なこと」は、50ページから始まるシートの見出し（PDF のページ）。このシートには「実施が困難なこと」の見出しが無い
+konnan	naibu	実施が困難なこと	
+fumaete	naibu	基本目標、基本的方向を踏まえて	
+kadai	naibu	今後の課題	
+gaibu	gaibu	外部検証	
+kekka	gaibu	検証結果	
+comment	gaibu	コメント	

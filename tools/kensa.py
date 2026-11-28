@@ -11,6 +11,9 @@
        作り直して、taio/konkyo.tsv と同じであることを確認する）
   3.46 一般質問の題と分野の対応の表の検査（tools/bunya.py --kensa。読み取りの結果から作り直して、taio/bunya.tsv と
        同じであることを確認する。台帳の題の全部に行があること、分野と話題の名前の検査を含む）
+  3.47 施策検証結果報告書の記述の表の検査（tools/kensho.py --kensa。読み取りの結果から作り直して、taio/kensho.tsv、
+       kensho-kpi.tsv、kensho-bun.tsv、kensho-bunya.tsv と同じであることを確認する。総合戦略の取り組みとの照合、
+       シートの本文との照合を含む）
   3.5 設計の物と関係に当たる表の検査（tools/sekkei.py。当たる表が無い物と関係の数と名前を出す）
   4. 試作のページの作成（tools/build_note.py hoiku、kaigo、kokyo、chiiki）と、分野の試作のページの作成（tools/build_bunya.py）
   5. 数値のページの作成（tools/build_suji.py taiki）
@@ -45,6 +48,7 @@ STEPS = [
     ("質問と事項の対応の表の検査", PY + [os.path.join(TOOLS, "yomi.py"), "--kensa"]),
     ("質問が取り上げた資料と出来事の表の検査", PY + [os.path.join(TOOLS, "konkyo.py"), "--kensa"]),
     ("一般質問の題と分野の対応の表の検査", PY + [os.path.join(TOOLS, "bunya.py"), "--kensa"]),
+    ("施策検証結果報告書の記述の表の検査", PY + [os.path.join(TOOLS, "kensho.py"), "--kensa"]),
     ("設計の物と関係に当たる表の検査", PY + [os.path.join(TOOLS, "sekkei.py")]),
     ("試作のページの作成（幼保）", PY + [os.path.join(TOOLS, "build_note.py"), "hoiku"]),
     ("試作のページの作成（高齢者福祉・介護）", PY + [os.path.join(TOOLS, "build_note.py"), "kaigo"]),

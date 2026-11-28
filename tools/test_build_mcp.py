@@ -93,10 +93,12 @@ class TestReal(unittest.TestCase):
         d = self.data
         self.assertEqual((d["name"], d["version"]), ("hino-context", bm.VERSION))
         self.assertEqual([t["name"] for t in d["tools"]],
-                         ["theme", "issue", "item", "facility", "document", "event", "field"])     # field は 2026-11-28 に追加
+                         ["theme", "issue", "item", "facility", "document", "event", "field", "review"])
+        # field と review は 2026-11-28 に追加
         want = {"theme": ["theme", "page"], "issue": ["issue", "page"], "item": ["item", "document", "breakdown", "page"],
                 "facility": ["facility", "page"],
-                "document": ["document", "table", "page"], "event": ["event", "page"], "field": ["field", "page"]}
+                "document": ["document", "table", "page"], "event": ["event", "page"], "field": ["field", "page"],
+                "review": ["review", "page"]}
         for t in d["tools"]:
             self.assertTrue(t["description"])
             self.assertEqual([a["name"] for a in t["args"]], want[t["name"]])
@@ -107,13 +109,13 @@ class TestReal(unittest.TestCase):
                 self.assertIsInstance(a["erabu"], list)
         self.assertEqual({t["name"]: [a["name"] for a in t["args"] if a["required"]] for t in d["tools"]},
                          {"theme": [], "issue": ["issue"], "item": ["item"], "facility": ["facility"],
-                          "document": ["document"], "event": ["event"], "field": []})
+                          "document": ["document"], "event": ["event"], "field": [], "review": ["review"]})
         self.assertIn("taiki（待機児童数）", d["tools"][2]["args"][0]["description"])
         self.assertIn("teiin（新こども園の定員）", d["tools"][1]["args"][0]["description"])
         self.assertNotIn("最初に", d["tools"][0]["description"])            # 2026-11-27 の修正
         self.assertIn("ツールの引数の説明か、theme の応答", d["tools"][0]["description"])
         self.assertEqual(d["tools"][2]["args"][2]["type"], "integer")
-        self.assertEqual(set(d["nai"]), {"theme", "issue", "item", "facility", "document", "event", "field"})
+        self.assertEqual(set(d["nai"]), {"theme", "issue", "item", "facility", "document", "event", "field", "review"})
         self.assertEqual(d["instructions"], bm.read_skill() + "\n- " + D.bun("mcp-hani-nai") + "\n- "
                          + D.bun("mcp-hani-bunya", keikaku="第6次日野町総合計画"))
         n = len(d["bun"])
@@ -137,7 +139,7 @@ class TestReal(unittest.TestCase):
             self.assertIn(k, issue)
         self.assertEqual(sum(1 for k in o["item"] if re.fullmatch(r"item=[a-z0-9-]+", k)), 27)
         self.assertEqual(sum(1 for k in o["facility"] if "page" not in k), 13)
-        self.assertEqual(sum(1 for k in o["document"] if re.fullmatch(r"document=[^&]+", k)), 28)     # 2026-11-28 に2つを足した
+        self.assertEqual(sum(1 for k in o["document"] if re.fullmatch(r"document=[^&]+", k)), 29)     # 2026-11-28 に2つと、施策検証結果報告書（令和7年度）を足した
         self.assertEqual(sum(1 for k in o["document"] if re.fullmatch(r"document=[^&]+&table=[0-9]+", k)), 17)
         # 続きの1は、続きを付けない組と同じ
         for v in o.values():
@@ -810,6 +812,51 @@ class TestReal(unittest.TestCase):
         self.assertNotIn(D.kotoba("質問の題と分野の対応の表 chushin が空"), w)
         # theme（引数なし）に、分野ごとの一覧があることの文
         self.assertIn(D.bun("mcp-hani-bunya", keikaku="第6次日野町総合計画"), self.bun("theme", ""))
+
+    def test_kensho(self):
+        """総合戦略の施策検証結果報告書の記述（SCHEMA.md 7.12。2026-11-28）。field の町の検証と、review。"""
+        o = self.data["outou"]
+        self.assertEqual(len([k for k in o["review"] if "page" not in k]), 40)
+        e008 = "取り組み8 子どもの読書活動と学習活動の支援（review：node:senryaku2/e008）"
+        # 分野⑤：基本施策のあと、題の一覧の前に、町の検証。2人が最初に書いた分野には中身を出す
+        t = "\n".join(self.data["bun"][i] for k, i in sorted(o["field"].items()) if k.startswith("field=⑤&page="))
+        a, b, c = t.index("## 基本施策"), t.index("## " + D.bun("kensho-midashi")), t.index("## 一般質問の題")
+        self.assertTrue(a < b < c)
+        self.assertIn("### " + e008 + "\n- " + D.bun("kensho-tantou", tantou="図書館"), t)
+        self.assertIn("- 検証結果：B（46〜47ページ）", t)
+        self.assertIn("- KPIの達成度【KPIが複数の場合は、平均点】：41.3%（46〜47ページ）", t)
+        self.assertIn("(2)子どもの読書活動の推進（" + D.kotoba("施策検証の取り組みと分野の対応の表 yomi が「一致」") + "）", t)
+        self.assertIn("https://www.town.shiga-hino.lg.jp/cmsfiles/contents/0000004/4666/70.pdf#page=46", t)
+        self.assertNotIn(D.bun("kensho-hoka"), t)
+        # 分野②：2つめの組として結び付いた取り組みは、名前と ID と読みの言葉だけ
+        t = "\n".join(self.data["bun"][i] for k, i in sorted(o["field"].items()) if k.startswith("field=②&page="))
+        hoka = t[t.index("### " + D.bun("kensho-hoka")):t.index("## 一般質問の題")]
+        self.assertIn("- " + e008 + "　かかわる基本施策：(3)豊かな心の育成（", hoka)
+        self.assertNotIn("### " + e008, t)
+        # 取り組みが結び付いていない基本施策の文
+        t = "\n".join(self.data["bun"][i] for k, i in sorted(o["field"].items()) if k.startswith("field=①&page="))
+        self.assertIn("- " + D.bun("kensho-nai", shisaku="(2)子どもが安心して生活できる仕組みづくり"), t)
+        # 話題の応答には出さない
+        self.assertNotIn(D.bun("kensho-midashi"), self.bun("field", "field=wadai-kokuho"))
+        # review：KPI は報告書の表のまま、文の欄は全部、検証結果の意味は報告書の字
+        r = "\n".join(self.data["bun"][i] for k, i in sorted(o["review"].items())
+                      if k.startswith("review=node:senryaku2/e008&page="))
+        self.assertTrue(r.split("\n")[1] == "# " + e008)
+        self.assertIn("- 令和7年度　目標 52　実績 30　達成率 57.7%", r)
+        self.assertIn("- 基準値【R2】：3.7 回", r)
+        self.assertIn("## 内部検証（町が書いたもの）\n### 取り組み状況\n", r)
+        self.assertIn("### 実施が困難なこと\n- 「特にありません。」（47ページ）", r)
+        self.assertIn("    - 「Ｂ 実施できている １８点 ～ １３点」（8ページ）", r)
+        self.assertEqual(r.count("\n### コメント\n"), 1)
+        self.assertEqual(sum(1 for x in r.split("\n") if x.startswith("- 「")), 10 + 6 + 12 + 1 + 1 + 5 + 3 + 7)
+        # 目標2・実績1で達成率100.0% の行も、字のまま（2026-11-28 の依頼者の決定）
+        r = self.bun("review", "review=node:senryaku2/e017")
+        self.assertIn("目標 2　実績 1　達成率 100.0%", r)
+        # 欄の見出しがシートによって違う欄は、そのシートの字
+        r = "\n".join(self.data["bun"][i] for k, i in sorted(o["review"].items())
+                      if k.startswith("review=node:senryaku2/e010&page="))
+        self.assertIn("### 実施できていないこと・困難なこと\n", r)
+        self.assertNotIn("### 実施が困難なこと", r)
 
     def test_repo_json(self):
         # リポジトリの JSON は、いまの表から作ったものと同じ（違えば、作り直していない）
