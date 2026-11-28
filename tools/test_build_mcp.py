@@ -92,10 +92,11 @@ class TestReal(unittest.TestCase):
     def test_shape(self):
         d = self.data
         self.assertEqual((d["name"], d["version"]), ("hino-context", bm.VERSION))
-        self.assertEqual([t["name"] for t in d["tools"]], ["theme", "issue", "item", "facility", "document", "event"])
+        self.assertEqual([t["name"] for t in d["tools"]],
+                         ["theme", "issue", "item", "facility", "document", "event", "field"])     # field は 2026-11-28 に追加
         want = {"theme": ["theme", "page"], "issue": ["issue", "page"], "item": ["item", "document", "breakdown", "page"],
                 "facility": ["facility", "page"],
-                "document": ["document", "table", "page"], "event": ["event", "page"]}
+                "document": ["document", "table", "page"], "event": ["event", "page"], "field": ["field", "page"]}
         for t in d["tools"]:
             self.assertTrue(t["description"])
             self.assertEqual([a["name"] for a in t["args"]], want[t["name"]])
@@ -106,14 +107,15 @@ class TestReal(unittest.TestCase):
                 self.assertIsInstance(a["erabu"], list)
         self.assertEqual({t["name"]: [a["name"] for a in t["args"] if a["required"]] for t in d["tools"]},
                          {"theme": [], "issue": ["issue"], "item": ["item"], "facility": ["facility"],
-                          "document": ["document"], "event": ["event"]})
+                          "document": ["document"], "event": ["event"], "field": []})
         self.assertIn("taiki（待機児童数）", d["tools"][2]["args"][0]["description"])
         self.assertIn("teiin（新こども園の定員）", d["tools"][1]["args"][0]["description"])
         self.assertNotIn("最初に", d["tools"][0]["description"])            # 2026-11-27 の修正
         self.assertIn("ツールの引数の説明か、theme の応答", d["tools"][0]["description"])
         self.assertEqual(d["tools"][2]["args"][2]["type"], "integer")
-        self.assertEqual(set(d["nai"]), {"theme", "issue", "item", "facility", "document", "event"})
-        self.assertEqual(d["instructions"], bm.read_skill() + "\n- " + D.bun("mcp-hani-nai"))
+        self.assertEqual(set(d["nai"]), {"theme", "issue", "item", "facility", "document", "event", "field"})
+        self.assertEqual(d["instructions"], bm.read_skill() + "\n- " + D.bun("mcp-hani-nai") + "\n- "
+                         + D.bun("mcp-hani-bunya", keikaku="第6次日野町総合計画"))
         n = len(d["bun"])
         self.assertTrue(all(0 <= i < n for v in d["outou"].values() for i in v.values()))
         self.assertEqual(set(range(n)), {i for v in d["outou"].values() for i in v.values()})
@@ -785,6 +787,29 @@ class TestReal(unittest.TestCase):
         t = "\n".join(self.issue_pages("hiyo"))
         self.assertIn(D.bun("mcp-issue-kakunin-bi", hi="2026年11月18日"), t)
         self.assertIn("総務省自治財政局財務調査課「", t)
+
+    def test_field(self):
+        """一般質問の題と、総合計画の分野（SCHEMA.md 7.11。2026-11-28）。"""
+        o = self.data["outou"]["field"]
+        # 引数なし、分野34、分野に無い話題17
+        self.assertEqual(len([k for k in o if "page" not in k]), 1 + 34 + 17)
+        t = self.bun("field", "")
+        self.assertIn("## 柱1 未来を担うひとづくり\n- ①子ども・子育て（field：①）　" + D.bun("bunya-kazu", n=103), t)
+        self.assertIn("## " + D.kotoba("質問の題と分野の対応の表 wadai") + "\n", t)
+        self.assertIn("- 国民健康保険と医療保険制度（field：wadai-kokuho）　" + D.bun("bunya-kazu", n=20), t)
+        # 分野：基本施策は入力の字のまま。題ごとに、読みの言葉、会議録の URL。発言者の名前は出さない
+        t = "\n".join(self.data["bun"][i] for k, i in sorted(o.items()) if k.startswith("field=①&page="))
+        self.assertIn("## 基本施策\n- (1)出産前から育児への切れ目のない支援の推進\n", t)
+        self.assertIn("\n## " + D.bun("bunya-midashi-dai", n=103) + "\n", t)
+        self.assertEqual(t.count("\n  - " + D.bun("bunya-link") + "："), 103)
+        self.assertIn("（issue：", t)
+        self.assertNotIn("議員", t)
+        # 中心の分野の言葉は、分野の題にだけ付ける。話題の題には付けない
+        self.assertIn(D.kotoba("質問の題と分野の対応の表 chushin が「一致」"), t)
+        w = self.bun("field", "field=wadai-kokuho")
+        self.assertNotIn(D.kotoba("質問の題と分野の対応の表 chushin が空"), w)
+        # theme（引数なし）に、分野ごとの一覧があることの文
+        self.assertIn(D.bun("mcp-hani-bunya", keikaku="第6次日野町総合計画"), self.bun("theme", ""))
 
     def test_repo_json(self):
         # リポジトリの JSON は、いまの表から作ったものと同じ（違えば、作り直していない）

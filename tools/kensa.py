@@ -9,8 +9,10 @@
        taio/shudai.tsv と同じであることを確認する）
   3.45 質問が取り上げた資料と出来事の表の検査（tools/konkyo.py --kensa。入力の確定済みの記録と、読み取りの結果から
        作り直して、taio/konkyo.tsv と同じであることを確認する）
+  3.46 一般質問の題と分野の対応の表の検査（tools/bunya.py --kensa。読み取りの結果から作り直して、taio/bunya.tsv と
+       同じであることを確認する。台帳の題の全部に行があること、分野と話題の名前の検査を含む）
   3.5 設計の物と関係に当たる表の検査（tools/sekkei.py。当たる表が無い物と関係の数と名前を出す）
-  4. 試作のページの作成（tools/build_note.py hoiku、kaigo、kokyo、chiiki）
+  4. 試作のページの作成（tools/build_note.py hoiku、kaigo、kokyo、chiiki）と、分野の試作のページの作成（tools/build_bunya.py）
   5. 数値のページの作成（tools/build_suji.py taiki）
   6. 資料の表のページの作成（tools/build_hyo.py pt:youho/honpen 4）
   7. 資料の表のページの作成（tools/build_hyo.py pt:kodomo/honpen 4）
@@ -42,11 +44,13 @@ STEPS = [
     ("事項の表の検査", PY + [os.path.join(TOOLS, "jiko.py")]),
     ("質問と事項の対応の表の検査", PY + [os.path.join(TOOLS, "yomi.py"), "--kensa"]),
     ("質問が取り上げた資料と出来事の表の検査", PY + [os.path.join(TOOLS, "konkyo.py"), "--kensa"]),
+    ("一般質問の題と分野の対応の表の検査", PY + [os.path.join(TOOLS, "bunya.py"), "--kensa"]),
     ("設計の物と関係に当たる表の検査", PY + [os.path.join(TOOLS, "sekkei.py")]),
     ("試作のページの作成（幼保）", PY + [os.path.join(TOOLS, "build_note.py"), "hoiku"]),
     ("試作のページの作成（高齢者福祉・介護）", PY + [os.path.join(TOOLS, "build_note.py"), "kaigo"]),
     ("試作のページの作成（公共施設の再編）", PY + [os.path.join(TOOLS, "build_note.py"), "kokyo"]),
     ("試作のページの作成（地域のあり方・自治会活動）", PY + [os.path.join(TOOLS, "build_note.py"), "chiiki"]),
+    ("分野の試作のページの作成", PY + [os.path.join(TOOLS, "build_bunya.py")]),
     ("数値のページの作成", PY + [os.path.join(TOOLS, "build_suji.py"), "taiki"]),
     ("資料の表のページの作成（再編整備計画の表4）", PY + [os.path.join(TOOLS, "build_hyo.py"), "pt:youho/honpen", "4"]),
     ("資料の表のページの作成（子ども・子育て支援事業計画の表4）",

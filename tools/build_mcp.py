@@ -24,6 +24,8 @@
       （tools/build_note.py の jiko_ni_suru と collect）
   (i) 質問が取り上げた資料と出来事の表（taio/konkyo.tsv）の検査（tools/konkyo.py の check）と、範囲の段落の確認。
       資料と出来事の名前の表（teigi/konkyo-namae.tsv）の検査（tools/yomi.py の check_namae）
+  (j) 質問の題と分野の対応の表（taio/bunya.tsv）と、分野に無い話題の名前の表（teigi/bunya-wadai.tsv）の検査
+      （tools/bunya.py の check と check_wadai）。台帳の題の start の発言と段落が会議録にあること
 """
 import argparse
 import datetime
@@ -36,8 +38,10 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
+import build_bunya as bb  # noqa: E402
 import build_hyo as bh  # noqa: E402
 import build_note as bn  # noqa: E402
+import bunya as bu  # noqa: E402
 import build_suji as bs  # noqa: E402
 import build_theme as bt  # noqa: E402
 import inputs  # noqa: E402
@@ -72,7 +76,8 @@ TOOLS = (("theme", (("theme", "string", False), (TSUZUKI, "integer", False))),
                    (TSUZUKI, "integer", False))),
          ("facility", (("facility", "string", True), (TSUZUKI, "integer", False))),
          ("document", (("document", "string", True), ("table", "integer", False), (TSUZUKI, "integer", False))),
-         ("event", (("event", "string", True), (TSUZUKI, "integer", False))))
+         ("event", (("event", "string", True), (TSUZUKI, "integer", False))),
+         ("field", (("field", "string", False), (TSUZUKI, "integer", False))))
 
 
 def design_problems(D, src=None):
@@ -173,6 +178,8 @@ class Tsukuru:
         self.konkyo = {}                 # 資料の ID → 質問が取り上げた資料と出来事の表の質問（Page.ronten の qs と同じ形）。build で入れる
         self.konkyo_pg = {}              # 質問 → 注（Page.chu_list）を引く build_note.Page（その質問があるテーマの Page）
         self.event = {}                  # 出来事の ID → (資料と出来事の名前の表の行, 質問の並び（konkyo と同じ形）, テーマの集まり)
+        self.bu = None                   # 分野と題（tools/bunya.py の matome に、計画 kk を足したもの）。build で入れる
+        self.bunya_ronten = {}           # 題の (from, n) → 論点の (名前, ID, テーマ) の並び（tools/bunya.py の ronten_of_dai）。build で入れる
 
     # 資料の名前と url
     def moto(self, key, quote=""):
@@ -211,7 +218,10 @@ class Tsukuru:
             name = bt.Theme(self.inp, th).namae
             items.append("- " + self.kagi_ji(S(name[0]) if name else E(th), "theme", th))
         D.dasanai("テーマの定義 kind が「名前」")
-        return Outou(E(D.bun("mcp-midashi-theme")), [E(D.bun("mcp-hani"))], blocks=[([], items)])
+        intro = [E(D.bun("mcp-hani"))]
+        if self.bu:
+            intro.append(D.bun("mcp-hani-bunya", keikaku=S(self.bu["kk"]["name"])))
+        return Outou(E(D.bun("mcp-midashi-theme")), intro, blocks=[([], items)])
 
     # theme=…
     def theme(self, theme):
@@ -938,6 +948,82 @@ class Tsukuru:
             self.problems.append(("(h) 論点", f"{ji}：続きの番号が、作り直すと変わる（{bango} → {o.hajime}）"))
         return o
 
+    # field（台帳の題と、総合計画の分野。SCHEMA.md 7.11、docs/design.md 4節）
+    def field_kagi(self, no):
+        """分野の番号と名前（入力の字のまま続けたもの）と ID。"""
+        x = self.bu["bunya"][no]
+        return self.kagi_ji(S(x["no"] + x["name"]), "field", no)
+
+    def wadai_kagi(self, name):
+        """話題（分野を付けなかった題の、まとめた名前）と ID。"""
+        D = self.D
+        D.dasanai("分野に無い話題の名前の表 matome")
+        D.dasanai("分野に無い話題の名前の表 id")
+        return self.kagi_ji(E(name), "field", self.bu["m2id"][name])
+
+    def field_ichiran(self):
+        """field（引数なし）：分野（政策の柱ごと）と、話題（分野を付けなかった題）の一覧と、それぞれの題の数。"""
+        D, m = self.D, self.bu
+        kk = m["kk"]
+        D.dasanai("質問の題と分野の対応の表 bunya")
+        intro = [D.bun("bunya-setsumei", keikaku=S(kk["name"])), D.bun("bunya-ichiran-setsumei", keikaku=S(kk["name"])),
+                 E(D.bun("mcp-bunya-ichiran"))]
+        blocks = []
+        for h in kk["hashira"]:
+            blocks.append(([f"## {S(h['no'] + ' ' + h['name'])}"],
+                           [f"- {self.field_kagi(x['no'])}　{E(D.bun('bunya-kazu', n=len(m['by'].get(x['no'], []))))}"
+                            for x in h["bunya"]]))
+        blocks.append(([f"## {E(D.kotoba('質問の題と分野の対応の表 wadai'))}", E(D.bun("bunya-wadai-setsumei"))],
+                       [f"- {self.wadai_kagi(name)}　{E(D.bun('bunya-kazu', n=len(m['by'].get(i, []))))}"
+                        for i, name in m["wadai"]]))
+        return Outou(D.bun("mcp-midashi-bunya", keikaku=S(kk["name"])), intro, blocks)
+
+    def field(self, fid):
+        """field に分野の番号か話題の ID：分野は基本施策（入力の字のまま）と、題の一覧。話題は題の一覧。"""
+        D, m, inp = self.D, self.bu, self.inp
+        kk = m["kk"]
+        intro = [D.bun("bunya-setsumei", keikaku=S(kk["name"]))]
+        blocks = []
+        if fid in m["bunya"]:
+            x = m["bunya"][fid]
+            h = x["hashira"]
+            title = self.field_kagi(fid)
+            intro.append(f"- {S(h['no'] + ' ' + h['name'])}　{S(x['seisaku'][0] + ' ' + x['seisaku'][1])}")
+            t = x["tokoro"]
+            pp = sj.page_no(t[0]) if len(t) == 1 else D.bun("kikan", a=sj.page_no(t[0]), z=sj.page_no(t[-1]))
+            items = [f"- {S(no + name)}" for no, name in x["shisaku"]]
+            items.append(f"{E(D.kotoba('資料の一覧の表 namae と、shiryo のページ'))}：{self.bunsho_kagi(kk['id'])}"
+                         f"　{E(D.bun('page', n=pp))}　{E(keys.source_url(inp, t[0]))}")
+            blocks.append(([f"## {S(x['midashi'])}"], items))
+        else:
+            name = next(n for i, n in m["wadai"] if i == fid)
+            title = self.wadai_kagi(name)
+            intro.append(E(D.bun("bunya-wadai-setsumei")))
+        dai = m["by"].get(fid, [])
+        blocks.append(([f"## {E(D.bun('bunya-midashi-dai', n=len(dai)))}", E(D.bun("bunya-dai-setsumei"))],
+                       [self.field_dai(fid, k) for k in dai]))
+        return Outou(title, intro, blocks)
+
+    def field_dai(self, fid, k):
+        """題1つ → 項目。日付と題、その分野（話題）の読み、ほかに付いた分野と話題、論点（tools/bunya.py の ronten_of_dai）、会議録の URL。"""
+        D, m = self.D, self.bu
+        r, rows = m["dai"][k], m["of"][k]
+        D.dasanai("質問の題と分野の対応の表 from、n")
+        D.dasanai("質問の題と分野の対応の表 chu")
+        mine = next(x for x in rows if (x["bunya"] or m["m2id"][x["wadai"]]) == fid)
+        dai = S("「" + r["title"] + "」") if r["title"].strip() else E(D.bun("bunya-dai-nashi"))
+        lines = [f"- {E(bs.hi_str(D, r['date']))}　{dai}", "  - " + E(bb.yomi_go(D, mine))]
+        hoka = [x for x in rows if x is not mine]
+        if hoka:
+            lines.append("  - " + D.bun("bunya-hoka", hoka="、".join(
+                self.field_kagi(x["bunya"]) if x["bunya"] else self.wadai_kagi(x["wadai"]) for x in hoka)))
+        ron = self.bunya_ronten.get(k)
+        if ron:
+            lines.append("  - " + D.bun("bunya-ronten", ronten="、".join(self.kagi_ji(E(P), "issue", s) for P, s, _ in ron)))
+        sid, p = bu.start_of(r)
+        lines.append(f"  - {E(D.bun('bunya-link'))}：{E(keys.search_url(sid, p))}")
+        return "\n".join(lines)
+
     # ツールの説明
     def tools(self, themes):
         D = self.D
@@ -949,6 +1035,14 @@ class Tsukuru:
         hyo_erabu = [f"{p['bunsho']} {p['n']}" for p in self.t["bubun"] if p["shu"] == sj.HYO]
         is_namae = {slug: P for T, _ in self.note.values() for P, slug, _, _ in T["topics"]}
         is_erabu = list(is_namae)
+        fi_erabu = list(self.bu["bunya"]) + [i for i, _ in self.bu["wadai"]]
+        fi_mei = {i: n for i, n in self.bu["wadai"]}
+
+        def fi_namae(k):
+            x = self.bu["bunya"].get(k)
+            return S(x["no"] + x["name"]) if x else E(fi_mei[k])
+        # 分野の名前は入力の字なので、使わない言葉の検査では、資料からの文の印を残した文（kensa）を使う
+        fi_desc = D.bun("mcp-hikisu-field", erabu="、".join(f"{k}（{fi_namae(k)}）" for k in fi_erabu))
 
         def namae_tsuki(ks, f):
             return ichi(f"{k}（{owari(f(k))}）" for k in ks)
@@ -974,6 +1068,9 @@ class Tsukuru:
             "event": (owari(E(D.bun("mcp-tool-event"))), [
                 dict(name="event", type="string", required=True, erabu=list(self.event), description=owari(E(D.bun(
                     "mcp-hikisu-event", erabu=namae_tsuki(list(self.event), self.event_kagi_namae)))))]),
+            "field": (owari(D.bun("mcp-tool-field", keikaku=S(self.bu["kk"]["name"]))), [
+                dict(name="field", type="string", required=False, erabu=fi_erabu,
+                     description=owari(fi_desc), kensa=fi_desc)]),
             "document": (owari(E(D.bun("mcp-tool-shiryo"))), [
                 dict(name="document", type="string", required=True, erabu=b_erabu, description=owari(E(D.bun(
                     "mcp-hikisu-bunsho", erabu=namae_tsuki(b_erabu, self.namae.bunsho))))),
@@ -1201,8 +1298,15 @@ def build(inp, tables, kotoba, read_problems=(), design=None, skill=None, notes=
         th0 = kyotsu[x][0]
         if th0 not in tk.note or x not in {s for _, s, _, _ in tk.note[th0][0]["topics"]}:
             problems.append(("(h) 論点", f"論点の ID {x} が、事項の表の theme の列の最初のテーマ（{th0}）の論点に無い"))
+    # (j) 台帳の題と、総合計画の分野（SCHEMA.md 7.11）
+    try:
+        tk.bu, more = bb.yomu(inp)
+    except (bu.BunyaError, inputs.InputError) as e:
+        raise Stop([("(j) 分野", str(e))])
+    problems += [("(j) 分野", m) for m in more]
     if problems:
         raise Stop(list(dict.fromkeys(problems)))
+    tk.bunya_ronten = bu.ronten_of_dai(inp, tk.note)
     tk.kiroku = kiroku
 
     outou, bun, dasenai = {name: {} for name, _ in TOOLS}, [], []
@@ -1244,6 +1348,9 @@ def build(inp, tables, kotoba, read_problems=(), design=None, skill=None, notes=
                 ireru("facility", [("facility", k)], tk.shisetsu(k, theme, th))
     for k in tk.event:
         ireru("event", [("event", k)], tk.event_outou(k))
+    ireru("field", [], tk.field_ichiran())
+    for k in list(tk.bu["bunya"]) + [i for i, _ in tk.bu["wadai"]]:
+        ireru("field", [("field", k)], tk.field(k))
     for b in tk.by:
         ireru("document", [("document", b)], tk.shiryo(b))
         for p in tables["bubun"]:
@@ -1259,10 +1366,11 @@ def build(inp, tables, kotoba, read_problems=(), design=None, skill=None, notes=
     nai = {name: D.bun("mcp-nai", tool=name) + D.bun("mcp-hani-nai") for name, _ in TOOLS}
     top = D.bun("mcp-top", name=NAME)
     setsumei = D.bun("mcp-setsumei")
-    skill = (read_skill() if skill is None else skill) + "\n- " + D.bun("mcp-hani-nai")
+    skill = ((read_skill() if skill is None else skill) + "\n- " + D.bun("mcp-hani-nai")
+             + "\n- " + owari(D.bun("mcp-hani-bunya", keikaku=S(tk.bu["kk"]["name"]))))
     # 使わない言葉の検査：応答の文、ツールと引数の説明、定型文
     zenbu = bun + [E(x) for x in list(nai.values()) + [top, setsumei, skill]]
-    zenbu += [E(x["description"]) for x in tools] + [E(a["description"]) for x in tools for a in x["args"]]
+    zenbu += [E(x["description"]) for x in tools] + [a.pop("kensa", None) or E(a["description"]) for x in tools for a in x["args"]]
     problems = []
     for x in zenbu:
         problems += bn.kotoba_problems(f"<p>{x}</p>", *kotoba)
