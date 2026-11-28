@@ -18,6 +18,23 @@ COLS = ["id", "theme", "name", "shurui", "taikei", "matome", "betsumei", "jotai"
 SHURUI = {"kadai": "課題", "torikumi": "取り組み", "atai": "対象の属性と値"}
 JOTAI = ("案", "決定")
 MOKUTEKI = "目的と手段"
+HOKA = "ほかの分野にかかわる話題"    # この matome の事項は、どのテーマの論点の一覧でも最後に並べる（SCHEMA.md 7.9。2026-11-28）
+THEME_MAX = 2                      # theme の列に書けるテーマの数（SCHEMA.md 7.9。2026-11-28）
+
+
+def themes_of(r):
+    """事項の行の theme の列 → テーマの ID の並び（「,」で区切る。SCHEMA.md 7.9）。"""
+    return [t.strip() for t in r["theme"].split(",")]
+
+
+def of_theme(rows, theme):
+    """事項の表の行のうち、theme の列にそのテーマがある行（表の順）。"""
+    return [r for r in rows if theme in themes_of(r)]
+
+
+def theme_jun(rows):
+    """事項の表のテーマの並び。表でテーマが最初に出る順。"""
+    return list(dict.fromkeys(t for r in rows for t in themes_of(r)))
 
 
 def read(path=PATH):
@@ -45,8 +62,9 @@ def check(rows, taikei_ids):
             bad.append(f"{r['id']}：matome は、taikei が nashi の行にだけ書ける（{r['matome']!r}）")
         if r["jotai"] not in JOTAI:
             bad.append(f"{r['id']}：jotai が違う（{r['jotai']!r}）")
-        if not r["theme"]:
-            bad.append(f"{r['id']}：theme が空")
+        ths = themes_of(r)
+        if not all(ths) or len(set(ths)) != len(ths) or len(ths) > THEME_MAX:
+            bad.append(f"{r['id']}：theme が空か、テーマが重なっているか、{THEME_MAX} つより多い（{r['theme']!r}）")
     return bad
 
 
@@ -87,9 +105,15 @@ def main():
     c = collections.Counter(r["shurui"] for r in rows)
     nashi = sum(r["taikei"] == "nashi" for r in rows)
     ari, zen = mokuteki(inp, rows)
-    mt = "、".join(f"{k} {len(v)}" for k, v in matome_jun(rows).items()) or "無い"
+    for th in theme_jun(rows):
+        rs = of_theme(rows, th)
+        ct = collections.Counter(r["shurui"] for r in rs)
+        mt = "、".join(f"{k} {len(v)}" for k, v in matome_jun(rs).items()) or "無い"
+        print(f"[{th}] 事項 {len(rs)}：" + "、".join(f"{SHURUI[k]} {ct[k]}" for k in SHURUI)
+              + f"。計画の章立てに入らない事項 {sum(r['taikei'] == 'nashi' for r in rs)}（資料の外のまとまり：{mt}）。"
+              + f"ほかのテーマと共通の事項 {sum(len(themes_of(r)) > 1 for r in rs)}")
     print(f"問題は無い（事項 {len(rows)}：" + "、".join(f"{SHURUI[k]} {c[k]}" for k in SHURUI)
-          + f"。計画の章立てに入らない事項 {nashi}（資料の外のまとまり：{mt}）。"
+          + f"。計画の章立てに入らない事項 {nashi}。"
           + f"入力の「目的と手段」の組 {zen} のうち、両端が事項の表にある組 {len(ari)}）")
     return 0
 

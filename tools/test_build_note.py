@@ -324,9 +324,10 @@ class TestReal(unittest.TestCase):
         self.assertRegex(page, "2017年9月14日　一般質問（[^）]*）「松尾公園テニスコート」「待機児童問題」</h3>")  # 答弁の段落だけ
 
     def test_counts_yomi(self):
-        """生成AIの2回の読み取りの行を入れると、48の論点の全部にページができ、質問は48（確定済み7と、読んだ41）。"""
+        """生成AIの2回の読み取りの行を入れると、50の論点の全部にページができ、質問は48（確定済み7と、読んだ41）。
+        2026-11-28 に、候補から2つの事項（子育て施策の情報発信、園児の制服・帽子の統一）を足して50。"""
         _, info = self.build(self.inp)
-        self.assertEqual(len(info["counts"]), 48)
+        self.assertEqual(len(info["counts"]), 50)
         self.assertEqual([(n, k) for _, n, k in info["counts"][:4]], [(13, 8), (9, 6), (8, 9), (6, 7)])
         self.assertEqual(info["questions"], 48)
         self.assertEqual(info["paras"].mismatched, [])
@@ -350,16 +351,16 @@ class TestReal(unittest.TestCase):
     def test_jiko(self):
         """事項の表から作る論点の一覧（SCHEMA.md 7.9）：記録のある13の論点にページを作り、記録の無い24は、一覧に名前と
         種類と、まだ入れていないことの文を出す。資料の3つ（提言、計画（案）、基本構想）は論点にしない。
-        生成AIの2回の読み取りの行を入れると、全部に記録がある（2026-11-28。候補から11を足して48）。"""
-        self.assertEqual(sum(r["aru"] for r in self.teigi["jiko"]), 48)
+        生成AIの2回の読み取りの行を入れると、全部に記録がある（2026-11-28。候補から11を足して48。さらに2を足して50）。"""
+        self.assertEqual(sum(r["aru"] for r in self.teigi["jiko"]), 50)
         T = self.teigi0
-        self.assertEqual(len(T["jiko"]), 48)
+        self.assertEqual(len(T["jiko"]), 50)
         self.assertEqual(sum(r["aru"] for r in T["jiko"]), 13)
         for P in ("子育て環境の未来に向けての提言", "日野町幼児教育保育施設再編整備計画（案）", "日野町認定こども園整備基本構想"):
             self.assertNotIn(P, [x[0] for x in T["topics"]])
         page, _ = self.build(self.inp, T)
         top = page[page.index("<section id='top'"):page.index("</section>")]
-        self.assertEqual(top.count("議会での質問と町の資料の記述は、まだ入れていません</td>"), 35)
+        self.assertEqual(top.count("議会での質問と町の資料の記述は、まだ入れていません</td>"), 37)
         self.assertIn("<th colspan='4'>日野町幼児教育保育施設再編整備計画の章立てに入らない論点</th>", top)
         # 資料の外のまとまり（事項の表の matome）は、章立てに入らない論点の中で、matome の無い論点のあとに、
         # まとまりの名前の見出しと、作成者が決めたことの文を付けてまとめる（2026-11-28）
@@ -370,6 +371,11 @@ class TestReal(unittest.TestCase):
         self.assertLess(top.index("<td>幼稚園・保育所と小学校の連携</td>"), m)
         for P in ("園の施設の修繕と安全対策", "園での感染症対策", "園児の安全対策"):
             self.assertGreater(top.index(f"<td>{P}</td>"), m)
+        # 「ほかの分野にかかわる話題」のまとまりは、最後に置く（2026-11-28）
+        h = top.index(f"<tr><th colspan='4'>{bn.jiko.HOKA}</th></tr>")
+        self.assertGreater(h, top.index("<td>園児の安全対策</td>"))
+        self.assertGreater(top.index("<td>子育て施策の情報発信</td>"), h)
+        self.assertLess(top.index("<td>園児の制服・帽子の統一</td>"), m)
         self.assertLess(top.index("３ 計画の期間"), top.index("７ 日野町の幼児教育・保育をめぐる課題"))
         # 目的と手段（両端が事項の表にある、入力の確定済みの組）
         sec = page[page.index("<section id='hoiku10'"):]
@@ -381,6 +387,32 @@ class TestReal(unittest.TestCase):
         self.assertIn("<td>目的：<a href='#hoiku10'>適正な集団規模の確保</a></td>", sec[:sec.index("</section>")])
         sec = page[page.index("<section id='hiyo'"):]
         self.assertNotIn("目的と手段", sec[:sec.index("</section>")])
+
+    def test_matome_saki(self):
+        """章立てが無いテーマ（kokyo、chiiki）は、まとまりを先に、まとまりの無い論点をそのあとに、「ほかの分野にかかわる話題」を
+        最後に並べる。共通の事項は、両方のテーマに出る（2026-11-28）。"""
+        D = bs_design()
+        tops = {}
+        for th in ("kokyo", "chiiki"):
+            T = bn.jiko_ni_suru(self.inp, bn.read_teigi(os.path.join(inputs.ROOT, "teigi", f"note-{th}.tsv"), th), th)
+            page, _ = bn.build(self.inp, T, th, self.kotoba, TODAY)
+            tops[th] = page[page.index("<section id='top'"):page.index("</section>")]
+            self.assertIn(f"<p class='m'>{D.bun('ronten-matome-jiko-setsumei')}</p>", tops[th])
+            self.assertNotIn("章立てに入らない論点", tops[th])
+        k = tops["kokyo"]
+        heads = ["施設の全体の管理", "公民館", "学校の施設", "跡地と使わなくなった施設", "公園の施設", D.bun("ronten-matome-nashi")]
+        idx = [k.index(f"<tr><th colspan='4'>{x}</th></tr>") for x in heads]
+        self.assertEqual(idx, sorted(idx))
+        self.assertGreater(k.index("#kokyo45'"), idx[-1])        # 図書館の役割と運営（まとまりが無い）
+        c = tops["chiiki"]
+        i1, i2, i3 = (c.index(f"<tr><th colspan='4'>{x}</th></tr>")
+                      for x in ("公民館", D.bun("ronten-matome-nashi"), bn.jiko.HOKA))
+        self.assertLess(i1, i2)
+        self.assertLess(i2, i3)
+        for slug in ("kokyo10", "kokyo11", "kokyo35"):
+            self.assertIn(f"#{slug}'", k)
+            self.assertIn(f"#{slug}'", c)
+        self.assertGreater(c.index("#chiiki30'"), i3)
 
     def test_jiko_stop(self):
         # 仮の表の論点の key が事項の表に無いか、name が違う。準備中の行がある。どちらも止まる

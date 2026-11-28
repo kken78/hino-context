@@ -41,6 +41,7 @@ import build_note as bn  # noqa: E402
 import build_suji as bs  # noqa: E402
 import build_theme as bt  # noqa: E402
 import inputs  # noqa: E402
+import jiko  # noqa: E402
 import keys  # noqa: E402
 import konkyo  # noqa: E402
 import ronten  # noqa: E402
@@ -326,23 +327,39 @@ class Tsukuru:
         D.dasanai("事項の表 taikei")
         D.dasanai("事項の表 taikei が「nashi」")
         D.dasanai("事項の表 matome")
-        D.dasanai("候補の名前と扱いの対応の表 atsukai が「ほかのテーマで扱う候補」か「決めていない」")   # 表に行を作らない（tools/yomi.py）
+        if keikaku is None:
+            return self.ronten_ichiran_matome(matome[0][1], midashi)
         out = []
         for youso, rs0 in matome:
             mi = f"### {S(youso['name'])}" if youso else f"### {E(D.bun('ronten-nashi', keikaku=S(keikaku)))}"
             for mt, rs in ([("", rs0)] if youso else bn.nashi_wake(rs0)):
-                items = []
-                for r in rs:
-                    shu = f"{E(D.kotoba('事項の表 shurui'))}：{E(self.shurui(r))}"
-                    if r["aru"]:
-                        items.append(f"- {self.kagi_ji(E(r['name']), 'issue', r['id'])}　{shu}")
-                    else:
-                        items.append(f"- {E(r['name'])}　{shu}　（{E(D.bun('ronten-mada'))}）")
+                items = [self.ronten_item(r) for r in rs]
                 if mt:
                     head = [f"#### {E(mt)}", E(D.bun("ronten-matome-setsumei"))]
                 else:
                     head = [mi] if out else [midashi, E(D.bun("mcp-ronten-setsumei-jiko", keikaku=S(keikaku))), mi]
                 out.append((head, items))
+        return out
+
+    def ronten_item(self, r):
+        """事項の表の1行 → theme の応答の、論点の項目の行。"""
+        D = self.D
+        shu = f"{E(D.kotoba('事項の表 shurui'))}：{E(self.shurui(r))}"
+        if r["aru"]:
+            return f"- {self.kagi_ji(E(r['name']), 'issue', r['id'])}　{shu}"
+        return f"- {E(r['name'])}　{shu}　（{E(D.bun('ronten-mada'))}）"
+
+    def ronten_ichiran_matome(self, rows, midashi):
+        """章立てが無いテーマ（kokyo と chiiki）の theme の応答の、論点のブロックの並び（docs/design.md 4節。2026-11-28）。まとまり（事項の表の matome）
+        ごとに `### ` の見出しにして、ronten-matome-setsumei の文を添える。まとまりの無い論点は、そのあとに ronten-matome-nashi
+        の見出しで並べる。matome が jiko.HOKA の論点は、最後に置く。"""
+        D = self.D
+        out = []
+        for mt, rs in bn.nashi_wake(rows, True):
+            head = [f"### {E(mt)}", E(D.bun("ronten-matome-setsumei"))] if mt else [f"### {E(D.bun('ronten-matome-nashi'))}"]
+            if not out:
+                head = [midashi, E(D.bun("mcp-ronten-setsumei-matome"))] + head
+            out.append((head, [self.ronten_item(r) for r in rs]))
         return out
 
     def shisetsu_ichiran(self, theme, th):
@@ -634,7 +651,8 @@ class Tsukuru:
         b = self.by[bkey]
         shurui = {"keikaku": D.kotoba("資料の一覧の表 shurui が「keikaku」"), "koho": D.kotoba("資料の一覧の表 shurui が「koho」"),
                   "yosan": D.kotoba("資料の一覧の表 shurui が「yosan」"), "hyoka": D.kotoba("資料の一覧の表 shurui が「hyoka」"),
-                  "jigyo": D.kotoba("資料の一覧の表 shurui が「jigyo」"), "shingi": D.kotoba("資料の一覧の表 shurui が「shingi」")}
+                  "jigyo": D.kotoba("資料の一覧の表 shurui が「jigyo」"), "shingi": D.kotoba("資料の一覧の表 shurui が「shingi」"),
+                  "chiiki": D.kotoba("資料の一覧の表 shurui が「chiiki」")}
         if b["shurui"] not in shurui:
             self.problems.append(("(e) デザインシステムとの対応",
                                   f"資料の一覧の表の shurui「{b['shurui']}」の行が、docs/design.md 3節に無い（{bkey}）"))
@@ -794,8 +812,14 @@ class Tsukuru:
             return a if a == z else D.bun("kikan", a=a, z=z)
 
         yomi = self.yomi_q.get(theme, [])      # 生成AIの2回の読み取りで読んだ質問（SCHEMA.md 7.10）
+        # テーマの定義の問いのうち、読んだ質問に入っているもの。読んだ質問の ID は、台帳（data/ippan.tsv）の議員の区切りの最初の
+        # 発言なので、定義の問い（2つめの問いなど）は、読んだ質問の台帳の行の turns にあれば、読んだものとする（2026-11-28）
+        def turns(q):
+            return {t.split(":")[0] for r in self.inp.ippan().get(keys.sid_of(q), []) for t in r["turns"].split(";") if t}
+        yturns = {q: turns(q) for q in yomi}
+        yomi_toi = {q for q in toi if q in yomi or any(keys.sid_of(q) in ts for ts in yturns.values())}
         tz = [q for q in toi if q in zumi]
-        tn = [q for q in toi if q not in zumi and q not in yomi]
+        tn = [q for q in toi if q not in zumi and q not in yomi_toi]
         sz = [q for q in shitsugi if q in zumi]
         if not (tz or sz):
             return []
@@ -811,7 +835,8 @@ class Tsukuru:
                            shitsugi_zumi=len(sz)))]
         if yomi:
             out.append(E(D.bun("mcp-issue-hani-yomi", n=len(yomi), kikan=E(kikan(yomi)),
-                               soto=len([q for q in yomi if q not in toi]), toi=len(toi))))
+                               soto=len([q for q in yomi if q not in toi
+                                         and not any(keys.sid_of(t) in yturns[q] for t in toi)]), toi=len(toi))))
             nashi = self.yomi_nashi.get(theme, [])     # 読んだが、当たる論点が無かった質問（SKILL.md 4.4 の G5）
             if nashi:
                 out.append(E(D.bun("mcp-issue-hani-yomi-nashi", n=len(nashi))))
@@ -1014,9 +1039,10 @@ def theme_jun(inp):
 def konkyo_problems(inp, tk, tables, rows, namae=None, yomi_qs=None):
     """質問が取り上げた資料と出来事の表の行を検査し、資料の ID ごとに質問を tk.konkyo に、出来事の ID ごとに質問を
     tk.event に入れる。→ 問題の並び。
-    質問は、どれかのテーマの定義の問い・質疑か、生成AIの2回の読み取りで読んだ質問（yomi_qs。質問 → テーマ）。
+    質問は、どれかのテーマの定義の問い・質疑か、生成AIの2回の読み取りで読んだ質問（yomi_qs。質問 → 読んだテーマの並び）。
     質問の題は、その質問があるテーマの定義の行（無ければ hino-council-search の data/ippan.tsv）から取り、注は、そのテーマの Page から引く。
     同じ資料（出来事）と質問の行は、1つの質問にまとめ、段落ごとに yomi を持つ（「入力の確定済み」の行は、人が確認した質問）。
+    2つのテーマの読み取りの行がある段落の yomi は、tools/yomi.py の yomi_awase で決める（SCHEMA.md 7.10）。
     資料の ID でも出来事の名前でもない aite（計画（案）と、資料と出来事の名前の表に無い名前）の行は、出さない。"""
     namae = ym.read_namae() if namae is None else namae
     yomi_qs = {} if yomi_qs is None else yomi_qs
@@ -1032,7 +1058,8 @@ def konkyo_problems(inp, tk, tables, rows, namae=None, yomi_qs=None):
             src_of.setdefault((r["theme"], r["value"]), r["source"])
     # 読んだ質問は、読んだテーマの質問とする（ほかのテーマの定義にもある質問は、題を、読んだテーマの定義か台帳から取る。
     # 試作のページと issue と同じ題にするため）
-    for q, th in yomi_qs.items():
+    for q, ths in yomi_qs.items():
+        th = ths[0]                   # 2つ以上のテーマで読んだ質問は、テーマの順の最初のテーマ（SCHEMA.md 7.10）
         qsrc[q] = src_of.get((th, q)) or bn.ippan_src(inp, q)
         qtheme[q] = th
         if not src_of.get((th, q)):
@@ -1056,17 +1083,18 @@ def konkyo_problems(inp, tk, tables, rows, namae=None, yomi_qs=None):
             k = ("event", ev[(r["theme"], r["aite"])]["id"])
         else:
             continue
-        x = kumi.setdefault(k, {}).setdefault(q, dict(yomi={}, mikakunin=False))
+        x = kumi.setdefault(k, {}).setdefault(q, dict(yomi={}, mikakunin=False, ys=set()))
         kumi_th.setdefault((k, q), r["theme"])
+        x["ys"].add(r["yomi"])
         for p in keys.paras_of(r["hani"]):
-            x["yomi"][p] = r["yomi"]
+            x["yomi"][p] = ym.yomi_awase(x["yomi"].get(p), r["yomi"])
     for (shu, aite), qd in kumi.items():
         out = []
         for q, x in qd.items():
             who = bn.qhead_parts(qsrc[q])[0]
             # 題は、aite に付いた段落の発言を含む問いの題名（SCHEMA.md 7.10。2026-11-28）
             dai = bn.dai_of(inp, q, qsrc, ippan, {sid for sid, _ in x["yomi"]})
-            ys = set(x["yomi"].values())
+            ys = x["ys"]
             if konkyo.NYURYOKU in ys and len(ys) > 1:
                 problems.append(("(i) 質問が取り上げた資料", f"{q} / {aite}：入力の確定済みの行と、読み取りの行がある"))
                 continue
@@ -1156,14 +1184,23 @@ def build(inp, tables, kotoba, read_problems=(), design=None, skill=None, notes=
     except ym.YomiError as e:
         raise Stop([("(i) 質問が取り上げた資料", str(e))])
     yomi_rows = ym.read() if os.path.exists(ym.PATH) else []
-    for q, th in yomi_qs.items():
-        tk.yomi_q.setdefault(th, []).append(q)
+    for q, qths in yomi_qs.items():
+        for th in qths:
+            tk.yomi_q.setdefault(th, []).append(q)
     for th in tk.yomi_q:
         tk.yomi_nashi[th] = ym.nashi_shitsumon(th, yomi_rows)
     # (i) 質問が取り上げた資料と出来事の表
     problems += konkyo_problems(inp, tk, tables, konkyo_rows, yomi_qs=yomi_qs)
     slugs = [slug for T, _ in tk.note.values() for _, slug, _, _ in T["topics"]]
-    problems += [("(h) 論点", f"論点の ID {x} が、2つ以上のテーマにある") for x in sorted({x for x in slugs if slugs.count(x) > 1})]
+    # ほかのテーマと共通の事項（SCHEMA.md 7.9）は、2つのテーマにあってよい。issue は、theme の列の最初のテーマで作るので、
+    # そのテーマの論点にあること
+    kyotsu = {r["id"]: jiko.themes_of(r) for r in jiko.read() if len(jiko.themes_of(r)) > 1}
+    problems += [("(h) 論点", f"論点の ID {x} が、2つ以上のテーマにある") for x in sorted({x for x in slugs if slugs.count(x) > 1})
+                 if x not in kyotsu]
+    for x in sorted({x for x in slugs if x in kyotsu}):
+        th0 = kyotsu[x][0]
+        if th0 not in tk.note or x not in {s for _, s, _, _ in tk.note[th0][0]["topics"]}:
+            problems.append(("(h) 論点", f"論点の ID {x} が、事項の表の theme の列の最初のテーマ（{th0}）の論点に無い"))
     if problems:
         raise Stop(list(dict.fromkeys(problems)))
     tk.kiroku = kiroku
@@ -1182,9 +1219,12 @@ def build(inp, tables, kotoba, read_problems=(), design=None, skill=None, notes=
     ireru("theme", [], tk.theme_ichiran(themes))
     for theme, th in ths.items():
         ireru("theme", [("theme", theme)], tk.theme(theme))
+    # ほかのテーマと共通の事項（SCHEMA.md 7.9）の issue は、事項の表の theme の列の最初のテーマで1つだけ作る
+    jiko_th = {r["id"]: jiko.themes_of(r) for r in jiko.read()}
     for theme, (T, _) in tk.note.items():
         for P, slug, short, setsumei in T["topics"]:
-            ireru("issue", [("issue", slug)], tk.issue(theme, P, slug, short, setsumei))
+            if jiko_th.get(slug, [theme])[0] == theme:
+                ireru("issue", [("issue", slug)], tk.issue(theme, P, slug, short, setsumei))
     for t in tables["suji"]:
         rs = [r for r in tables["atai"] if r["suji"] == t["id"]]
         ireru("item", [("item", t["id"])], tk.suji(t))
