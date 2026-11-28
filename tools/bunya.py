@@ -343,7 +343,7 @@ def dai_of_question(inp, q, sids, turn=None):
     if f is None:
         return []
     rs = ip[f]
-    ate = [r for r in rs if {t.split(":")[0] for t in r["turns"].split(";") if t} & set(sids)]
+    ate = inputs.Inputs.ippan_ate(rs, sids)
     if not ate:
         ate = rs if sid == f else [r for r in rs if (f, r["n"]) in turn.get(sid, [])]
     return [(f, r["n"]) for r in ate]

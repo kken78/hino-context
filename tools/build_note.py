@@ -106,8 +106,7 @@ def ippan_src(inp, q, sids=None):
     if not rs:
         return ""
     if sids:
-        ate = [r for r in rs if {t.split(":")[0] for t in r["turns"].split(";") if t} & set(sids)]
-        rs = ate or rs
+        rs = inputs.Inputs.ippan_ate(rs, sids) or rs
     return f"{inp.role(keys.sid_of(q)) or '0番'} {rs[0]['member']} " + "".join(f"「{r['title']}」" for r in rs)
 
 
