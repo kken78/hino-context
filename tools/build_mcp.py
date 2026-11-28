@@ -63,6 +63,7 @@ SKILL_SETSU = "## 1. "              # SKILL.md の、出すときの規約の節
 NAME = "hino-context"
 VERSION = "0.1.0"                    # データのもとのコミットと日付は入れない（作るたびに変わると、検査で比較できない）
 JOGEN = 6000                         # 1回の応答の文字数の上限（目安）
+TSUNAGARI_ICHIRAN = 3                # theme と field のまとまりの見出しに添える、同じ題の数の多いまとまりの数（docs/design.md 4節。2026-11-28。案）
 A, B = bn.A, bn.B
 E, S = bn.E, bn.S
 Stop = bn.Stop
@@ -185,6 +186,7 @@ class Tsukuru:
         self.bu = None                   # 分野と題（tools/bunya.py の matome に、計画 kk を足したもの）。build で入れる
         self.bunya_ronten = {}           # 題の (from, n) → 論点の (名前, ID, テーマ) の並び（tools/bunya.py の ronten_of_dai）。build で入れる
         self.ks = None                   # 施策検証結果報告書の記述（tools/kensho.py の matome）。build で入れる
+        self.tsunagari = {}              # まとまりの ID → 同じ題に付いた論点の入る、ほかのまとまりと論点（tsunagari_of）。build で入れる
 
     # 資料の名前と url
     def moto(self, key, quote=""):
@@ -365,8 +367,16 @@ class Tsukuru:
     def matome_head(self, level, theme, ue, mt):
         """まとまりの見出しの行（まとまりの名前と ID。引数の名前は issue）と、見出しの下の文（docs/design.md 4節。2026-11-28）。
         ue は、まとまりの ID の頭（見出しの ID）。"""
-        bun, url = bn.matome_bun(self.D, self.inp, self.note[theme][0]["matome"].get(mt))
-        return [f"{level} {self.kagi_ji(E(mt), 'issue', jiko.matome_id(ue, mt))}", bun] + ([self.url_gyo(url)] if url else [])
+        D = self.D
+        mid = jiko.matome_id(ue, mt)
+        bun, url = bn.matome_bun(D, self.inp, self.note[theme][0]["matome"].get(mt))
+        out = [f"{level} {self.kagi_ji(E(mt), 'issue', mid)}", bun] + ([self.url_gyo(url)] if url else [])
+        # 同じ題に付いた論点の入る、ほかのまとまりを、題の数の多い順に TSUNAGARI_ICHIRAN まで（docs/design.md 4節。2026-11-28。案）
+        ue3 = [x for t, x, _ in self.tsunagari.get(mid, []) if t == "matome"][:TSUNAGARI_ICHIRAN]
+        if ue3:
+            out.append(D.bun("ronten-matome-tsunagari",
+                             matome="、".join(self.kagi_ji(E(self.matome[x]["mt"]), "issue", x) for x in ue3)))
+        return out
 
     def kazu(self, r):
         """事項の行 → theme と field の応答で論点に添える、取り上げた質問の数と日付の文（issue の応答の質問と同じ集め方。2026-11-28）。"""
@@ -957,8 +967,28 @@ class Tsukuru:
         issho = self.issho.get(slug, [])
         if issho:
             out.append(([f"## {E(D.bun('mcp-midashi-issue-issho'))}", E(D.bun("mcp-issue-issho-setsumei"))],
-                        [f"{self.ronten_mei(self.jiko_by[j], theme)}　{E(D.bun('mcp-issue-issho-kazu', n=n))}" for j, n in issho]))
+                        [f"{self.ronten_mei(self.jiko_by[j], theme)}　{E(D.bun('mcp-issue-issho-kazu', n=n))}"
+                         + "".join("　" + self.matome_mei(m) for m in self.row_matome.get(j, [])) for j, n in issho]))
         return out
+
+    def matome_mei(self, mid):
+        """まとまりの ID → mcp-matome-mei の文（まとまりの名前と ID）（docs/design.md 4節。2026-11-28。案）。"""
+        return self.D.bun("mcp-matome-mei", matome=self.kagi_ji(E(self.matome[mid]["mt"]), "issue", mid))
+
+    def tsunagari_block(self, mid, theme):
+        """まとまりの応答の、同じ題に付いた論点の入る、ほかのまとまりと、まとまりに入っていない論点のブロック
+        （docs/design.md 4節の issue の11。2026-11-28。案）。無ければ None。"""
+        D = self.D
+        items = []
+        for t, x, n in self.tsunagari.get(mid, []):
+            kazu = E(D.bun("mcp-issue-issho-kazu", n=n))
+            if t == "matome":
+                items.append(f"- {self.matome_mei(x)}　{self.ue_ji(self.matome[x])}　{kazu}")
+            else:
+                items.append(f"{self.ronten_mei(self.jiko_by[x], theme)}　{kazu}")
+        if not items:
+            return None
+        return ([f"## {E(D.bun('mcp-midashi-matome-tsunagari'))}", E(D.bun("mcp-matome-tsunagari-setsumei"))], items)
 
     def matome_outou(self, mid):
         """issue にまとまりの ID：まとまりの論点の全部の、名前と ID、種類、取り上げた質問の一覧（docs/design.md 4節。2026-11-28）。"""
@@ -969,6 +999,7 @@ class Tsukuru:
         intro = [D.bun("mcp-matome-lead", midashi=self.ue_ji(g), n=len(g["rows"])), bun] + ([self.url_gyo(url)] if url else [])
         intro += [E(D.bun("mcp-matome-setsumei")), E(D.bun("ronten-kazu-setsumei"))]
         blocks = []
+        ts = self.tsunagari_block(mid, th)
         for r in g["rows"]:
             shu = f"{E(D.kotoba('事項の表 shurui'))}：{E(self.shurui(r))}"
             if r["id"] not in self.issue_ari:
@@ -983,6 +1014,8 @@ class Tsukuru:
                              f"　{E(D.bun('mcp-matome-bubun', n=len(q['paras'])))}\n  - {E(bn.kakunin_go(D, q))}")
             blocks.append(([f"## {self.kagi_ji(E(r['name']), 'issue', r['id'])}　{shu}{self.kazu(r)}"],
                            items or [E(D.bun("mcp-matome-shitsumon-nashi"))]))
+        if ts:
+            blocks.append(ts)
         return Outou(self.kagi_ji(E(g["mt"]), "issue", mid), intro, blocks)
 
     def issue_hani_bunya(self, theme):
@@ -1491,10 +1524,10 @@ def konkyo_hani(chu):
     return ""
 
 
-def issho_of(inp, rows, jrows):
-    """質問と事項の対応の表（taio/shudai.tsv）の行 → 事項の ID → 同じ質問の同じ題で一緒に取り上げられた、ほかの事項の
-    (ID, 題の数) の並び（題の数の多い順。同じ数は事項の表の順。docs/design.md 4節。2026-11-28）。題は、行の n（総合計画の分野の
-    読み取り）か、範囲の段落が入る、台帳（data/ippan.tsv）の題（build_note の dai_gyo。テーマの読み取り）。台帳に無い質問の行は数えない。"""
+def dai_jiko(inp, rows):
+    """質問と事項の対応の表（taio/shudai.tsv）の行 → 題 → その題に論点に関する部分が付いた事項の ID の集合（SCHEMA.md 7.10。
+    2026-11-28）。題は、行の n（総合計画の分野の読み取り）か、範囲の段落が入る、台帳（data/ippan.tsv）の題（build_note の
+    dai_gyo。テーマの読み取り）。台帳に無い質問の行は数えない。"""
     dai = {}
     for r in rows:
         q = r["question"]
@@ -1507,6 +1540,13 @@ def issho_of(inp, rows, jrows):
             ks = [(f, x["n"]) for x in rs]
         for k in ks:
             dai.setdefault(k, set()).add(r["jiko"])
+    return dai
+
+
+def issho_of(inp, rows, jrows, dai=None):
+    """質問と事項の対応の表の行 → 事項の ID → 同じ質問の同じ題で一緒に取り上げられた、ほかの事項の (ID, 題の数) の並び
+    （題の数の多い順。同じ数は事項の表の順。docs/design.md 4節。2026-11-28）。題の決め方は dai_jiko。"""
+    dai = dai_jiko(inp, rows) if dai is None else dai
     jun = {r["id"]: i for i, r in enumerate(jrows)}
     kazu = {}
     for js in dai.values():
@@ -1516,6 +1556,34 @@ def issho_of(inp, rows, jrows):
                     kazu.setdefault(a, {}).setdefault(b, 0)
                     kazu[a][b] += 1
     return {a: sorted(c.items(), key=lambda x: (-x[1], jun.get(x[0], 0))) for a, c in kazu.items()}
+
+
+def tsunagari_of(dai, matome, kihon, jrows):
+    """まとまりごとの、同じ題に付いた論点の入る、ほかのまとまりと、まとまりに入っていない論点（SCHEMA.md 7.10。
+    docs/design.md 4節。2026-11-28）。dai は dai_jiko の結果、matome はまとまりの ID → まとまり（rows を持つ。並びは theme と field の並べ方の順）、
+    kihon は基本施策そのものの事項の ID の集合（数えない）。
+    → まとまりの ID → (種類, ID, 題の数) の並び。種類は "matome"（まとまり）か "ronten"（まとまりに入っていない論点）。
+    題の数は、このまとまりの論点のどれかと、相手の論点が、同じ題に付いている題の数。題の数の多い順、同じ数はまとまりを先に、
+    まとまりは matome の順、論点は事項の表の順。"""
+    row_m = {}
+    for mid, g in matome.items():
+        for r in g["rows"]:
+            row_m.setdefault(r["id"], []).append(mid)
+    jun_m = {mid: i for i, mid in enumerate(matome)}
+    jun_j = {r["id"]: i for i, r in enumerate(jrows)}
+    out = {}
+    for mid, g in matome.items():
+        A = {r["id"] for r in g["rows"]} - kihon
+        kazu = {}
+        for k, js in dai.items():
+            if not js & A:
+                continue
+            for b in js - A - kihon:
+                for t in ([("matome", m) for m in row_m[b]] if b in row_m else [("ronten", b)]):
+                    kazu.setdefault(t, set()).add(k)
+        out[mid] = sorted(((t, x, len(ks)) for (t, x), ks in kazu.items()),
+                          key=lambda y: (-y[2], y[0] != "matome", jun_m.get(y[1], 0) if y[0] == "matome" else jun_j.get(y[1], 0)))
+    return out
 
 
 def read_skill(path=SKILL_PATH):
@@ -1767,7 +1835,10 @@ def build(inp, tables, kotoba, read_problems=(), design=None, skill=None, notes=
             tk.matome[g["id"]] = g
             for r in g["rows"]:
                 tk.row_matome.setdefault(r["id"], []).append(g["id"])
-    tk.issho = issho_of(inp, yomi_rows, jrows)
+    dai = dai_jiko(inp, yomi_rows)
+    tk.issho = issho_of(inp, yomi_rows, jrows, dai)
+    tk.kihon_ids = {x for T, _ in tk.note.values() for x in T.get("kihon", ())}
+    tk.tsunagari = tsunagari_of(dai, tk.matome, tk.kihon_ids, jrows)
     if problems:
         raise Stop(list(dict.fromkeys(problems)))
 
