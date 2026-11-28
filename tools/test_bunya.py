@@ -203,7 +203,8 @@ class TestReal(unittest.TestCase):
         k = ("0000005483_20200914_0202", "3")
         self.assertEqual(ip[k]["title"], "図書館サービス")
         self.assertNotIn("入所の調整", [p for p, _, _ in br.get(k, [])])
-        self.assertEqual(len(br), 178)
+        # 2回めの読み取り（2026-11-28）の前は178
+        self.assertEqual(len(br), 233)
 
     def test_page(self):
         page, info = bb.build(self.inp, D, bn.read_kotoba(), datetime.date(2026, 11, 28))

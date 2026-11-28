@@ -325,12 +325,37 @@ class TestReal(unittest.TestCase):
 
     def test_counts_yomi(self):
         """生成AIの2回の読み取りの行を入れると、50の論点の全部にページができ、質問は48（確定済み7と、読んだ41）。
-        2026-11-28 に、候補から2つの事項（子育て施策の情報発信、園児の制服・帽子の統一）を足して50。"""
+        2026-11-28 に、候補から2つの事項（子育て施策の情報発信、園児の制服・帽子の統一）を足して50。
+        2回めの読み取り（2026-11-28。35問）のあとは57の論点で、質問は66（確定済み7と、読んだ76のうち論点に付いた63から、
+        確定済みの質問の4を除いた数）。"""
         _, info = self.build(self.inp)
-        self.assertEqual(len(info["counts"]), 50)
-        self.assertEqual([(n, k) for _, n, k in info["counts"][:4]], [(13, 8), (9, 6), (8, 9), (6, 7)])
-        self.assertEqual(info["questions"], 48)
+        self.assertEqual(len(info["counts"]), 57)
+        self.assertEqual([(n, k) for _, n, k in info["counts"][:4]], [(13, 9), (9, 6), (8, 9), (6, 8)])
+        self.assertEqual(info["questions"], 66)
         self.assertEqual(info["paras"].mismatched, [])
+
+    def test_kakutei_yusen(self):
+        """同じ質問と論点に、入力の確定済みの対応の記録と、読み取りの行があるときは、確定済みの記録だけを出す
+        （SCHEMA.md 7.10。2026-11-28。2回めの読み取りで、確定済みの記録がある質問も読んだため）。"""
+        q = "iq:0000008397_20250310_0285"
+        self.assertTrue(any(r["question"] == q and r["point"] == "新こども園の面積" for r in self.teigi["shudai"]))
+        model, problems, _ = bn.collect(self.inp, self.teigi, "hoiku")
+        self.assertEqual(problems, [])
+        pg = bn.Page(self.inp, self.teigi, model)
+        qs = [x for x in pg.ronten("新こども園の面積")["qs"] if x["question"] == q]
+        self.assertEqual([x["mikakunin"] for x in qs], [False])
+        ta = [r for r in model["ta"] if r["question"] == q and r["point"] == "新こども園の面積"]
+        self.assertEqual(len(qs[0]["paras"]), sum(len(bn.keys.paras_of(r["hani"])) for r in ta))
+        # 確定済みの記録が無い論点（既存の園の今後）には、読み取りの質問として出る
+        qs = [x for x in pg.ronten("既存の園の今後")["qs"] if x["question"] == q]
+        self.assertEqual([x["mikakunin"] for x in qs], [True])
+
+    def test_s_kagi(self):
+        """題名の中に「」がある題は、外側の「」の全体を資料からの文とする（2026-11-28）。"""
+        a, b = bn.A, bn.B
+        self.assertEqual(bn.S_kagi("「「こども誰でも通園制度」日野町の対応は」"), a + "「「こども誰でも通園制度」日野町の対応は」" + b)
+        self.assertEqual(bn.S_kagi("問1「x」。「y」"), "問1" + a + "「x」" + b + "。" + a + "「y」" + b)
+        self.assertEqual(bn.kotoba_problems("<p>" + bn.S_kagi("「「x」日野町の対応は」") + "</p>", [("対応", "文")], []), [])
 
     def test_yomi_shirushi(self):
         """読み取りの質問には、未確認の印と、段落ごとに一致か1回だけかを出す。確定済みの質問には、人が確認した印。"""
@@ -338,11 +363,13 @@ class TestReal(unittest.TestCase):
         page, _ = self.build(self.inp)
         sec = page[page.index("<section id='teiin'"):]
         sec = sec[:sec.index("</section>")]
-        self.assertEqual(sec.count(f"<p class='m'>{D.kotoba('質問と事項の対応の表 question')}</p>"), 4)
+        # 2回めの読み取り（2026-11-28）で、2025年9月12日の質問が足された。確定済みの3件の質問にも読み取りの行があるが、
+        # 確定済みの記録だけを出す（SCHEMA.md 7.10）
+        self.assertEqual(sec.count(f"<p class='m'>{D.kotoba('質問と事項の対応の表 question')}</p>"), 5)
         self.assertEqual(sec.count(f"<p class='m'>{D.bun('shitsumon-kakutei')}</p>"), 3)
         n1 = sec.count(f"（{D.kotoba('質問と事項の対応の表 yomi が「一致」')}）")
         n2 = sec.count(f"（{D.kotoba('質問と事項の対応の表 yomi が「1回だけ」')}）")
-        self.assertEqual(n1 + n2, 3 + 10 + 7 + 2)
+        self.assertEqual(n1 + n2, 3 + 3 + 10 + 7 + 2)
         self.assertIn(D.bun("keisai-yomi", short="定員"), sec)
         self.assertIn(D.bun("yomi-setsumei", short="定員"), sec)
         # 一般質問の題は、付いた段落が範囲に入る台帳の題名だけ（段落の単位。SCHEMA.md 7.10。2026-11-28）。
@@ -353,16 +380,17 @@ class TestReal(unittest.TestCase):
     def test_jiko(self):
         """事項の表から作る論点の一覧（SCHEMA.md 7.9）：記録のある13の論点にページを作り、記録の無い24は、一覧に名前と
         種類と、まだ入れていないことの文を出す。資料の3つ（提言、計画（案）、基本構想）は論点にしない。
-        生成AIの2回の読み取りの行を入れると、全部に記録がある（2026-11-28。候補から11を足して48。さらに2を足して50）。"""
-        self.assertEqual(sum(r["aru"] for r in self.teigi["jiko"]), 50)
+        生成AIの2回の読み取りの行を入れると、全部に記録がある（2026-11-28。候補から11を足して48。さらに2を足して50。
+        2回めの読み取りの候補から7を足して57）。"""
+        self.assertEqual(sum(r["aru"] for r in self.teigi["jiko"]), 57)
         T = self.teigi0
-        self.assertEqual(len(T["jiko"]), 50)
+        self.assertEqual(len(T["jiko"]), 57)
         self.assertEqual(sum(r["aru"] for r in T["jiko"]), 13)
         for P in ("子育て環境の未来に向けての提言", "日野町幼児教育保育施設再編整備計画（案）", "日野町認定こども園整備基本構想"):
             self.assertNotIn(P, [x[0] for x in T["topics"]])
         page, _ = self.build(self.inp, T)
         top = page[page.index("<section id='top'"):page.index("</section>")]
-        self.assertEqual(top.count("議会での質問と町の資料の記述は、まだ入れていません</td>"), 37)
+        self.assertEqual(top.count("議会での質問と町の資料の記述は、まだ入れていません</td>"), 44)
         self.assertIn("<th colspan='4'>日野町幼児教育保育施設再編整備計画の章立てに入らない論点</th>", top)
         # 資料の外のまとまり（事項の表の matome）は、章立てに入らない論点の中で、matome の無い論点のあとに、
         # まとまりの名前の見出しと、作成者が決めたことの文を付けてまとめる（2026-11-28）

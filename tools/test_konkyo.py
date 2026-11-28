@@ -133,20 +133,24 @@ class TestRepo(unittest.TestCase):
                           ("sq:0000008942_20260305_0170", "kaigo", "第10期の計画の策定")])
         self.assertEqual([r["yomi"] for r in rows[:6]], ["入力の確定済み"] * 6)
         self.assertEqual({r["yomi"] for r in rows[6:]}, {"一致", "1回だけ"})
-        self.assertEqual([r["theme"] for r in rows[6:]], ["hoiku"] * 171 + ["kaigo"] * 34 + ["kokyo"] * 104 + ["chiiki"] * 56)
-        self.assertEqual(len(rows), 371)
+        # 2回めの読み取り（2026-11-28）のあと。前は、幼保171行、介護34行、公共施設104行、地域のあり方56行の371行
+        self.assertEqual([r["theme"] for r in rows[6:]], ["hoiku"] * 207 + ["kaigo"] * 41 + ["kokyo"] * 116 + ["chiiki"] * 70)
+        self.assertEqual(len(rows), 440)
         # 資料の日付が質問の日より後の行は、ID を付けない（2026-11-28）
         u = {(t, n): (ids, c) for t, n, ids, c in konkyo.uchiwake(rows, konkyo.ym.read_namae())}
-        self.assertEqual(u[("hoiku", "計画")], ({"pt:youho/honpen-202503": 3, "pt:youho/honpen": 0}, 1))
-        self.assertEqual(u[("hoiku", "計画（案）")], ({"doc:jigyo-youhosaihen-keikakuan-202411": 8}, 7))
-        self.assertEqual(sum(c for (t, _), (_, c) in u.items() if t == "hoiku"), 27)
-        self.assertEqual(u[("kaigo", "第9期の計画")], ({"pt:kaigo9/honpen": 2}, 0))
+        self.assertEqual(u[("hoiku", "計画")], ({"pt:youho/honpen-202503": 4, "pt:youho/honpen": 0}, 1))
+        self.assertEqual(u[("hoiku", "計画（案）")], ({"doc:jigyo-youhosaihen-keikakuan-202411": 13}, 7))
+        self.assertEqual(sum(c for (t, _), (_, c) in u.items() if t == "hoiku"), 36)
+        self.assertEqual(u[("kaigo", "第9期の計画")], ({"pt:kaigo9/honpen": 6}, 0))
         self.assertEqual(u[("kaigo", "アンケート調査")], ({"doc:jigyo-kaigo-chosa-r7": 0}, 3))
         # 公共施設の再編と地域のあり方（2026-11-28）。公共施設等総合管理計画は改定のあとの版だけなので、前の質問には ID を付けない
         self.assertEqual(u[("kokyo", "公共施設等総合管理計画")], ({"pt:kokyo-kanri/honpen": 6}, 5))
         self.assertEqual(u[("kokyo", "総合計画")], ({"plan:sogo6": 1}, 4))
         self.assertEqual(u[("chiiki", "自治会活動に関するアンケート調査")], ({"doc:chiiki-jichikai-chosa": 3}, 0))
         self.assertEqual(u[("kokyo", "学校施設の長寿命化計画")], ({}, 7))
+        # 資料の一覧の表に足した「いま、私たちができること 2025」（令和８年２月。2026-11-28）。前の読み取りの2026年3月10日の
+        # 質問の行も、この資料に結び付く
+        self.assertEqual(u[("chiiki", "いま、私たちができること2025")], ({"doc:chiiki-jichikai-forum-shiryo": 2}, 0))
 
 
 if __name__ == "__main__":

@@ -134,7 +134,7 @@ kokyo34	kokyo	スケートボード練習場の整備	torikumi	nashi	公園の�
 kokyo35	kokyo,chiiki	公民館への補助金と地区協力金	torikumi	nashi	公民館		決定	依頼者の決定 2026-11-28
 kokyo36	kokyo	公民館開放事業「ひのっこルーム」	torikumi	nashi	公民館		決定	依頼者の決定 2026-11-28
 kokyo37	kokyo	公民館の感染症対策と利用の制限	torikumi	nashi	公民館		決定	依頼者の決定 2026-11-28
-kokyo38	kokyo	公民館の運営委員会	torikumi	nashi	公民館		決定	依頼者の決定 2026-11-28
+kokyo38	kokyo,chiiki	公民館の運営委員会	torikumi	nashi	公民館		決定	依頼者の決定 2026-11-28
 kokyo39	kokyo	旧南比都佐公民館の活用	torikumi	nashi	跡地と使わなくなった施設		決定	依頼者の決定 2026-11-28
 kokyo40	kokyo	日野警部交番の跡地	torikumi	nashi	跡地と使わなくなった施設		決定	依頼者の決定 2026-11-28
 kokyo41	kokyo	公共施設の点検と安全管理	torikumi	nashi	施設の全体の管理		決定	依頼者の決定 2026-11-28
@@ -173,3 +173,35 @@ hoiku48	hoiku	子育て施策の情報発信	torikumi	nashi	ほかの分野に�
 hoiku49	hoiku	園児の制服・帽子の統一	torikumi	nashi			決定	依頼者の決定 2026-11-28。候補の扱い「決めていない」から替えた
 kaigo46	kaigo	介護保険の手続きの電子申請	torikumi	nashi	ほかの分野にかかわる話題		決定	依頼者の決定 2026-11-28。候補の扱い「ほかのテーマで扱う候補」（デジタル活用、情報発信全般）から替えた
 kaigo47	kaigo	制度の緩和による支援の拡充	torikumi	nashi			決定	依頼者の決定 2026-11-28。候補の扱い「決めていない」から替えた
+hoiku50	hoiku	外国籍の園児の割合	atai	nashi	ほかの分野にかかわる話題		決定	依頼者の決定 2026-11-28
+hoiku51	hoiku	保育士の働きがいの創出	torikumi	nashi			決定	依頼者の決定 2026-11-28
+hoiku52	hoiku	少子化対策・こども未来戦略会議	torikumi	nashi	ほかの分野にかかわる話題		決定	依頼者の決定 2026-11-28
+hoiku53	hoiku	園の祖父母学級	torikumi	nashi			決定	依頼者の決定 2026-11-28
+hoiku54	hoiku	園の給食の炊きたての御飯	torikumi	nashi			決定	依頼者の決定 2026-11-28
+hoiku55	hoiku	住民意識調査の保育・子育て支援の評価	atai	nashi			決定	依頼者の決定 2026-11-28
+hoiku56	hoiku	子どもの貧困の把握	torikumi	nashi	ほかの分野にかかわる話題		決定	依頼者の決定 2026-11-28
+kaigo48	kaigo	町内の孤独死の件数	atai	nashi			決定	依頼者の決定 2026-11-28
+kaigo49	kaigo	高齢化率	atai	nashi			決定	依頼者の決定 2026-11-28
+kaigo50	kaigo	平均寿命と健康寿命	atai	nashi			決定	依頼者の決定 2026-11-28
+kaigo51	kaigo	第10期の介護保険料	atai	nashi			決定	依頼者の決定 2026-11-28
+kokyo51	kokyo	公共施設の感染症対策	torikumi	nashi	施設の全体の管理		決定	依頼者の決定 2026-11-28
+kokyo52	kokyo	学童保育所の施設整備	torikumi	nashi			決定	依頼者の決定 2026-11-28
+kokyo53	kokyo	グリム冒険の森の指定管理と改修	torikumi	nashi			決定	依頼者の決定 2026-11-28
+kokyo54	kokyo	ブルーメの丘の指定管理と施設の修繕	torikumi	nashi	公園の施設		決定	依頼者の決定 2026-11-28
+kokyo55	kokyo	指定管理者の指定の手続	torikumi	nashi	施設の全体の管理		決定	依頼者の決定 2026-11-28
+kokyo56	kokyo	林業センターの休日の貸館	torikumi	nashi			決定	依頼者の決定 2026-11-28
+kokyo57	kokyo	わたむきホール虹の使用料	torikumi	nashi			決定	依頼者の決定 2026-11-28
+kokyo58	kokyo	役場庁舎の改修と設備	torikumi	nashi			決定	依頼者の決定 2026-11-28
+kokyo59	kokyo	小学校体育館のLED化	torikumi	nashi	学校の施設		決定	依頼者の決定 2026-11-28
+kokyo60	kokyo	公衆トイレの整備と管理	torikumi	nashi			決定	依頼者の決定 2026-11-28
+chiiki31	chiiki	コロナ禍での地域の行事と交流	torikumi	nashi			決定	依頼者の決定 2026-11-28
+chiiki32	chiiki	出前講座による地域づくりの支援	torikumi	nashi			決定	依頼者の決定 2026-11-28
+chiiki33	chiiki	地域の課題に取り組む施策のPDCA	torikumi	nashi	ほかの分野にかかわる話題		決定	依頼者の決定 2026-11-28
+chiiki34	chiiki	地域運営の人材育成	torikumi	nashi			決定	依頼者の決定 2026-11-28
+chiiki35	chiiki	複数の地域コミュニティーをつなぐ場の創出	torikumi	nashi			決定	依頼者の決定 2026-11-28
+chiiki36	chiiki	地域の慣習と行事の見直し	torikumi	nashi			決定	依頼者の決定 2026-11-28
+chiiki37	chiiki	職員の地域活動への参加	torikumi	nashi			決定	依頼者の決定 2026-11-28
+chiiki38	chiiki	地域のしがらみと若い世代の定住	kadai	nashi	ほかの分野にかかわる話題		決定	依頼者の決定 2026-11-28
+chiiki39	chiiki	公民館の利用の促進	torikumi	nashi			決定	依頼者の決定 2026-11-28
+chiiki40	chiiki	公民館の情報発信	torikumi	nashi			決定	依頼者の決定 2026-11-28
+chiiki41	chiiki	人権と福祉のまちづくりの施策の一体化	torikumi	nashi	ほかの分野にかかわる話題		決定	依頼者の決定 2026-11-28

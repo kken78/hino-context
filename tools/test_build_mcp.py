@@ -127,19 +127,22 @@ class TestReal(unittest.TestCase):
         self.assertEqual(sorted(k for k in o["theme"] if re.fullmatch(r"theme=[a-z]+", k)),
                          ["theme=chiiki", "theme=hoiku", "theme=kaigo", "theme=kokyo"])
         issue = [k for k in o["issue"] if "page" not in k]
-        # 幼保50、介護40、公共施設46、地域のあり方30（共通の事項3は、公共施設で作る。2026-11-28）
-        self.assertEqual(len(issue), 166)
+        # 幼保57、介護45、公共施設56、地域のあり方41（共通の事項4は、公共施設で作る。2回めの読み取りのあと。2026-11-28）
+        self.assertEqual(len(issue), 199)
         ev = sorted(k for k in o["event"] if "page" not in k)
-        self.assertEqual(len(ev), 22)
+        self.assertEqual(len(ev), 33)
         self.assertEqual([k for k in ev if not k.startswith(("event=kokyo-", "event=chiiki-"))],
-                         ["event=kaigo-dai10ki-sakutei", "event=kaigo-dai8ki-sakutei", "event=kaigo-pabukome",
+                         ["event=hoiku-daredemo-tsuen-kaigi", "event=hoiku-genba-bukai", "event=hoiku-kousou-sakutei-iinkai",
+                          "event=hoiku-sekkei-proposal", "event=kaigo-choisoko-wg",
+                          "event=kaigo-dai10ki-sakutei", "event=kaigo-dai8ki-sakutei", "event=kaigo-pabukome",
                           "event=kaigo-setsumeikai", "event=kaigo-unei-kyogikai",
                           "event=konwakai", "event=pabukome", "event=setsumeikai"])
         for k in ("issue=hiyo", "issue=menseki", "issue=teiin", "issue=yochi", "issue=kaigo23", "issue=chiiki05"):
             self.assertIn(k, issue)
         self.assertEqual(sum(1 for k in o["item"] if re.fullmatch(r"item=[a-z0-9-]+", k)), 27)
         self.assertEqual(sum(1 for k in o["facility"] if "page" not in k), 13)
-        self.assertEqual(sum(1 for k in o["document"] if re.fullmatch(r"document=[^&]+", k)), 29)     # 2026-11-28 に2つと、施策検証結果報告書（令和7年度）を足した
+        # 2026-11-28 に2つと、施策検証結果報告書（令和7年度）と、「いま、私たちができること 2025」を足した
+        self.assertEqual(sum(1 for k in o["document"] if re.fullmatch(r"document=[^&]+", k)), 30)
         self.assertEqual(sum(1 for k in o["document"] if re.fullmatch(r"document=[^&]+&table=[0-9]+", k)), 17)
         # 続きの1は、続きを付けない組と同じ
         for v in o.values():
@@ -417,7 +420,7 @@ class TestReal(unittest.TestCase):
         # テーマの応答の論点の一覧（事項の表があるテーマ）：計画の章立ての要素ごとに、章立ての順にまとめ、種類を出す。
         # 記録のある論点は名前と ID、記録の無い論点は、ID を付けずに、まだ入れていないことの文（2026-11-27）
         T = bm.read_notes(self.inp)["hoiku"]
-        self.assertEqual((len(T["topics"]), len(T["junbi"]), len(T["jiko"])), (50, 0, 50))
+        self.assertEqual((len(T["topics"]), len(T["junbi"]), len(T["jiko"])), (57, 0, 57))
         t = "\n".join(self.data["bun"][i] for k, i in sorted(self.data["outou"]["theme"].items())
                       if k.startswith("theme=hoiku&page="))
         s = t.index(f"## {D.bun('mcp-midashi-ronten')}\n")
@@ -429,10 +432,11 @@ class TestReal(unittest.TestCase):
         self.assertEqual(mi[-1], D.bun("ronten-nashi", keikaku=keikaku))
         self.assertEqual(len(mi), 9)
         gyo = [x for x in part.split("\n") if x.startswith("- ")]
-        self.assertEqual(len(gyo), 50)
-        # 生成AIの2回の読み取りの行を入れたので、全部に ID がある（2026-11-28。候補から足した11と2を含む）
-        self.assertEqual(sum("（issue：" in x for x in gyo), 50)
-        for i in range(37, 50):
+        self.assertEqual(len(gyo), 57)
+        # 生成AIの2回の読み取りの行を入れたので、全部に ID がある（2026-11-28。候補から足した11と2と、2回めの読み取りの候補から
+        # 足した7を含む）
+        self.assertEqual(sum("（issue：" in x for x in gyo), 57)
+        for i in range(37, 57):
             self.assertIn(f"issue=hoiku{i}", self.data["outou"]["issue"])
         # 章立てに入らない論点のうち、資料の外のまとまりがあるものは、まとまりの名前の見出しにまとめる（2026-11-28）
         nashi = part[part.index("### " + D.bun("ronten-nashi", keikaku=keikaku)):]
@@ -477,21 +481,23 @@ class TestReal(unittest.TestCase):
         o = self.data["outou"]["document"]
         t = self.bun("document", "document=doc:shingi-youho-teigen")
         # 提言（2024年2月）より前の質問は、提言に結び付けない（SCHEMA.md 7.10。2026-11-28）
-        part = self.setsu(t, "## " + D.bun("mcp-midashi-konkyo", n=10))
+        part = self.setsu(t, "## " + D.bun("mcp-midashi-konkyo", n=12))
         # 題は、テーマの定義にある質問も、一般質問の台帳の題（SCHEMA.md 7.10。2026-11-28）
+        # 2025年3月10日の質問には、入力の確定済みの行と、2回めの読み取り（2026-11-28）の行がある。確定済みの行だけを出す
         self.assertIn("- 2025年3月10日　一般質問　「幼児教育保育施設再編整備計画（案）について」\n  - "
-                      + D.bun("shitsumon-kakutei") + "\n  - この資料に関する部分（8か所）（page：2）", part)
-        self.assertEqual(part.count("  - " + D.kotoba("質問と事項の対応の表 question") + "\n"), 9)    # 読み取りの質問
+                      + D.bun("shitsumon-kakutei") + "\n  - この資料に関する部分（8か所）（page：4）", part)
+        self.assertEqual(part.count("  - " + D.kotoba("質問と事項の対応の表 question") + "\n"), 11)   # 読み取りの質問
         self.assertNotIn("2023年", part)
         self.assertIn(D.bun("keisai-yomi", short="この資料"), part)
-        rest = self.data["bun"][o["document=doc:shingi-youho-teigen&page=2"]]
+        rest = self.data["bun"][o["document=doc:shingi-youho-teigen&page=4"]]
         self.assertEqual(rest.count("\n- 「"), 8)
         self.assertIn("発言の段落7", rest)
         self.assertNotIn(D.kotoba("質問と事項の対応の表 yomi が「一致」"), rest)      # 確定済みの質問の段落には付けない
-        rest = self.data["bun"][o["document=doc:shingi-youho-teigen&page=3"]]
+        self.assertNotIn(D.kotoba("質問と事項の対応の表 yomi が「1回だけ」"), rest)
+        rest = self.data["bun"][o["document=doc:shingi-youho-teigen&page=2"]]
         self.assertEqual(rest.count("\n- 「"), rest.count(D.kotoba("質問と事項の対応の表 yomi が「一致」"))
                          + rest.count(D.kotoba("質問と事項の対応の表 yomi が「1回だけ」")))
-        self.assertIn("この資料を取り上げている、議会での質問 10 件", t)
+        self.assertIn("この資料を取り上げている、議会での質問 12 件", t)
         # 計画は、質問の日より前か同じ日付の資料に結び付く。令和８年６月一部改正より前の質問しか無いので、改正後の資料には出ない
         self.assertIn("document=pt:youho/honpen-202503&page=2", o)
         self.assertNotIn("document=pt:youho/honpen&page=2", o)
@@ -513,11 +519,12 @@ class TestReal(unittest.TestCase):
         notes = bm.read_notes(self.inp)
         self.assertEqual(list(notes), ["chiiki", "hoiku", "kaigo", "kokyo"])          # テーマの定義の順
         self.assertEqual({th: len(T["topics"]) for th, T in notes.items()},
-                         dict(hoiku=50, kaigo=40, kokyo=46, chiiki=33))
+                         dict(hoiku=57, kaigo=45, kokyo=56, chiiki=45))          # 2回めの読み取りのあと（2026-11-28）
         self.assertEqual({th: len(T["junbi"]) for th, T in notes.items()}, dict(hoiku=0, kaigo=0, kokyo=0, chiiki=0))
         slugs = [slug for T in notes.values() for _, slug, _, _ in T["topics"]]
-        # ID がテーマをまたいで重なるのは、公共施設の再編と地域のあり方に共通の事項の3つだけ（2026-11-28）
-        self.assertEqual(sorted({x for x in slugs if slugs.count(x) > 1}), ["kokyo10", "kokyo11", "kokyo35"])
+        # ID がテーマをまたいで重なるのは、公共施設の再編と地域のあり方に共通の事項の4つだけ（2026-11-28。kokyo38 は2回めの
+        # 読み取りのあとに共通にした）
+        self.assertEqual(sorted({x for x in slugs if slugs.count(x) > 1}), ["kokyo10", "kokyo11", "kokyo35", "kokyo38"])
         o = self.data["outou"]
         for th, T in notes.items():
             t = "\n".join(self.data["bun"][o["theme"][k]] for k in sorted(o["theme"]) if k.startswith(f"theme={th}&page="))
@@ -555,7 +562,9 @@ class TestReal(unittest.TestCase):
 
     def test_issue_teiin(self):
         """論点「新こども園の定員」：町の資料の記述1、説明と答弁6（うち1つに作成者の注）、今後検討・決定するとされていること1、
-        質問7件（確定済み3件は20、7、5か所。読み取りの4件は3、10、7、2か所）。質問ごとの部分は、一覧に示した番号の続きから始まる。"""
+        質問8件（確定済み3件は20、7、5か所。読み取りの5件は3、3、10、7、2か所）。質問ごとの部分は、一覧に示した番号の続きから始まる。
+        2025年9月12日の質問は、ほかの論点に確定済みの記録があり、この論点には読み取りの行だけがあるので、読み取りの質問として出る
+        （2026-11-28）。確定済みの3件にも読み取りの行があるが、確定済みの記録だけを出す（SCHEMA.md 7.10）。"""
         pages = self.issue_pages("teiin")
         t = pages[0]
         n = {}
@@ -564,14 +573,16 @@ class TestReal(unittest.TestCase):
         self.assertEqual(list(n.values()), [1, 6, 1])
         setsumei = self.setsu(t, f"## {D.bun('mcp-midashi-issue-setsumei')}")
         self.assertEqual(setsumei.count("  - " + D.bun("mcp-issue-chu", chu="")), 1)
-        gikai = self.setsu(t, f"## {D.bun('mcp-midashi-issue-gikai', n=7)}")
-        self.assertEqual(re.findall(r"に関する部分（(\d+)か所）", gikai), ["3", "20", "7", "5", "10", "7", "2"])
+        gikai = self.setsu(t, f"## {D.bun('mcp-midashi-issue-gikai', n=8)}")
+        self.assertEqual(re.findall(r"に関する部分（(\d+)か所）", gikai), ["3", "20", "3", "7", "5", "10", "7", "2"])
         self.assertNotIn("\n- 「", gikai)                                   # 1回めには、段落の文を出さない
         heads = re.findall(r"\n- (.+)\n  - .+\n  - .+（page：(\d+)）", gikai)
-        self.assertEqual(len(heads), 7)
+        self.assertEqual(len(heads), 8)
+        self.assertEqual([D.bun("shitsumon-kakutei") in x for x in re.findall(r"\n- .+\n  - (.+)\n", gikai)],
+                         [False, True, False, True, True, False, False, False])
         hi = [tuple(int(x) for x in re.match(r"(\d+)年(\d+)月(\d+)日", h).groups()) for h, _ in heads]
         self.assertEqual(hi, sorted(hi, reverse=True))                          # 日付の新しい順
-        for (h, p), k in zip(heads, (3, 20, 7, 5, 10, 7, 2)):
+        for (h, p), k in zip(heads, (3, 20, 3, 7, 5, 10, 7, 2)):
             body = pages[int(p) - 1]
             self.assertIn(f"\n### {h}　", body)
             alltext = "\n".join(x for x in pages[int(p) - 1:] if f"\n### {h}　" in x)
@@ -587,7 +598,9 @@ class TestReal(unittest.TestCase):
                                 shitsugi_zumi=3), t)
             # 残りの12問は生成AIが2回読んだので、「まだ読んでいません」は出ない（2026-11-28）
             self.assertNotIn("まだ読んでいません", t)
-            self.assertIn(D.bun("mcp-issue-hani-yomi", n=41, kikan="2017年9月〜2026年6月", soto=29, toi=16), t)
+            # 2回めの読み取り（2026-11-28）の35問を含む。13問は、当たる論点が無かった
+            self.assertIn(D.bun("mcp-issue-hani-yomi", n=76, kikan="2017年3月〜2026年6月", soto=60, toi=16), t)
+            self.assertIn(D.bun("mcp-issue-hani-yomi-nashi", n=13), t)
             self.assertNotIn(D.bun("mcp-issue-hani-shitsugi", n=0), t)
         # ほかのテーマも、テーマごとの数で出す
         for slug, kazu, toi, shitsugi in (
@@ -605,9 +618,10 @@ class TestReal(unittest.TestCase):
                     self.assertIn(D.bun("mcp-issue-hani-toi", **toi), t)
                 elif slug == "kaigo01":                 # 介護は、未読の一般質問を全部読んだ（2026-11-28）
                     self.assertNotIn("残りの一般質問", t)
-        # 介護は、テーマの定義の未読の5問と、題名に語がある17問を読んだ。2026年3月10日の質問は、当たる論点が無かった（2026-11-28）
+        # 介護は、テーマの定義の未読の5問と、題名に語がある17問を読み、2回めの読み取りで11問を読んだ。2026年3月10日の質問は、
+        # 当たる論点が無かった（2026-11-28）
         t = "\n".join(self.issue_pages("kaigo01"))
-        self.assertIn(D.bun("mcp-issue-hani-yomi", n=22, kikan="2017年3月〜2026年3月", soto=17, toi=11), t)
+        self.assertIn(D.bun("mcp-issue-hani-yomi", n=33, kikan="2017年3月〜2026年3月", soto=23, toi=11), t)
         self.assertIn(D.bun("mcp-issue-hani-yomi-nashi", n=1), t)
         self.assertNotIn(D.bun("mcp-issue-hani-yomi-nashi", n=0), "\n".join(self.issue_pages("hiyo")))
 
@@ -631,8 +645,8 @@ class TestReal(unittest.TestCase):
         i = "\n".join(self.issue_pages("kokyo10"))
         self.assertIn("2021年3月12日　一般質問　「地域福祉活動」「地域コミュニティーの再編」", i)
         self.assertIn("「公共施設の再編」のうち", i)
-        for slug, n, kikan, soto, shitsugi in (("kokyo01", 39, "2017年3月〜2026年3月", 23, 16),
-                                               ("chiiki01", 29, "2017年12月〜2026年6月", 9, 9)):
+        for slug, n, kikan, soto, shitsugi in (("kokyo01", 49, "2017年3月〜2026年6月", 33, 16),
+                                               ("chiiki01", 42, "2017年12月〜2026年6月", 21, 9)):
             t = "\n".join(self.issue_pages(slug))
             self.assertIn(D.bun("mcp-issue-hani-yomi", n=n, kikan=kikan, soto=soto, toi=22), t)
             self.assertNotIn("残りの一般質問", t)
@@ -702,11 +716,12 @@ class TestReal(unittest.TestCase):
                 self.assertEqual(rest.count("\n- 「"), sum(len(q["paras"]) for q in R["qs"]))
                 nq += nt
                 nb += sum(len(q["paras"]) for q in R["qs"])
-        # 4つの論点の合計（確定済みの記録だけのときは、質問16件、関する部分96か所。2026-11-28 に読み取りの行を入れた）
-        self.assertEqual((nq, nb), (30, 188))
-        # 試作のページは、幼保の50の論点の全部（2026-11-28 に候補から11を足した。37の論点のときは 2052。さらに2を足す前の
-        # 48の論点のときは 2189）（確定済みの記録だけのときは、13の論点で121か所）
-        self.assertEqual(sum(int(x) for x in re.findall(r"に関する部分を表示（(\d+)か所）", page)), 2196)
+        # 4つの論点の合計（確定済みの記録だけのときは、質問16件、関する部分96か所。2026-11-28 に読み取りの行を入れた。
+        # 2回めの読み取りの前は、30件、188か所）
+        self.assertEqual((nq, nb), (32, 207))
+        # 試作のページは、幼保の57の論点の全部（2026-11-28 に候補から11を足した。37の論点のときは 2052。さらに2を足す前の
+        # 48の論点のときは 2189。2回めの読み取りの前の50の論点のときは 2196）（確定済みの記録だけのときは、13の論点で121か所）
+        self.assertEqual(sum(int(x) for x in re.findall(r"に関する部分を表示（(\d+)か所）", page)), 2576)
 
     def test_issue_namae(self):
         # 発言者の名前（議員と、答弁した人）を出さない。区分は発言者の役職から決める（委員長の報告は議員の発言）
@@ -736,7 +751,7 @@ class TestReal(unittest.TestCase):
         first = pages[0]
         mi = D.kotoba("質問と事項の対応の表 question")
         self.assertIn(D.bun("yomi-setsumei", short="保育士等の不足"), first)
-        self.assertEqual(first.count(f"  - {mi}\n"), 24)
+        self.assertEqual(first.count(f"  - {mi}\n"), 26)                    # 2回めの読み取りの前は24
         # テーマの定義に無い質問の題は、論点に付いた段落の発言を含む問いの題名だけ（SCHEMA.md 7.10。2026-11-28）
         self.assertIn("- 2017年9月14日　一般質問　「待機児童問題」\n  - " + mi, first)
         self.assertNotIn("松尾公園テニスコート", first)
@@ -754,32 +769,43 @@ class TestReal(unittest.TestCase):
                       if k.startswith("theme=hoiku&page="))
         part = self.setsu(t, "## " + D.kotoba("資料と出来事の名前の表 shu が「出来事」"))
         self.assertEqual([x for x in part.split("\n") if x.startswith("- ")],
-                         ["- 懇話会（日野町幼児教育保育の在り方検討懇話会）（event：konwakai）　" + D.bun("mcp-dekigoto-kazu", n=16),
-                          "- パブリックコメント（event：pabukome）　" + D.bun("mcp-dekigoto-kazu", n=4),
-                          "- 説明会（住民や保護者への説明会、行政懇談会）（event：setsumeikai）　" + D.bun("mcp-dekigoto-kazu", n=9)])
+                         ["- 懇話会（日野町幼児教育保育の在り方検討懇話会）（event：konwakai）　" + D.bun("mcp-dekigoto-kazu", n=18),
+                          "- パブリックコメント（event：pabukome）　" + D.bun("mcp-dekigoto-kazu", n=8),
+                          "- 説明会（住民や保護者への説明会、行政懇談会）（event：setsumeikai）　" + D.bun("mcp-dekigoto-kazu", n=9),
+                          # 2回めの読み取りで足した出来事（2026-11-28）。名前の表の順
+                          "- こども誰でも通園制度に伴う会議（event：hoiku-daredemo-tsuen-kaigi）　" + D.bun("mcp-dekigoto-kazu", n=1),
+                          "- 保育現場の部会（event：hoiku-genba-bukai）　" + D.bun("mcp-dekigoto-kazu", n=1),
+                          "- 基本構想の策定委員会（event：hoiku-kousou-sakutei-iinkai）　" + D.bun("mcp-dekigoto-kazu", n=3),
+                          "- 設計委託業務の公募型プロポーザル（event：hoiku-sekkei-proposal）　" + D.bun("mcp-dekigoto-kazu", n=1)])
         # 公共施設の再編と地域のあり方の出来事（2026-11-28）。行政懇談会と意見交換会は、テーマごとに ID が違う
-        for th, n in (("kokyo", 8), ("chiiki", 6)):
-            part = self.setsu(self.bun("theme", f"theme={th}"), "## " + D.kotoba("資料と出来事の名前の表 shu が「出来事」"))
+        for th, n in (("kokyo", 12), ("chiiki", 8)):
+            # 2回めの読み取りのあと、地域のあり方の出来事は、theme の続き（page=2）に入る（2026-11-28）
+            t = "\n".join(self.data["bun"][i] for k, i in sorted(self.data["outou"]["theme"].items())
+                          if k.startswith(f"theme={th}&page="))
+            part = self.setsu(t, "## " + D.kotoba("資料と出来事の名前の表 shu が「出来事」"))
             gyo = [x for x in part.split("\n") if x.startswith("- ")]
             self.assertEqual(len(gyo), n)
             self.assertTrue(all(f"（event：{th}-" in x for x in gyo))
-        self.assertIn("- 行政懇談会（event：chiiki-gyosei-kondankai）　" + D.bun("mcp-dekigoto-kazu", n=9),
-                      self.bun("theme", "theme=chiiki"))
+        self.assertIn("- 行政懇談会（event：chiiki-gyosei-kondankai）　" + D.bun("mcp-dekigoto-kazu", n=11),
+                      self.bun("theme", "theme=chiiki&page=2"))
         # 介護の出来事（2026-11-28）。同じ名前の出来事（パブリックコメント）も、テーマごとに ID が違い、数はそのテーマの質問だけ
-        part = self.setsu(self.bun("theme", "theme=kaigo"), "## " + D.kotoba("資料と出来事の名前の表 shu が「出来事」"))
+        t = "\n".join(self.data["bun"][i] for k, i in sorted(self.data["outou"]["theme"].items())
+                      if k.startswith("theme=kaigo&page="))
+        part = self.setsu(t, "## " + D.kotoba("資料と出来事の名前の表 shu が「出来事」"))
         self.assertEqual([x for x in part.split("\n") if x.startswith("- ")],
                          ["- 第10期の計画の策定（event：kaigo-dai10ki-sakutei）　" + D.bun("mcp-dekigoto-kazu", n=4),
                           "- 第8期の計画の策定（event：kaigo-dai8ki-sakutei）　" + D.bun("mcp-dekigoto-kazu", n=1),
                           "- 介護保険運営協議会（event：kaigo-unei-kyogikai）　" + D.bun("mcp-dekigoto-kazu", n=2),
                           "- 住民説明会（event：kaigo-setsumeikai）　" + D.bun("mcp-dekigoto-kazu", n=2),
-                          "- パブリックコメント（event：kaigo-pabukome）　" + D.bun("mcp-dekigoto-kazu", n=1)])
+                          "- パブリックコメント（event：kaigo-pabukome）　" + D.bun("mcp-dekigoto-kazu", n=1),
+                          "- チョイソコのワーキンググループ（event：kaigo-choisoko-wg）　" + D.bun("mcp-dekigoto-kazu", n=1)])
         # 第10期の計画の策定は、入力の確定済みの記録（3件。人が内容を確認した質問）と、読み取り（1件）
         e = self.bun("event", "event=kaigo-dai10ki-sakutei")
         self.assertIn("\n## " + D.bun("mcp-midashi-event-konkyo", n=4) + "\n", e)
         self.assertEqual(e.count("\n  - " + D.bun("shitsumon-kakutei") + "\n"), 3)
         self.assertEqual(e.count("\n  - " + D.kotoba("質問と事項の対応の表 question") + "\n"), 1)
         e = self.bun("event", "event=konwakai")
-        self.assertIn("\n## " + D.bun("mcp-midashi-event-konkyo", n=16) + "\n", e)
+        self.assertIn("\n## " + D.bun("mcp-midashi-event-konkyo", n=18) + "\n", e)
         self.assertIn(D.bun("mcp-issue-gikai-setsumei", short="この出来事"), e)
         self.assertNotIn("event=keikaku-an", self.data["outou"]["event"])
         # 計画（案）と、名前の表に無い名前（子ども・子育て会議など）の行は、どの応答にも出さない

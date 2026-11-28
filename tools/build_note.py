@@ -58,8 +58,21 @@ def S(s):
 
 
 def S_kagi(s):
-    """「」の中だけを資料からの文とする（問いの題など）。"""
-    return re.sub(r"「[^」]*」", lambda m: A + m.group(0) + B, html.escape(s))
+    """「」の中だけを資料からの文とする（問いの題など）。題名の中に「」があるとき（例：「「こども誰でも通園制度」日野町の
+    対応は」）は、外側の「」の全体を1つの資料からの文とする（「と」の数を数えて、外側の」までを取る）。"""
+    s = html.escape(s)
+    out, depth, start, last = [], 0, 0, 0
+    for i, c in enumerate(s):
+        if c == "「":
+            if depth == 0:
+                start = i
+            depth += 1
+        elif c == "」" and depth > 0:
+            depth -= 1
+            if depth == 0:
+                out.append(s[last:start] + A + s[start:i + 1] + B)
+                last = i + 1
+    return "".join(out) + s[last:]
 
 
 # ---- 項目の表と言葉の表 ----
@@ -511,10 +524,12 @@ class Page:
             dai = self.dai(q, {(sid, i) for sid, i, _ in paras})
             qs.append(dict(question=q, date=qdate(q), sitsugi=q.startswith("sq:"), who=who, dai=dai, paras=paras,
                            mikakunin=False, yomi={}))
-        # 生成AIの2回の読み取りの行（SCHEMA.md 7.10）。質問ごとに段落をまとめ、段落ごとに一致か1回だけかを持つ
+        # 生成AIの2回の読み取りの行（SCHEMA.md 7.10）。質問ごとに段落をまとめ、段落ごとに一致か1回だけかを持つ。
+        # 同じ質問と論点に、入力の確定済みの対応の記録があるときは、確定済みの記録だけを出す（SCHEMA.md 7.10。案）
+        kakutei = {r["question"] for r in ta}
         yq = {}
         for r in self.m.get("yomi", []):
-            if r["point"] == P:
+            if r["point"] == P and r["question"] not in kakutei:
                 for p in keys.paras_of(r["hani"]):
                     d = yq.setdefault(r["question"], {})
                     d[p] = ym.yomi_awase(d.get(p), r["yomi"])     # 2つのテーマの読み取りの行（SCHEMA.md 7.10）
