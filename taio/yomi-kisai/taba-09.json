@@ -1,0 +1,78 @@
+[
+ [
+  {
+   "shiryo": "pt:nogyo-tamen/honpen/1",
+   "danraku": 17,
+   "sha256": "e2a87304f406ace433e9bb8f59e0023dd97ed6e1a443f098f472b2a4553c5d52",
+   "ji": 752,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-09-0.txt"
+  },
+  {
+   "shiryo": "pt:nogyo-tamen/honpen/2",
+   "danraku": 15,
+   "sha256": "671ef82afe244c7655bd1bd33d013ffcb1eeff298d53ad46d90469715b9e6ca5",
+   "ji": 859,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-09-0.txt"
+  },
+  {
+   "shiryo": "pt:nogyo-tamen/marugoto-r7/1",
+   "danraku": 28,
+   "sha256": "81b9cd52b1bdbe0afc3497fc6ce127ab3d90bc8d52c1a435635819903d078f8d",
+   "ji": 1060,
+   "hyo": 1,
+   "file": "/home/claude/yomi/keikaku/honbun-09-0.txt"
+  },
+  {
+   "shiryo": "pt:nogyo-tamen/marugoto-r7/2",
+   "danraku": 15,
+   "sha256": "e76987382edec6f705f9412b789bd9d6358744c09776fd4d0dc6facbd09308e7",
+   "ji": 476,
+   "hyo": 1,
+   "file": "/home/claude/yomi/keikaku/honbun-09-0.txt"
+  },
+  {
+   "shiryo": "pt:nogyo-tamen/x2-r7/1",
+   "danraku": 20,
+   "sha256": "63d2f68224b22cf06e3863ca69c2494c5242c1522bf5a00eedbd8a34bc44321a",
+   "ji": 717,
+   "hyo": 1,
+   "file": "/home/claude/yomi/keikaku/honbun-09-0.txt"
+  },
+  {
+   "shiryo": "pt:nogyo-tamen/x3-r7/1",
+   "danraku": 8,
+   "sha256": "06bf4bba08999ac97dbc2e16821cc5f76c45323ea74f2e58f6abf5a338a19343",
+   "ji": 385,
+   "hyo": 1,
+   "file": "/home/claude/yomi/keikaku/honbun-09-0.txt"
+  }
+ ],
+ [
+  {
+   "shiryo": "pt:seibutsu/honpen/1",
+   "danraku": 1,
+   "sha256": "73d512f6edec749a59afd6b185c24bd41dd8b26c16a8d42062849e8eeca056b3",
+   "ji": 48,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-09-1.txt"
+  },
+  {
+   "shiryo": "pt:seibutsu/honpen/2",
+   "danraku": 13,
+   "sha256": "dcb0bd5af1b66c023b43edf8cc3aab72391b5cb3798220fe21cd33e9c5c73dd6",
+   "ji": 1251,
+   "hyo": 3,
+   "file": "/home/claude/yomi/keikaku/honbun-09-1.txt"
+  },
+  {
+   "shiryo": "pt:seibutsu/honpen/3",
+   "danraku": 18,
+   "sha256": "96bc00f8da7f6ff441e9b5c04367f64368fcf43bb093d86e3d880aaaa74d3e8f",
+   "ji": 1021,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-09-1.txt"
+  }
+ ]
+]

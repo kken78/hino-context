@@ -10,11 +10,13 @@ from inputs import paragraphs
 WHITESPACE = "[\t\n\v\f\r    -     　﻿]"
 
 
-def norm(text):
-    """SCHEMA.md §3 の正規化：NFKC → 改行に続くページ番号の除去 → 「-数字-」の除去 → 空白の除去。"""
+def norm(text, page_bango=True):
+    """SCHEMA.md §3 の正規化：NFKC → 改行に続くページ番号の除去 → 「-数字-」の除去 → 空白の除去。
+    page_bango が False なら、ページ番号の2つの除去をしない（資料の段落の字の照合。SCHEMA.md 7.13。2026-11-28）。"""
     text = unicodedata.normalize("NFKC", text or "")
-    text = re.sub(r"\n[0-9]+-[0-9]+", "", text)
-    text = re.sub(r"-[0-9]+-", "", text)
+    if page_bango:
+        text = re.sub(r"\n[0-9]+-[0-9]+", "", text)
+        text = re.sub(r"-[0-9]+-", "", text)
     return re.sub(WHITESPACE, "", text)
 
 
@@ -60,18 +62,20 @@ class Result:
         self.mismatched += other.mismatched
 
 
-def check_quotes(inp, rows):
-    """rows は {"where", "source", "quote"} の並び。引用が資料の本文にあるかを1件ずつ確認する。"""
+def check_quotes(inp, rows, page_bango=True):
+    """rows は {"where", "source", "quote"} の並び。引用が資料の本文にあるかを1件ずつ確認する。
+    page_bango が False なら、正規化でページ番号の除去をしない（資料の段落の字。行をつないで作るので、行の頭の「1-2」などを
+    本文の側だけで除くと合わなくなるため。SCHEMA.md 7.13。2026-11-28）。"""
     res = Result()
     for r in rows:
         res.total += 1
         texts = source_texts(inp, r["source"])
-        q = norm(r["quote"])
+        q = norm(r["quote"], page_bango)
         if not q:
             reason = "引用が空"
         elif texts is None:
             reason = "資料が入力に無いか、照合できない資料の ID"
-        elif not any(q in norm(t) for t in texts):
+        elif not any(q in norm(t, page_bango) for t in texts):
             reason = "引用が資料の本文に無い"
         else:
             res.matched += 1

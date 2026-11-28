@@ -1,0 +1,1376 @@
+[
+ [
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/1",
+   "danraku": 3,
+   "sha256": "acceecd6a7ee4f4f49b2915ec01c4a3c8e3367d62feae51bed9327c58bf12d27",
+   "ji": 40,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/3",
+   "danraku": 6,
+   "sha256": "9b8e1a842d2cec3ccd6140b2c0092331c6cadfafb557a96b2f22a36629fb54c2",
+   "ji": 669,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/5",
+   "danraku": 12,
+   "sha256": "4e7647a0c95a6a301fb5a58c5a61e98fd3a9d61da75fa40a8d7363b2e8a2582a",
+   "ji": 3197,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/7",
+   "danraku": 7,
+   "sha256": "324807440c8d3b76992bcdbf8d7bdb06493718adbc717b3fbdf0b0d26ec6d3e0",
+   "ji": 1170,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/8",
+   "danraku": 8,
+   "sha256": "c1cf4c22919cb4299b9b3d2ca0ee273fb14ecc699004f8c8a535c7ffce06b1d9",
+   "ji": 551,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/9",
+   "danraku": 21,
+   "sha256": "7341f58fa0af46685040d69ee56166ac6fc933b2db537f371deb97b5976314b9",
+   "ji": 293,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/10",
+   "danraku": 13,
+   "sha256": "60a69c98d4f3114943171fdb4033d0860381e981c819edb5165acf7b67cdd2ea",
+   "ji": 819,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/11",
+   "danraku": 21,
+   "sha256": "441eced181518396116d3d391ab92bd37fae9e078a8468cf5ae5339507e1326d",
+   "ji": 692,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/12",
+   "danraku": 14,
+   "sha256": "985589bd534f3f187023acde8dd285b881c245123e3431a9b2dbf0aad69c2b48",
+   "ji": 945,
+   "hyo": 1,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/13",
+   "danraku": 13,
+   "sha256": "cd588e84f1f7a910f8858fe1ba041418ce31fd63b31f270e4ece4253184fae49",
+   "ji": 855,
+   "hyo": 1,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/14",
+   "danraku": 6,
+   "sha256": "89651a7daa7cd76f4ea5202953647256b5ab80d31b3b61a96949c7e1934c9972",
+   "ji": 194,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/15",
+   "danraku": 32,
+   "sha256": "18ce49dd19abccd88e50472055cc7980b44c1eafbb1bffc4b9d48877623b3a70",
+   "ji": 945,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/16",
+   "danraku": 15,
+   "sha256": "f3eeba6ebc42f855d6311d167ce10c6f7ebc307244f7f0cb75b60a5e9b65389d",
+   "ji": 727,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/17",
+   "danraku": 23,
+   "sha256": "1693b1fd1162644cc45fc358f6853402bb401b5e9952710e1c23e31746bb307d",
+   "ji": 486,
+   "hyo": 1,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/18",
+   "danraku": 31,
+   "sha256": "6aaed6a7ac671a8ff8a5c981e3c2bfc5ebea528d30fb51151364b2ca9ab850b6",
+   "ji": 308,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/19",
+   "danraku": 32,
+   "sha256": "e873fb21abdd1adcb1fe57fdbf890bce6282c2fdf504f6b328d34e0f0d83e9ad",
+   "ji": 631,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/20",
+   "danraku": 24,
+   "sha256": "5feff427f4c9c7a0b93d07683eea2aa9d9f6aaf93fe58c9aac8470a60f69e87e",
+   "ji": 366,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/21",
+   "danraku": 67,
+   "sha256": "4c286e22ade51b8e06a8faa34f62a673e00acc728d701881e9ed70cae763c8bf",
+   "ji": 1263,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/22",
+   "danraku": 27,
+   "sha256": "ab0d875b5e9e65b79381c90982f8f6057476fa2563284a9eddc28f036e5308cf",
+   "ji": 314,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/23",
+   "danraku": 23,
+   "sha256": "2a7d33bbd1348f2051863f956db312a6d3d00f8ac828087e1498eaf7f7e0cdf5",
+   "ji": 560,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/24",
+   "danraku": 31,
+   "sha256": "cba00e01a3c4cecae6b80c14169f91c9ec41cc9177cae6085bc0c1241d5dfb4c",
+   "ji": 602,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/25",
+   "danraku": 17,
+   "sha256": "078a7e5c87903149b798c8b3c11de16cb47cdcbbafe860443cf388ab62a1e22f",
+   "ji": 458,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/26",
+   "danraku": 31,
+   "sha256": "41ffe99d149222b2a3a2cc780c5f27cf94b360d017939b80a3411c109f042d18",
+   "ji": 583,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/27",
+   "danraku": 39,
+   "sha256": "a71c8528e5048bd05e7268042784dd6915b6c2b7e9e6cafbdfa472b7692f1080",
+   "ji": 1307,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/28",
+   "danraku": 38,
+   "sha256": "de37b96ec90101e9a68e46c3e1fb89c84ba44bba0fd16ad99bd410bf6cabecaa",
+   "ji": 1295,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/29",
+   "danraku": 15,
+   "sha256": "bab66c0abe274079da735896d72947770fae61718d8452c7167a7742d5a34a1f",
+   "ji": 478,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/30",
+   "danraku": 20,
+   "sha256": "999f54c67f66cf19cd58560045e7282606c6cf92c9a65592eccd077bf96a7ee9",
+   "ji": 609,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/31",
+   "danraku": 19,
+   "sha256": "f8e9765a8365ab45c12b3fc447ce5cd6b1afa55de71ac58857b752d44eb9ba0b",
+   "ji": 425,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/32",
+   "danraku": 35,
+   "sha256": "e279d749bc8d2a0aec71df44c3a9b6983c36da1dc647e5c5fef4d5e448c6398b",
+   "ji": 1446,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/33",
+   "danraku": 23,
+   "sha256": "839291f192ef5a4d86222505bdbcc0fc62df8161bc773806afbcbe0d88d647ac",
+   "ji": 753,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/34",
+   "danraku": 20,
+   "sha256": "80f746f51893e60f5c941bc8714cd515a6db7d52e380f71424ff4f4d3f4d7fef",
+   "ji": 1080,
+   "hyo": 1,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/35",
+   "danraku": 19,
+   "sha256": "65ba1964fda7eb0be772dacda04169b9328a4c0017fe92c00d06a676e6956fbc",
+   "ji": 945,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/36",
+   "danraku": 7,
+   "sha256": "cbc1cf3acbb5c692e13c887347696a3a3d8d7ab7b5b1fb1de92365d6ed2a8842",
+   "ji": 727,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/37",
+   "danraku": 2,
+   "sha256": "98973968d12877f1dd791483a5d5da8107f188c89426ccfcd159867fa69f4c1d",
+   "ji": 282,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/38",
+   "danraku": 1,
+   "sha256": "6b4eaf4f6d482c5414433bcfd5cce6647c272bb98abdfc219694b7671910dadd",
+   "ji": 321,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/39",
+   "danraku": 16,
+   "sha256": "0a11a645a5448706ca092a98b08ef8fcabc0cf5fa440235bb6bc81303222b6b7",
+   "ji": 849,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/40",
+   "danraku": 15,
+   "sha256": "78a173284614e44ff70ccef9f80a8cb8e2c3abd8721874eece29e260376661d4",
+   "ji": 791,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/41",
+   "danraku": 17,
+   "sha256": "acd185d1cf6466761e8a35bae9c95ce2605bd4fc65fe8ded5899fa93e6b6a607",
+   "ji": 861,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/42",
+   "danraku": 19,
+   "sha256": "e61d035f49957b0720cf0e31e47c786122132a2aa95fba5c9ef310070d3a6f54",
+   "ji": 943,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/43",
+   "danraku": 12,
+   "sha256": "ff7bb3d158b88895faaa2f7dff3916c209dde6fde1dac72998ad788df5834cbe",
+   "ji": 767,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/44",
+   "danraku": 18,
+   "sha256": "43c7732013abaf3499af598e77e57a86523df9fa9a7983c2e28103252172f758",
+   "ji": 822,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/45",
+   "danraku": 18,
+   "sha256": "95be33264470f7f8fc23bb19f9bfb77c937cb28894cc44272fe5c6bf9790f948",
+   "ji": 803,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/46",
+   "danraku": 11,
+   "sha256": "76dd98b3401ca9799f9c876e193d37b2ffed7725cab286a49b7da92a3c9700ff",
+   "ji": 583,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/47",
+   "danraku": 6,
+   "sha256": "5b1d4e20de8ce9d0c567229e74baf29f7cb54abe43b3cecaf9cdeba9a75000f3",
+   "ji": 341,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/48",
+   "danraku": 22,
+   "sha256": "c4931d3d97342f563f5dbdcdc4aaef7802acea09f645d75699b422b3922d3456",
+   "ji": 715,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/49",
+   "danraku": 15,
+   "sha256": "9ee16703f9c8cf837aef1553382ef35a33bd75719f7035a0a13b2237d2e51852",
+   "ji": 562,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/50",
+   "danraku": 2,
+   "sha256": "bc6f79ba593e2b880f0137e2cbde7444fde95e63266374b088e0d5f9eb3c9507",
+   "ji": 353,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/51",
+   "danraku": 10,
+   "sha256": "0e25306ee1309bab06753144f22614fb51df37f45fcecc908be89a147b708189",
+   "ji": 162,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/52",
+   "danraku": 19,
+   "sha256": "1d38024b0f03122774e26ce515c36d09d27610f3be4948a930ad06316d4fb2fc",
+   "ji": 617,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/53",
+   "danraku": 18,
+   "sha256": "5b86d6d1d83fd5f4f041f6d752ae15113c0a272f559e3827a6374fe321832545",
+   "ji": 920,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/54",
+   "danraku": 20,
+   "sha256": "0d59930496d259a374acf5975d2e660304be5e23446ad9a844df86a82799f309",
+   "ji": 765,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/55",
+   "danraku": 13,
+   "sha256": "0e02f0d1f118069878a9212213b08d1718673694b9e80bb5c73a6c36f7d56844",
+   "ji": 378,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:chiiki-fukushi4/honpen/56",
+   "danraku": 1,
+   "sha256": "8f21afe2f2ba2b00826752c89a00dc989b2b74e11e7823cb76e51cacc4832118",
+   "ji": 155,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/1",
+   "danraku": 1,
+   "sha256": "60da6787bfd2b63e7a17ec0f3ffd9a8c43670fc35f3758ff3b03437387401162",
+   "ji": 49,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/3",
+   "danraku": 9,
+   "sha256": "b1d4e1180d94e838362158ae7f5f8d24d5c3d1ed9cfe331006e3f98c36fce091",
+   "ji": 848,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/5",
+   "danraku": 14,
+   "sha256": "fefd240cd3966f79fd6ca82520b39ecc825208488f46ebddf2d18c6daca4e478",
+   "ji": 1481,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/6",
+   "danraku": 7,
+   "sha256": "076dd7afd473bc06018354c05dca3347e80e0dd24748d8b99ec64b01e15fdd70",
+   "ji": 1215,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/7",
+   "danraku": 1,
+   "sha256": "be8e6c02a90a51f1d9c23e929e166481febf159ae4034c0215011b31f2ce1d32",
+   "ji": 8,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/9",
+   "danraku": 13,
+   "sha256": "b4473731b171c4aaaff9237d4b6b310ed367f0ea6626fe571091f64907a7856f",
+   "ji": 885,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/10",
+   "danraku": 10,
+   "sha256": "d1fc54496d591cca3a169c3491cbb84740e02084005fad5773baca6e0b47bec9",
+   "ji": 466,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/11",
+   "danraku": 8,
+   "sha256": "fefc578e558fb01978f7e10923073badda2667f81db1c7af96bfaae4afe5991e",
+   "ji": 900,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/12",
+   "danraku": 5,
+   "sha256": "0857eb6c9a91b7384f9d7c25b020caf1c9eca3030a5dfa7e7e72ca09cf3e2330",
+   "ji": 525,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/13",
+   "danraku": 19,
+   "sha256": "ae59dd2d244334916405b1f00ed829af75720a023b5301acb5573b07d939a14c",
+   "ji": 550,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/14",
+   "danraku": 20,
+   "sha256": "cf5bb3ca895a8a34a6e09e5c0b84744233bac6d7733b13ba537ca41462c43ec8",
+   "ji": 757,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-0.txt"
+  }
+ ],
+ [
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/15",
+   "danraku": 33,
+   "sha256": "89dae737c3ac7cadc2a35941132e13995295fc2b17c1d762bec79d50e0dc3006",
+   "ji": 786,
+   "hyo": 1,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/16",
+   "danraku": 27,
+   "sha256": "85123414f19524c1eaef165aac3fd962fdcce31f4cf82ef195ddffbde0aa1746",
+   "ji": 638,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/17",
+   "danraku": 23,
+   "sha256": "16f0189f454860b8a4c749b57088e7a2bdcb77ece1a75295e9271bdbdd5a2194",
+   "ji": 505,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/18",
+   "danraku": 25,
+   "sha256": "d02cd7ea21b236433632ff807496d901925ff2a82667d60f95f63324773b6c32",
+   "ji": 444,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/19",
+   "danraku": 26,
+   "sha256": "c3ae51e2da6382a56e5b502e9df3593bf444c1ff2ad05d726aa4dec14513f923",
+   "ji": 595,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/20",
+   "danraku": 30,
+   "sha256": "ef68bee9dbd431a4011e01f66e3d65c0c7af8ce541ad059f7355340045273289",
+   "ji": 487,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/21",
+   "danraku": 47,
+   "sha256": "79a4e828730f5a48f510538951f43a12e8d30a3f6e7b9e036812a7b00c1eb39e",
+   "ji": 607,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/22",
+   "danraku": 27,
+   "sha256": "e2b9b35b29768fcfe109ea85826af6dfe0f96a3b6ed8df2e0d632a5fd6ff2459",
+   "ji": 846,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/23",
+   "danraku": 17,
+   "sha256": "9bab74f45a8581fe3e4e2b325c41c669542ea89f18464c82235ff91eab5475eb",
+   "ji": 770,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/24",
+   "danraku": 30,
+   "sha256": "44c46f048630b31ca69528cb2da8a323baee5e6ff43711308ee67a9e66cdddc6",
+   "ji": 683,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/25",
+   "danraku": 13,
+   "sha256": "90b9575a635c77ce9073f09eebb446f3b9bf192252ee70ef39c47b10849ae946",
+   "ji": 813,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/26",
+   "danraku": 28,
+   "sha256": "e98ca281578e720249c2e182212b0ff3229d8d5bdf903871fecb4d94a35c7e84",
+   "ji": 606,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/27",
+   "danraku": 31,
+   "sha256": "ca2568db3d6b40301975bec4a27e36b96709f39c0cf9191c136a88f1c9adb912",
+   "ji": 672,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/28",
+   "danraku": 28,
+   "sha256": "9a3ff580f267e0e829c2d1e012c2265b867985b109a166f1e88cc40f60c08cf1",
+   "ji": 769,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/29",
+   "danraku": 19,
+   "sha256": "c0f07d9722ce8fffcca4c8fbd1f22f102f4eba2be524c03c08c54dd30ae49c6e",
+   "ji": 886,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/30",
+   "danraku": 14,
+   "sha256": "0d70b044939f847036719e55cffdff93a0b4232e76007129a196a795c9d74241",
+   "ji": 805,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/31",
+   "danraku": 16,
+   "sha256": "b179b6cc8bdc7194b565c50de2f9e8062a03c71edcfd4c8d04b46a2c6f1762b0",
+   "ji": 815,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/32",
+   "danraku": 2,
+   "sha256": "64d60334de490174ec6c081a84294b18df89007d2baeefdbb4240fa2d30334c1",
+   "ji": 909,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/33",
+   "danraku": 1,
+   "sha256": "cca6a9ec4035687903963c546eadfe93690f2d04d2338a42493d8eb2a677716f",
+   "ji": 8,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/35",
+   "danraku": 21,
+   "sha256": "b38db030e59c9b641260875c17cb3e85ea05ad9681a6f6f7ff9b51087ccb9b5f",
+   "ji": 971,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/36",
+   "danraku": 26,
+   "sha256": "9ce8ab6fa7f859db4ee4bea2497c8e1df748095e57383aae852fc0685d2a8d01",
+   "ji": 913,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/37",
+   "danraku": 22,
+   "sha256": "06cfe6155e9c2c17d5f35027713d4b7a2995bbf2e3fa6627cfe72e97ee2f83e4",
+   "ji": 784,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/38",
+   "danraku": 19,
+   "sha256": "28251f032bcdf31a7665345eeee93e22d1bb7318d37b5d1606edf433c1a4dca9",
+   "ji": 670,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/39",
+   "danraku": 10,
+   "sha256": "c6287d6fe76a3da395c6a98bc6b623b4a986a8a990b1b51e884a24e1f6163488",
+   "ji": 417,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/40",
+   "danraku": 13,
+   "sha256": "2db1c9098c3d31f54c9a0c771fb36417cd9f36a04bcf757740f38959e8ecf8d7",
+   "ji": 1017,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/41",
+   "danraku": 28,
+   "sha256": "e01d35b5e2d63baa78be3dd164593076da22cb8dc1d9f9880d9a7dc11d5cb170",
+   "ji": 1006,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/42",
+   "danraku": 35,
+   "sha256": "390f0d6b6963fca2c759fe1e1b9a2fc9651ff484b704cb1f76c08d70d7c93438",
+   "ji": 1148,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/43",
+   "danraku": 32,
+   "sha256": "bcfc7754fe06a1ed70dc0f6db95826cf70ffb2ebf54b80836dc8822f7cee133e",
+   "ji": 890,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/44",
+   "danraku": 24,
+   "sha256": "07f664ce5db47a1d0b0bd2ae0ae9192c58cf3b291668745d13fc9b6b41f65ac6",
+   "ji": 854,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/45",
+   "danraku": 11,
+   "sha256": "c0eb80d2b3752f1954518340623668f8b3b107dda177eb6d2325036d7c395062",
+   "ji": 407,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/46",
+   "danraku": 19,
+   "sha256": "0df3781291cd26fe3afdad4456928f361942cbf3e4940cc3aafa57d8ebbe398b",
+   "ji": 1035,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/47",
+   "danraku": 26,
+   "sha256": "367ce209eb0a11a9acd405f6c289c27d1c755602e6318cf69a92d68a05f6a324",
+   "ji": 799,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/48",
+   "danraku": 21,
+   "sha256": "7356d78b976541057ed1c12d345ba30f1ea6928446964f0e1c53dd2b2086e281",
+   "ji": 720,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/49",
+   "danraku": 23,
+   "sha256": "bf9843ab6ee2ab3cd06f26280a1422f7aea4c7d9b5b1bf4484e4609cb3e5e9ac",
+   "ji": 789,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/50",
+   "danraku": 13,
+   "sha256": "96c207831efa7cc767a1fbe9208b1c17f7676aa57e745d743589cbe9269c3ef1",
+   "ji": 465,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/51",
+   "danraku": 18,
+   "sha256": "2f5e7ad11e8df4281b1054db415fa8481c665a37f77d8095999aae279504ecc4",
+   "ji": 1137,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/52",
+   "danraku": 24,
+   "sha256": "e0d2e2b5900cbb86b2db097cda1e674110db08b486f25cf12d74f25c95375784",
+   "ji": 857,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/53",
+   "danraku": 23,
+   "sha256": "7776f98b3f0f581ab7003d496ee3e17eb1c9d1e0f10db920de750724dcd1ac95",
+   "ji": 691,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/54",
+   "danraku": 24,
+   "sha256": "ad58a83cedd140f7d76583419deeea31cf80deb7d38ac213f260253eaed0da5e",
+   "ji": 1038,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/55",
+   "danraku": 25,
+   "sha256": "1a7adc361aa77dfbbd9749663b54907cf2134d491b35f5814a6758fe33be51b8",
+   "ji": 753,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/56",
+   "danraku": 24,
+   "sha256": "efc677518b6109aea0c7acd0fa21fbe026d0aec29599976d16e1af2028c068b3",
+   "ji": 868,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/57",
+   "danraku": 15,
+   "sha256": "8ede49630d2951533b16c66868a3c31f494f5a52010f2fba5f7336f9813d0435",
+   "ji": 767,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/58",
+   "danraku": 33,
+   "sha256": "7bbe3ed99b3580f964cbd3f23013ee654a5902251bad208f845564894cc95937",
+   "ji": 804,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/59",
+   "danraku": 22,
+   "sha256": "cd21723ca552d42b0f8280deae835f050a3afbdf66e4f5d4e92a36fcebea3a7c",
+   "ji": 525,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/60",
+   "danraku": 17,
+   "sha256": "3ccadf3f39b5e8a89277b3f79c13e0bca7117282dbe77aa296f46d0d2779be8d",
+   "ji": 832,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/61",
+   "danraku": 22,
+   "sha256": "6e1eda6ebfb52fbefaddbccf3ae6a399af09a28c3136ad1f9940319574589398",
+   "ji": 811,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/62",
+   "danraku": 13,
+   "sha256": "4287c40a58f3237c154914c344bf596dc80095f32dacddb6845beae58548e7c6",
+   "ji": 453,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/63",
+   "danraku": 12,
+   "sha256": "c109244ade8c5baccbb491f5b87d22499271f462b5ae6702027ae82747aa8908",
+   "ji": 711,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/64",
+   "danraku": 25,
+   "sha256": "e7276491d99330621cabb9fab3aeb73bc2673029febc6628d5159347dfd2fd6c",
+   "ji": 749,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/65",
+   "danraku": 27,
+   "sha256": "1da527842bf6d143ac788f593923784e3b01ac188f471d0581e3ecb3126a2646",
+   "ji": 872,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/66",
+   "danraku": 23,
+   "sha256": "afbd591b084bce8f85c7eb22b8c81b924f289bf6ecde1d13e9ee51d0d043810f",
+   "ji": 763,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/67",
+   "danraku": 32,
+   "sha256": "23eaacfef735cf2d53c762dc1afa500b00298400becd74e0d50ad9f3c1c8d38b",
+   "ji": 1043,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/68",
+   "danraku": 9,
+   "sha256": "1fc5c95218a29308cc98b08ad68a49f2bf37f89e86cbd26dbcfb258b24764fc8",
+   "ji": 504,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/69",
+   "danraku": 1,
+   "sha256": "1960eb78faf3c6ab01440f93013f48e62f3149e84487aa0c323fa76b249a3f85",
+   "ji": 3,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/71",
+   "danraku": 4,
+   "sha256": "032dc246afff74a984c8c1c4824a87447122cbdd6f65d2ebdf18adb73865f8fa",
+   "ji": 293,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/72",
+   "danraku": 21,
+   "sha256": "4c29e6bc795219fdf14ec76d58eb7ed19e766098fed16c78d1eeece6218f9d78",
+   "ji": 869,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/73",
+   "danraku": 13,
+   "sha256": "6f1ae486801f953a8b09317801a92c2c4707d58f30aabecfc19513dbf73d3713",
+   "ji": 439,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/74",
+   "danraku": 2,
+   "sha256": "c63878bebb785945daa7b4cb29cb91932d4e460a78705f9f5e7cf40bfc024778",
+   "ji": 395,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  },
+  {
+   "shiryo": "pt:shogai-keikaku/honpen/75",
+   "danraku": 1,
+   "sha256": "c86883c88f74576c706846b97d50a4b99d43641c2d5c78e082f5a518bbd46bd1",
+   "ji": 139,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-1.txt"
+  }
+ ],
+ [
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/1",
+   "danraku": 1,
+   "sha256": "db2dedc1417b4acc7a3f27d8c84f963768059b7b7b23d42f2d1fb8797fbc5b7d",
+   "ji": 63,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/3",
+   "danraku": 24,
+   "sha256": "4e6ec4896faeebe3cebe45c4ff6a2a78888481dd5d23facbd8233fc08f0c23db",
+   "ji": 1842,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/5",
+   "danraku": 11,
+   "sha256": "0c34c0c77e196b04165fdda7b4cee566053eeff3111e48fcbe3760e04af67145",
+   "ji": 992,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/6",
+   "danraku": 10,
+   "sha256": "3651d26af6ca6506caa00122c2e0f511f0b380620779e363461e09f0a7a33f79",
+   "ji": 470,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/7",
+   "danraku": 8,
+   "sha256": "81b996fa9d743188816e7a488cd5eea2bb10a8c0acb384004f6f7c8dbda7bb81",
+   "ji": 692,
+   "hyo": 1,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/8",
+   "danraku": 36,
+   "sha256": "9ba577eba515a0278fb1869b88853f205b807da50225e4e1976945d1c6441f60",
+   "ji": 621,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/9",
+   "danraku": 25,
+   "sha256": "a74ce7e4d32f903262afa7cef8589a186c6022d19691e6610241acfacaa90058",
+   "ji": 595,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/10",
+   "danraku": 17,
+   "sha256": "cfb7eee3b82846ce424895a371c5f8777679c8ab6c59a408c7292990390b52b7",
+   "ji": 402,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/11",
+   "danraku": 7,
+   "sha256": "79171b76d2d2cdad5cec8e94afade7bca1a75f261a771847d539424b792a318c",
+   "ji": 866,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/12",
+   "danraku": 7,
+   "sha256": "2f78cd97ecc051fc209721a503a61b1c625adb31f66eac8b36d54f8023c6ca9f",
+   "ji": 462,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/13",
+   "danraku": 7,
+   "sha256": "32e95cf3cb630d45d85e12474a57a540f6e19210c977a6fdf149a5d9af671438",
+   "ji": 685,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/14",
+   "danraku": 1,
+   "sha256": "a176b1dab14e77755df8433990fb67fc7e630568ea74eadc9dcdf032611b2e51",
+   "ji": 675,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/15",
+   "danraku": 14,
+   "sha256": "47ff87b39d98865143837f099af8d115eb261f1b47a1b87faf979662dade173c",
+   "ji": 655,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/16",
+   "danraku": 14,
+   "sha256": "84574dd8542cbafd9685e68bb1ee58b6827431c634702922128c87cb8ccb5e72",
+   "ji": 1012,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/17",
+   "danraku": 21,
+   "sha256": "1f143c0194dcd04d706448c4a7c7ecb42086ccb6ea2b0710a5c9894052de441f",
+   "ji": 751,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/18",
+   "danraku": 26,
+   "sha256": "7ffea67e8c8904396d772b37c6fa3051fbb91d918e7496d66d8cf9cf21e10819",
+   "ji": 869,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/19",
+   "danraku": 10,
+   "sha256": "1a1935176c3fb0a4ba3e272c8e37c10970ca3531b11defddf6984339ee417e8a",
+   "ji": 671,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/20",
+   "danraku": 23,
+   "sha256": "e9ef76c6ca147d950849160c3e31ad75d175582a4121b8628cce5f87422c1fb8",
+   "ji": 673,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/21",
+   "danraku": 34,
+   "sha256": "36e34050071e70ea89cd44cee77ecbd8ab1f34b2c761cfe64d44d6cf34f91f1e",
+   "ji": 932,
+   "hyo": 1,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/22",
+   "danraku": 16,
+   "sha256": "7dfed360595f15eae8f681a77d3204ed78eb9de47de5661d35c8760f8c653040",
+   "ji": 881,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/23",
+   "danraku": 20,
+   "sha256": "a2cbbcb8f60f8c3483f5692c8b9b6c4c4c8334729b5885325248f1853a5ded6a",
+   "ji": 680,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/24",
+   "danraku": 16,
+   "sha256": "315c9f68dbc82dcf46d2cc001654087052c09f9399edddcf426b75e5c7678856",
+   "ji": 864,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/25",
+   "danraku": 9,
+   "sha256": "cc1864518d0092ef751a791b83fde1c64f429c9d23cea435b798fd9889ac90fe",
+   "ji": 831,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/26",
+   "danraku": 12,
+   "sha256": "38bc859785507eecc3a593d2880d125f808184c916cfe961528bbad29c259a0f",
+   "ji": 632,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/27",
+   "danraku": 9,
+   "sha256": "5125eca9fd889b5cf962b1d0d555caf5d73cabcfd528600483c661a2ab0b624a",
+   "ji": 333,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/28",
+   "danraku": 5,
+   "sha256": "64de7d3c18f4d9e8c0d3722b01950affdce399e0eee72d8050dba69271eeabdd",
+   "ji": 665,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/29",
+   "danraku": 18,
+   "sha256": "4df3754f5739df1330978d7d6fa921f58e1471ffce868947e5908271f6d051c4",
+   "ji": 917,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/30",
+   "danraku": 15,
+   "sha256": "5b5eb36dd0fdd9e9fbafb2822fcd661b420b5c848815c2e911e7b6b46158a7ba",
+   "ji": 531,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/31",
+   "danraku": 24,
+   "sha256": "e45bf55319ce779269f8d2a4c9a27fa13b4b338e93e24c2068c29dac2b015ac4",
+   "ji": 939,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/32",
+   "danraku": 17,
+   "sha256": "fd759a6d04b2bd86588fd508afedb5c2d7b33b861804957f10957e31894b4fd7",
+   "ji": 666,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/33",
+   "danraku": 17,
+   "sha256": "f8b463b523e22a7b59538a6911e2a2a03ba627ecd325cc45936bd9388314e8ab",
+   "ji": 732,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/34",
+   "danraku": 17,
+   "sha256": "ce280bc22beb388db0e78caedc859968489337e657c909be6de78b3ea80758fd",
+   "ji": 645,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/35",
+   "danraku": 14,
+   "sha256": "6e83ee3975412569d196ac86b7b646cf3950e5615e10308a2ab3e600adb6318f",
+   "ji": 441,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/36",
+   "danraku": 7,
+   "sha256": "7177286ab6b8340f71e36f084fa5e54fdc7fa54a41c9f16f29befb2afa2a4eaf",
+   "ji": 336,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/37",
+   "danraku": 12,
+   "sha256": "d9c3aa1450fe6995888660fdba3ee59ad1ce9d51e3c22d17bee3081d7332b2bf",
+   "ji": 761,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/38",
+   "danraku": 11,
+   "sha256": "d86443b71399cac5621bf82e8fe5556172b4190623f6ead44c2a998429214750",
+   "ji": 516,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/39",
+   "danraku": 11,
+   "sha256": "e1c71ce8e9acafc6dc20c086c7f8dc046a4d61a80c6864fb76ecbb7c6e2d8d50",
+   "ji": 461,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/40",
+   "danraku": 13,
+   "sha256": "053e7bc6e2fd0e1e3637b7de0bbb9c29c17d73acf7caedc322de99a9c0eeabb4",
+   "ji": 593,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/41",
+   "danraku": 17,
+   "sha256": "481da4ee6c2b64f4978b17e96695e6cff23f7eee60210e6064cc6e38375ec660",
+   "ji": 456,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/42",
+   "danraku": 15,
+   "sha256": "10377598b17030faf99d6a91268f657f7e9e54fe3b3aeb0e5589b19fa7a3487c",
+   "ji": 759,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/43",
+   "danraku": 13,
+   "sha256": "d0456ac13ed468a3c82385b4edc0ac2f2b03f7510bf32bfe7927b3d47ca9f12b",
+   "ji": 728,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/44",
+   "danraku": 13,
+   "sha256": "a82ff7a187f47f1987cc20122714162714d36a68152868d367f4aa701afacc1d",
+   "ji": 810,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/45",
+   "danraku": 12,
+   "sha256": "613a495cec3fe96940cb1d9e6344214f229a8c402baa2a08020bc8254b7c34f3",
+   "ji": 810,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/46",
+   "danraku": 5,
+   "sha256": "de1f2417a813df213c97646540d1bd55a18abe5e577461adbfa27237dabc9178",
+   "ji": 296,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/47",
+   "danraku": 21,
+   "sha256": "4c29e6bc795219fdf14ec76d58eb7ed19e766098fed16c78d1eeece6218f9d78",
+   "ji": 869,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/48",
+   "danraku": 13,
+   "sha256": "6f1ae486801f953a8b09317801a92c2c4707d58f30aabecfc19513dbf73d3713",
+   "ji": 439,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/49",
+   "danraku": 2,
+   "sha256": "c63878bebb785945daa7b4cb29cb91932d4e460a78705f9f5e7cf40bfc024778",
+   "ji": 395,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  },
+  {
+   "shiryo": "pt:shogai-fukushi7/honpen/51",
+   "danraku": 1,
+   "sha256": "2490548944d245c2758316421cb29555c3e39b124eb91d7710576c499315e023",
+   "ji": 155,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-19-2.txt"
+  }
+ ]
+]

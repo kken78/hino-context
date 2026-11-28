@@ -64,6 +64,7 @@ SKILL_SETSU = "## 1. "              # SKILL.md の、出すときの規約の節
 NAME = "hino-context"
 VERSION = "0.1.0"                    # データのもとのコミットと日付は入れない（作るたびに変わると、検査で比較できない）
 JOGEN = 6000                         # 1回の応答の文字数の上限（目安）
+SHIRYO_SAISHO = 3                    # 論点の資料の記述（mcp-midashi-issue-shiryo）が1回めの応答に入りきらないとき、資料ごとに1回めに出す数（2026-11-28）
 TSUNAGARI_ICHIRAN = 3                # theme と field のまとまりの見出しに添える、同じ題の数の多いまとまりの数（docs/design.md 4節。2026-11-28。案）
 A, B = bn.A, bn.B
 E, S = bn.E, bn.S
@@ -850,8 +851,12 @@ class Tsukuru:
         """論点の記述（hino-ronten の事柄の記録の1行）→ 項目。引用を先に出す。"""
         D = self.D
         nm, url = self.moto(x["source"], x["quote"])
-        jiki = E(bs.hi_str(D, x["source_date"]))
-        lines = [f"- 「{S(x['quote']).replace(chr(10), chr(10) + '  ')}」"]
+        jiki = E(bs.hi_str(D, x["source_date"])) if x["source_date"] else E(D.bun("kisai-hiduke-nashi"))
+        if x.get("hyo"):
+            # 指標の表の段落で、計画ライブラリの指標の表とページで結べるもの（SCHEMA.md 7.13。2026-11-28）
+            lines = [f"- {E(D.bun('kisai-shihyo-setsumei'))}"] + [f"  - {t}" for t in bn.shihyo_gyo(D, x["hyo"])]
+        else:
+            lines = [f"- 「{S(x['quote']).replace(chr(10), chr(10) + '  ')}」"]
         if x.get("iken"):
             # 意見募集の結果の、提出された意見の行（SCHEMA.md 7.14）
             lines.append("  - " + D.bun("kiroku-iken", midashi=S(x["iken"])))
@@ -935,21 +940,49 @@ class Tsukuru:
             hani = self.issue_hani(theme)
             if any(r["point"] == P and jiko.is_bunya(r["theme"]) for r in pg.m.get("yomi", [])):
                 hani = hani + [D.bun("mcp-issue-hani-bunya-hoka", keikaku=S(self.bu["kk"]["name"]))]
-        blocks = [([f"## {E(D.bun('mcp-midashi-issue-shiryo'))}"]
-                   + ([E(D.bun("kisai-yomi-setsumei", short=E(short)))] if any(x.get("yomi") for x in R["docs"]) else []),
-                   [self.kijutsu(pg, x, False) for x in R["docs"]] or [E(D.bun("mcp-issue-shiryo-nashi"))])]
-        items = [self.kijutsu(pg, x) for x in R["ko"]]
-        blocks.append(([f"## {E(D.bun('mcp-midashi-issue-setsumei'))}"], items))
+        head = [f"## {E(D.bun('mcp-midashi-issue-shiryo'))}"]
+        if any(x.get("yomi") for x in R["docs"]):
+            head.append(E(D.bun("kisai-yomi-setsumei", short=E(short))))
+            wa = bn.wariate_bun(D, R["docs"], self.by)
+            if wa:
+                head.append(wa)
+        ditems = [(x, self.kijutsu(pg, x, False)) for x in R["docs"]]
+        ato_blocks = [([f"## {E(D.bun('mcp-midashi-issue-setsumei'))}"], [self.kijutsu(pg, x) for x in R["ko"]])]
         if R["tome"]:
-            blocks.append(([f"## {E(D.bun('mcp-midashi-issue-kongo'))}"],
-                           [self.kijutsu(pg, x) for x in R["tome"]] + [E(D.bun("mcp-issue-kongo-setsumei"))]))
+            ato_blocks.append(([f"## {E(D.bun('mcp-midashi-issue-kongo'))}"],
+                               [self.kijutsu(pg, x) for x in R["tome"]] + [E(D.bun("mcp-issue-kongo-setsumei"))]))
         if R["mokuteki"]:
-            blocks.append(([f"## {E(D.kotoba('つながりの記録 link が「目的と手段」'))}", E(D.bun("mokuteki-setsumei"))],
-                           [self.mokuteki(a) for a in R["mokuteki"]]))
+            ato_blocks.append(([f"## {E(D.kotoba('つながりの記録 link が「目的と手段」'))}", E(D.bun("mokuteki-setsumei"))],
+                               [self.mokuteki(a) for a in R["mokuteki"]]))
         qs = R["qs"]
-        return self.gikai(self.kagi_ji(E(P), "issue", slug), intro, blocks, qs, short, lambda q: pg,
-                          f"## {E(D.bun('mcp-midashi-issue-gikai', n=len(qs)))}", hani, slug,
-                          ato=self.issue_matome(slug, theme))
+        matome_blocks = self.issue_matome(slug, theme)
+
+        def tsukuru(gentei):
+            # gentei：資料の記述（mcp-midashi-issue-shiryo）を、資料ごとに最初の SHIRYO_SAISHO つまでにし、残りを続きの応答で返す（docs/design.md 4節）
+            items, nokori, kazu = [], [], {}
+            for x, it in ditems:
+                b = x.get("bunsho") or sj.bunsho_of(x["source"]) or x["source"]
+                kazu[b] = kazu.get(b, 0) + 1
+                (items if not gentei or kazu[b] <= SHIRYO_SAISHO else nokori).append(it)
+
+            def blocks_of(bango):
+                its = list(items) or [E(D.bun("mcp-issue-shiryo-nashi"))]
+                if nokori:
+                    its.append(self.kagi_ji(E(D.bun("mcp-issue-shiryo-tsuzuki", n=len(nokori), m=SHIRYO_SAISHO)),
+                                            TSUZUKI, str(bango[0])))
+                return [(head, its)] + ato_blocks
+            mae = (blocks_of, [([f"## {E(D.bun('mcp-midashi-issue-shiryo-tsuzuki'))}"], nokori, True)] if nokori else [])
+            return self.gikai(self.kagi_ji(E(P), "issue", slug), intro, None, qs, short, lambda q: pg,
+                              f"## {E(D.bun('mcp-midashi-issue-gikai', n=len(qs)))}", hani, slug,
+                              ato=matome_blocks, mae=mae), bool(nokori)
+        o, _ = tsukuru(False)
+        n = len(o.pages(D))
+        # 1回めの応答（質問ごとの部分の前まで）が2つ以上の応答に分かれるときだけ、資料の記述を分ける（2026-11-28）
+        if (o.hajime[0] - 1 if o.hajime else n) > 1:
+            o2, wake = tsukuru(True)
+            if wake:
+                return o2
+        return o
 
     def theme_ji(self, th):
         """テーマの名前（HTML）。総合計画の分野のテーマは、分野の番号と名前（入力の字）。"""
@@ -1068,11 +1101,13 @@ class Tsukuru:
                       f"    - {E(D.kotoba('つながりの記録 source'))}：{nm}" + (f"　{E(url)}" if url else "")]
         return "\n".join(lines)
 
-    def gikai(self, title, intro, blocks, qs, short, pg_of, gikai, hani, ji, ato=()):
+    def gikai(self, title, intro, blocks, qs, short, pg_of, gikai, hani, ji, ato=(), mae=None):
         """議会での質問と答弁のブロック（issue と document で共通。docs/design.md 4節）。1回めの応答に質問の一覧を出し、
         質問ごとの部分を、続きの応答で返す。pg_of は、質問 → 注（Page.chu_list）を引く build_note.Page（無ければ None）。
         hani は、扱っている質問の範囲の文の並び。ji は、検査の問題に出す字。ato は、質問の一覧のあと、質問ごとの部分の前に置く
-        ブロックの並び（issue_matome のブロック。2026-11-28）。"""
+        ブロックの並び（issue_matome のブロック。2026-11-28）。mae は (関数, ブロックの並び) の組で、ブロックの並び（新しい
+        応答から始めるもの）を、質問ごとの部分の前に置き、関数に、その始まりの応答の番号の並びを渡して、blocks の代わりの
+        ブロックを作る（論点の資料の記述 mcp-midashi-issue-shiryo の続き。2026-11-28）。"""
         D, inp = self.D, self.inp
         zentai = E(D.bun("mcp-issue-zentai"))
 
@@ -1105,9 +1140,12 @@ class Tsukuru:
                 items.append("\n".join(lines))
             tsuzuki.append((head, items, True))
 
+        mae_fn, mae_blocks = mae if mae else (None, [])
+
         def tsukuru(bango):
+            nm = len(mae_blocks)
             items = [f"- {shitsumon(q)}\n  - {kakunin(q)}\n  - {self.kagi_ji(bubun(q), TSUZUKI, str(n))}"
-                     f"\n  - {zentai}：{E(keys.source_url(inp, q['question']))}" for q, n in zip(qs, bango)]
+                     f"\n  - {zentai}：{E(keys.source_url(inp, q['question']))}" for q, n in zip(qs, bango[nm:])]
             setsumei = [E(D.bun("mcp-issue-gikai-setsumei", short=E(short)))]
             if qs:
                 setsumei.append(E(D.bun("mcp-issue-gikai-tsuzuki", short=E(short))))
@@ -1116,14 +1154,22 @@ class Tsukuru:
                 setsumei.append(E(D.bun("yomi-setsumei", short=E(short))))
             keisai = D.bun("keisai-yomi", short=E(short)) if mi else D.bun("mcp-issue-keisai", short=E(short))
             items += [E(keisai)] + list(hani) + [E(D.bun("mcp-issue-owari"))]
-            return Outou(title, intro, blocks + [([gikai] + setsumei, items)] + list(ato) + tsuzuki)
+            bl = mae_fn(bango[:nm]) if mae_fn else blocks
+            return Outou(title, intro, bl + [([gikai] + setsumei, items)] + list(ato) + list(mae_blocks) + tsuzuki)
 
         # 続きの番号は、分けてみるまで分からないので、仮の番号で分けてから、その番号で作り直す
-        o = tsukuru([99] * len(qs))
+        o = tsukuru([99] * (len(mae_blocks) + len(qs)))
         o.pages(self.D)
         bango = list(o.hajime)
         o = tsukuru(bango)
         o.pages(self.D)
+        for _ in range(3):
+            # 資料の記述の続きの番号の字が短くなると、1回めの応答の分け方が変わることがある。変わらなくなるまで作り直す
+            if o.hajime == bango:
+                break
+            bango = list(o.hajime)
+            o = tsukuru(bango)
+            o.pages(self.D)
         if o.hajime != bango:
             self.problems.append(("(h) 論点", f"{ji}：続きの番号が、作り直すと変わる（{bango} → {o.hajime}）"))
         return o

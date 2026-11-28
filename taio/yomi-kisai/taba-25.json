@@ -1,0 +1,501 @@
+[
+ null,
+ [
+  {
+   "shiryo": "pt:koutsu/honpen/1",
+   "danraku": 1,
+   "sha256": "bc4eab61bd91eaaff7ef2315162c6bb3fbe6d3db5c3fb19a253c61bcefc3f979",
+   "ji": 34,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/3",
+   "danraku": 8,
+   "sha256": "3a928d980fd69a445eb9cc7c2bfe7eb2a9389208914d3470d5d9834537aa8347",
+   "ji": 825,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/4",
+   "danraku": 45,
+   "sha256": "19cb2369fb8a8c085e9ebb58376094a82c54f7a81c48fa1f70d43e21c442e2ea",
+   "ji": 3145,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/5",
+   "danraku": 13,
+   "sha256": "4a011d312c2ac191890cc16407e564c62aa1c8139e68f3616aeae60750366f8c",
+   "ji": 781,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/6",
+   "danraku": 7,
+   "sha256": "b5859ca76518f47270fa738bab21b58b1ab7307538ff39b8069a31516bc0f2f8",
+   "ji": 466,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/7",
+   "danraku": 20,
+   "sha256": "110ba6b0cbba301e3cf02fc9ee5e0bd1d6db8ba5c5b5fc0f5c9aaf458a58f983",
+   "ji": 725,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/8",
+   "danraku": 26,
+   "sha256": "b2a0385078cfb4dc25609fdf1c124cb281494e5d9d9a94bbe578a7561e7b82c1",
+   "ji": 855,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/9",
+   "danraku": 28,
+   "sha256": "ad14024aa8322802e4d8e480a96ac0bbe8c83b3d48aae4bedc117721f915b32f",
+   "ji": 520,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/10",
+   "danraku": 7,
+   "sha256": "34f26311428b1096b6b2d66c4a8c8d39c44d6c9e4aa538eb4bcc7d4b007bc8d1",
+   "ji": 550,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/11",
+   "danraku": 11,
+   "sha256": "d4e82b92993742646e0f7f4fb407dbd013fd77e6f611f5ac38fe91425cdef8dc",
+   "ji": 482,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/12",
+   "danraku": 13,
+   "sha256": "94548175dd20bc79a132731603dab57ce0507ece830f405d0574584ce771b3ef",
+   "ji": 688,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/13",
+   "danraku": 30,
+   "sha256": "51739f708b34cabf3740c4779b46731d0ffe3fc26a7b33b8f3af8b8f08861d10",
+   "ji": 775,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/14",
+   "danraku": 20,
+   "sha256": "fcdef473a32eb386c4ab438b3f950e1301f1bdfed0b94a45dc89a750311232bd",
+   "ji": 592,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/15",
+   "danraku": 9,
+   "sha256": "e0b6e2e4f8e2efa5752804935c70fb2ed14e2c6a9cd03adcc8ccd350666a5779",
+   "ji": 1190,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/16",
+   "danraku": 18,
+   "sha256": "d63b7b6893f53070d3552f8978ef178da312de1328e0152b8adc220a9c20f5f8",
+   "ji": 590,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/17",
+   "danraku": 9,
+   "sha256": "e35e151f1d8788ce41c5040e31a55acd6827eb8af486a5844e4f4709bbb05340",
+   "ji": 556,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/18",
+   "danraku": 9,
+   "sha256": "29fa0ae217447c4c669ebcf7469d858467b737fe80ee3500a0a64131c273268a",
+   "ji": 839,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/19",
+   "danraku": 12,
+   "sha256": "87a54fc5a8e9769d0f4c21161b7de25da1ac0447917fbd92dcd64f235b8e07cf",
+   "ji": 957,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/20",
+   "danraku": 10,
+   "sha256": "1088280b7347bb39f6bdb48572e4f2477ca00024b4361d2da7c21e42aa548f0b",
+   "ji": 491,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/21",
+   "danraku": 19,
+   "sha256": "42c2ae4bdb567fb4f15bff25e4b0a97af36a9b00654781d1617f1ccaf9f77d36",
+   "ji": 682,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/22",
+   "danraku": 10,
+   "sha256": "78a9437f7bcc2ed3a92a3ae8ffc9311c3cdaceb243037b2f8e7d86a413b31907",
+   "ji": 894,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/23",
+   "danraku": 7,
+   "sha256": "b1f25d50ad1165c67d927d7455f551798ce43544b24d963445c6a0d1c27d974c",
+   "ji": 638,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/24",
+   "danraku": 8,
+   "sha256": "c72c7fa6073409747ce5c2a40a707063a5065fe6466273bdbddd7ef2a5623ddd",
+   "ji": 501,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/25",
+   "danraku": 56,
+   "sha256": "acb0de6699aa03e3b28800e74da49a428bc50a233c87fb288bcd717e2c0e6ba6",
+   "ji": 1257,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/26",
+   "danraku": 17,
+   "sha256": "ff8781d1c04c3526eeaada4d3abcb4441352df9d94a26fbd829030c80f011bc9",
+   "ji": 659,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/27",
+   "danraku": 18,
+   "sha256": "0ca987ed6001b29f35cc62557e2d12ee61b0b3e3902be34b24ed2c4c2fd6540e",
+   "ji": 813,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/28",
+   "danraku": 6,
+   "sha256": "0eee14ef1f9083c66c9f7a67def0e2ce3a82316dd5a88c7147a060592521ea89",
+   "ji": 452,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/29",
+   "danraku": 26,
+   "sha256": "921cef39f15e57ba8db305a1a14d50ad366af5b75f55a9fd2786703af9ef25a0",
+   "ji": 1044,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/30",
+   "danraku": 25,
+   "sha256": "1f9297687a52d900cd762bf7790bf6688be95354e0812739a11ae9a3de2b41fd",
+   "ji": 1069,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/31",
+   "danraku": 23,
+   "sha256": "4be2cd924d33aedc489ca2b342e88cef3326dc0b0f276d781078686b37ea730f",
+   "ji": 818,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/32",
+   "danraku": 4,
+   "sha256": "3b0882637bd3af742dc4b53ec81fe61d7913ae261ec93ecc9ebbdf90edb0d477",
+   "ji": 254,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/33",
+   "danraku": 17,
+   "sha256": "443a4358c7988e7be6f9da9240c0d9847a82f7be40220e9651091585cb9747e9",
+   "ji": 917,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/34",
+   "danraku": 14,
+   "sha256": "d2f3c99ca7d3e1b23adc38b34f04bda084629d27151909c8bd0c9ae799c67532",
+   "ji": 481,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/35",
+   "danraku": 4,
+   "sha256": "42c8956f5618fd591ceeab9c8d8a40821c480a883e083d70ffceda6245d2fc4a",
+   "ji": 190,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/36",
+   "danraku": 24,
+   "sha256": "5d6666afd3a7cabc371d0c29e0477a6894b26e94238f7edcb7cf07abc13723e7",
+   "ji": 706,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/37",
+   "danraku": 18,
+   "sha256": "bd2684fd7beb22410a65f9a29621a8f788fd3c52f57d500c410d8be8a1cc6eab",
+   "ji": 905,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/38",
+   "danraku": 53,
+   "sha256": "997c628d492013bc67e494c736ace42a6c109daa3cba574c31069b62ee6a0633",
+   "ji": 798,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/39",
+   "danraku": 19,
+   "sha256": "baa7f9c2d23de3cce2ee45742cc52766cf072564427719ded25944043abae1a4",
+   "ji": 989,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/40",
+   "danraku": 15,
+   "sha256": "7bc85acac448587515a5c9217565cd2fb8291011c06f7dc1010b0ba1b4f30850",
+   "ji": 906,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/41",
+   "danraku": 14,
+   "sha256": "2164971d7819b9c9dc39360fccc74d9a31c9b6e712cb0d6c5e5a5f700808d6f1",
+   "ji": 777,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/42",
+   "danraku": 19,
+   "sha256": "1e2c8e05cfe77452a91787844598fe73d80868c89d95a7ec48cbbf009b28bf48",
+   "ji": 1025,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/43",
+   "danraku": 22,
+   "sha256": "1e68e5f650050d51915f0339476838e40878a190ab3f50a1af4ccc7f243dcf06",
+   "ji": 1239,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/44",
+   "danraku": 23,
+   "sha256": "b89d1ac6607172bb4264c21ea95f83ef430a5353e3fff201c5d7703a37ec54e7",
+   "ji": 1025,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/45",
+   "danraku": 10,
+   "sha256": "bc04552906f9ab7764015b62462e897ff8eac1218f104ee1b821719ffbde8165",
+   "ji": 523,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/46",
+   "danraku": 52,
+   "sha256": "63f90cfd7df84ca85541cd95f2154ac574179280e1f7dfc50ac55b685d147568",
+   "ji": 794,
+   "hyo": 2,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/47",
+   "danraku": 22,
+   "sha256": "b46e1fd54d16651a3e71b87458af8b4a08fd8475009a037de97f92bff925e956",
+   "ji": 663,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/48",
+   "danraku": 13,
+   "sha256": "3cc081ac4a7aaee6d131289a6ee5902c877a360130edc05fe4a5396d1a3a99ac",
+   "ji": 416,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/49",
+   "danraku": 2,
+   "sha256": "4731afa6aa95d2bf3211735a918af23fe15c5302f53ff49b6ef10b9afc1649c3",
+   "ji": 95,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/50",
+   "danraku": 4,
+   "sha256": "472229307f0baa803497f62f01e93f16a814bbf06da5358fd92538faebf4e09e",
+   "ji": 504,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/51",
+   "danraku": 19,
+   "sha256": "676eba450f9e52f73c4a451351feeefd44c4495c90139076a85c132753fa0b88",
+   "ji": 913,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/52",
+   "danraku": 21,
+   "sha256": "b8da4ddc4f16f1d9757952fb7cbcf1ef2727868237bd9295b3913570f1623e24",
+   "ji": 759,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/53",
+   "danraku": 19,
+   "sha256": "343a6351e735f5672bb526f9bca4de95bd114eb648191f552f05c0b66276b2b7",
+   "ji": 1028,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:koutsu/honpen/54",
+   "danraku": 1,
+   "sha256": "8d513cf1ae93186a8e9ef76a97220a6dbb9a7c1ca2c886826b89159147613ecb",
+   "ji": 85,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:shasi-koutsu/honpen/1",
+   "danraku": 11,
+   "sha256": "c7a5be6fc0f8004e5a107ee6b1d3b5f67002029cc8181c5152b6288924844df6",
+   "ji": 1102,
+   "hyo": 2,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:shasi-koutsu/honpen/2",
+   "danraku": 2,
+   "sha256": "d3f1142e95d554c5cb9d3158c2de3152db4e0388dd0390aab8672f09fb8cb9d5",
+   "ji": 752,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:shasi-koutsu/honpen/3",
+   "danraku": 2,
+   "sha256": "afd8fc9cd8f2bc85e1a93b77e58ffad28fc288c631a07b7aaf72fdff8bb9242f",
+   "ji": 741,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:shasi-koutsu/honpen/4",
+   "danraku": 2,
+   "sha256": "eb3c600d145ea0a4eb9d5c8d49f9f2efecd82d7029fea4b2fbaa4cbb046d3ff2",
+   "ji": 328,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:shasi-koutsu/honpen/5",
+   "danraku": 2,
+   "sha256": "fd64c7a6cea75bb405f7188c962deae820cfa7506a8b7162e3f95435d89d4a5b",
+   "ji": 789,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:shasi-koutsu/honpen/6",
+   "danraku": 2,
+   "sha256": "cb29bce7681ab7a7b3499a1f2bda966a58b9be8c04472c76a5538fc7d745cd13",
+   "ji": 782,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:shasi-koutsu/honpen/7",
+   "danraku": 2,
+   "sha256": "3e4757ba65265e972fa37132c81303b448ee2fd5e90bccbfa08acf4cbb4df431",
+   "ji": 577,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:shasi-koutsu/honpen/8",
+   "danraku": 1,
+   "sha256": "105acbb739089052b686ed121c0c530052358815ee2173998d7d75000638aba5",
+   "ji": 174,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  },
+  {
+   "shiryo": "pt:shasi-koutsu/honpen/9",
+   "danraku": 12,
+   "sha256": "b6ca80b30944c69bff8900b3aa568b22728b0f9d262b4401107df07b9e1672ab",
+   "ji": 578,
+   "hyo": 0,
+   "file": "/home/claude/yomi/keikaku/honbun-25-1.txt"
+  }
+ ]
+]
