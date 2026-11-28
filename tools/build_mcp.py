@@ -1,9 +1,11 @@
 """MCP サーバーの応答を、表と入力から作る（docs/mcp.md、docs/design.md 3節・4節）。
 
 実行：python3 -B tools/build_mcp.py [--out <ファイル>] [--hikaku <ファイル>]
-  既定の出力は mcp/data/outou.json。Cloudflare に置くプログラム（mcp/src/index.ts）は、この JSON を引いて返すだけで、
-  応答の文を組み立てない。
-  --hikaku を付けると、作った JSON が、そのファイルと同じかを確認する（tools/kensa.py が使う。違えば終了コード 1）。
+  既定の出力は mcp/data/outou.json.gz（JSON を gzip で圧縮したもの。docs/mcp.md 4節）。Cloudflare に置くプログラム
+  （mcp/src/index.ts）は、この JSON を引いて返すだけで、応答の文を組み立てない。
+  --out と --hikaku のファイルの名前が .gz で終わるときは、圧縮したファイルとして書き、展開して読む。圧縮は、同じ中身なら
+  同じバイトになる形にする（gzip の頭の時刻を 0 にし、ファイルの名前を入れない）。
+  --hikaku を付けると、作った JSON が、そのファイルを展開した JSON と同じかを確認する（tools/kensa.py が使う。違えば終了コード 1）。
 中身は teigi/ の表と、lock の版の入力だけから作る。数値を計算しない。良し悪しを書かない。
 画面に出す言葉は、docs/design.md 3節の2つの表から読む（tools/build_suji.py の read_design と同じ読み方）。
 このファイルには、画面の言葉を書かない。資料の名前、時期、掲載の場所などは、ページを作るツールの関数を使う。
@@ -31,7 +33,9 @@
 """
 import argparse
 import datetime
+import gzip
 import html
+import io
 import json
 import os
 import re
@@ -58,7 +62,7 @@ import suji as sj  # noqa: E402
 import yomi as ym  # noqa: E402
 import yosan as ys  # noqa: E402
 
-OUT_PATH = os.path.join(inputs.ROOT, "mcp", "data", "outou.json")
+OUT_PATH = os.path.join(inputs.ROOT, "mcp", "data", "outou.json.gz")
 SRC_PATH = os.path.abspath(__file__)
 SKILL_PATH = os.path.join(inputs.ROOT, "SKILL.md")
 SKILL_SETSU = "## 1. "              # SKILL.md の、出すときの規約の節。箇条書きの行を、サーバーの instructions にする
@@ -2215,6 +2219,31 @@ def dumps(data):
     return json.dumps(data, ensure_ascii=False, indent=1) + "\n"
 
 
+def asshuku(s):
+    """JSON の字 → gzip で圧縮したバイト。同じ字なら同じバイトになる（頭の時刻を 0、ファイルの名前を空にする）。"""
+    buf = io.BytesIO()
+    with gzip.GzipFile(filename="", mode="wb", fileobj=buf, mtime=0, compresslevel=9) as g:
+        g.write(s.encode("utf-8"))
+    return buf.getvalue()
+
+
+def kaku(path, s):
+    """JSON の字を path に書く。名前が .gz で終わるときは圧縮する。→ 書いたバイトの数。"""
+    b = asshuku(s) if path.endswith(".gz") else s.encode("utf-8")
+    with open(path, "wb") as f:
+        f.write(b)
+    return len(b)
+
+
+def yomu(path):
+    """path の JSON の字を読む。名前が .gz で終わるときは展開する。"""
+    with open(path, "rb") as f:
+        b = f.read()
+    if path.endswith(".gz"):
+        b = gzip.decompress(b)
+    return b.decode("utf-8")
+
+
 def main(argv=None, teigi_dir=None):
     p = argparse.ArgumentParser(description="MCP サーバーの応答の JSON を作る")
     p.add_argument("--out", default=OUT_PATH)
@@ -2234,9 +2263,8 @@ def main(argv=None, teigi_dir=None):
         return 1
     s = dumps(data)
     os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
-    with open(a.out, "w", encoding="utf-8") as f:
-        f.write(s)
-    print(f"{os.path.relpath(os.path.abspath(a.out), inputs.ROOT)}（{len(s.encode('utf-8'))} バイト）")
+    n = kaku(a.out, s)
+    print(f"{os.path.relpath(os.path.abspath(a.out), inputs.ROOT)}（{n} バイト。展開した JSON は {len(s.encode('utf-8'))} バイト）")
     for x, why in info["dasenai"]:
         print(f"表の形で出せない表 {x}：{why[0][1]}")
     print(f"組 {info['kumi']}（{'、'.join(f'{k} {v}' for k, v in info['kazu'].items())}）、応答の文 {info['bun']}、"
@@ -2248,8 +2276,7 @@ def main(argv=None, teigi_dir=None):
     if a.hikaku:
         moto = None
         if os.path.exists(a.hikaku):
-            with open(a.hikaku, encoding="utf-8") as f:
-                moto = f.read()
+            moto = yomu(a.hikaku)
         if moto != s:
             print(f"止めた：作り直した JSON が {os.path.relpath(os.path.abspath(a.hikaku), inputs.ROOT)} と違う。"
                   "データか言葉を変えたのに、MCP の応答を作り直していない。"

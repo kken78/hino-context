@@ -1,6 +1,6 @@
 // hino-context の MCP サーバー（Cloudflare Workers。docs/mcp.md）。
-// 行うことは3つだけ：ツールの一覧を返す、呼ばれたツールと引数に該当する応答を data/outou.json から引いて返す、
-// 該当するものが無いときに data/outou.json の定型文を返す。data/outou.json は、scripts/bunkatsu.mjs が、目次（dist/mokuji.json）と、
+// 行うことは3つだけ：ツールの一覧を返す、呼ばれたツールと引数に該当する応答を data/outou.json.gz の JSON から引いて返す、
+// 該当するものが無いときに JSON の定型文を返す。data/outou.json.gz は、scripts/bunkatsu.mjs が展開して、目次（dist/mokuji.json）と、
 // 応答の文のファイル（静的なアセットの o/<番号>.txt）に分けている（2026-11-28。docs/mcp.md 5節）。
 // 応答の文、言葉、決まりは、tools/build_mcp.py が作った JSON にあり、ここには書かない。
 // 要求ごとに新しいサーバーを作る（createMcpHandler）。セッションと Durable Objects は使わない。

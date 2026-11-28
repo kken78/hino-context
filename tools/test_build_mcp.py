@@ -8,6 +8,7 @@ import json
 import os
 import re
 import sys
+import tempfile
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -1183,9 +1184,25 @@ class TestReal(unittest.TestCase):
         # リポジトリの JSON は、いまの表から作ったものと同じ（違えば、作り直していない）
         path = bm.OUT_PATH
         if not os.path.exists(path):
-            self.skipTest("mcp/data/outou.json がまだ無い")
-        with open(path, encoding="utf-8") as f:
-            self.assertEqual(f.read(), bm.dumps(self.data))
+            self.skipTest("mcp/data/outou.json.gz がまだ無い")
+        self.assertTrue(path.endswith(".gz"))
+        self.assertEqual(bm.yomu(path), bm.dumps(self.data))
+
+    def test_asshuku(self):
+        # 圧縮は、同じ字なら同じバイト（gzip の頭の時刻 0、ファイルの名前なし）。展開すると元の字に戻る
+        s = '{"bun": ["応答の文"]}\n'
+        b = bm.asshuku(s)
+        self.assertEqual(b, bm.asshuku(s))
+        self.assertEqual(b[4:8], b"\x00\x00\x00\x00")   # 頭の時刻
+        self.assertEqual(b[3] & 0x08, 0)                    # ファイルの名前が無い
+        with tempfile.TemporaryDirectory() as d:
+            gz, js = os.path.join(d, "o.json.gz"), os.path.join(d, "o.json")
+            self.assertEqual(bm.kaku(gz, s), len(b))
+            bm.kaku(js, s)
+            with open(gz, "rb") as f:
+                self.assertEqual(f.read(), b)
+            self.assertEqual(bm.yomu(gz), s)
+            self.assertEqual(bm.yomu(js), s)
 
 
 if __name__ == "__main__":
