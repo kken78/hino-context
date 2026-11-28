@@ -2,7 +2,7 @@
 
 hino-context のデータを、使う人の生成AIから呼べる、読み取り専用の MCP サーバーにする。依頼者が 2026-11-27 に了承した文案（Project の `claude/hino-context-R2/mcp-an-2026-11-27.md`）による。
 
-- 応答の文は、Python のツール（tools/build_mcp.py）が、ページと同じ検査を通ったデータから、先に作る。できた応答は、1つの JSON ファイル（mcp/data/outou.json）にして、リポジトリにコミットする。
+- 応答の文は、Python のツール（tools/build_mcp.py）が、ページと同じ検査を通ったデータから、先に作る。できた応答は、1つの JSON ファイルを gzip で圧縮したもの（mcp/data/outou.json.gz）にして、リポジトリにコミットする（2026-11-28 の変更。4節）。
 - Cloudflare Workers に置くプログラム（mcp/）は、JSON を引いて返すだけにする。応答の文を組み立てる処理、言葉、決まりを、プログラムに書かない。照合、確認の記録、使わない言葉の検査が Python のツールにあり、同じ決まりを2か所に書かないためである。
 - 応答の文の型と言葉は docs/design.md（3節の表と、4節の「MCP の応答」）、使う生成AIが守ることは SKILL.md §1 に書く。この文書には、サーバーの形と、置き方を書く。
 
@@ -46,7 +46,7 @@ hino-context のデータを、使う人の生成AIから呼べる、読み取�
 - hino-ronten の構造にしていない記載（2026-11-28。SCHEMA.md 7.14、docs/design.md 4節。言葉は案）：入力の確定済みの行のうち、about が事項の名前の行を、issue の町の資料の記述とこれまでの説明と答弁に、事柄の記録と同じ形で出す。about が資料か出来事の名前の行を、document と event に「この資料（出来事）について記している記述」として出す。いまある応答で変わったのは、記載がある論点の issue（幼保と介護。介護の2つの論点は issue が新しくできた）、テーマの論点の一覧（論点ごとの記録の有無）、全部の資料の document（mcp-shiryo-kazu の文に数を足した）、記載がある資料と出来事の応答、document と event のツールの説明の文。ツールと引数の名前と型は変えていない。
 - field の分野の番号の応答に、関連する個別計画と、指標と目標値を足した（2026-11-28。SCHEMA.md 7.15、docs/design.md 4節の field の2。言葉は案）。基本施策の見出しの下に、総合計画の字がページの画像から読み取った字であることの文を足した。分野の試作のページにも同じ中身を出す。hino-ronten の構造にしていない記載の、意見募集の結果の提出された意見の行に、資料の欄の見出しの字の印を添えた（SCHEMA.md 7.14）。資料と出来事の名前の表の betsumei を足し、提言（中間報告と最終報告）と計画（案）の document に記載が出るようになった。ツールと引数の名前と型は変えていない。
 - 予算の事業（2026-11-28。SCHEMA.md 7.16、docs/design.md 4節の issue の13。言葉は案）：論点の issue の、町の資料の記述のあとに、生成AIが予算の事業（当初予算の附表、補正予算の概要の主な内容と繰越明許費・債務負担行為・地方債、実施計画）の名前と説明の字を2回読んで、その論点に付けた事業を、種類ごとに分けて返す（541の論点。事業の行2756）。額は入力の字のまま、種類の言葉を添え、合計や差は出さない。確定済みの記録（町の資料の記述）にある事業は出さない（3つの論点で6）。1回めの応答が分かれる論点は、種類と年度ごとに3つまでを1回めに出し、残りを続きで返す。ツールと引数の名前と型は変えていない。新しくできた issue は無い。
-- 手元で、MCP と同じ応答を引くときは、`python3 -B tools/hiku.py <ツール> <引数…>` を使う（例 `python3 -B tools/hiku.py field ㉝`、`python3 -B tools/hiku.py issue "b33-k1:職員の育成と人事評価"`、`python3 -B tools/hiku.py issue b33-07 page=2`）。引数は「名前=値」か、値だけ（ツールの引数の順）。`--json <ファイル>` で、ほかの版の outou.json（直しの前のものなど）から引ける。引き方は mcp/src/index.ts と同じ。
+- 手元で、MCP と同じ応答を引くときは、`python3 -B tools/hiku.py <ツール> <引数…>` を使う（例 `python3 -B tools/hiku.py field ㉝`、`python3 -B tools/hiku.py issue "b33-k1:職員の育成と人事評価"`、`python3 -B tools/hiku.py issue b33-07 page=2`）。引数は「名前=値」か、値だけ（ツールの引数の順）。既定では mcp/data/outou.json.gz を展開して引く。`--json <ファイル>` で、ほかの版（直しの前のものなど）から引ける。ファイルの名前が .gz で終わるときは展開して読み、ほかは圧縮していない JSON として読む。引き方は mcp/src/index.ts と同じ。
 
 ## 2. 応答
 
@@ -76,7 +76,7 @@ hino-context のデータを、使う人の生成AIから呼べる、読み取�
 - item の応答の、資料ごとの数値の前に、数値のページと同じ「資料の間で、数値が一致していません」（chigau、chigau-setsumei）を出す。判定は数値のページと同じ（時点の関係が mae の数値を、内訳と時期ごとにまとめ、tools/suji.py の ichi_shinai）。時期ごとに、数値と資料の名前を並べる。どちらが正しいかは書かない。いまは待機児童数の2018年4月（会議録 2019年6月14日の「平成30年度」の「なし」と、提言と再編整備計画の2つの版の表の「1」）が該当する。
 - 必須の引数が無いときと、型が違うとき（table に文字列など）は、MCP のライブラリが引数の検査の誤りを返す。
 
-## 3. JSON の形（mcp/data/outou.json）
+## 3. JSON の形（mcp/data/outou.json.gz を展開したもの）
 
 | 項目 | 中身 |
 | --- | --- |
@@ -111,18 +111,19 @@ hino-context のデータを、使う人の生成AIから呼べる、読み取�
 
 ## 4. 応答を作るツール（tools/build_mcp.py）
 
-- `python3 -B tools/build_mcp.py` で mcp/data/outou.json を作る。ページのツールと同じ検査（lock と入力、表の検査、docs/design.md の言葉の検査、引用の照合、使わない言葉。issue は試作のページと同じ検査）を通し、1つでも当たれば、件数と該当行を示して、何も書かずに終了コード 1。
+- `python3 -B tools/build_mcp.py` で mcp/data/outou.json.gz を作る。ページのツールと同じ検査（lock と入力、表の検査、docs/design.md の言葉の検査、引用の照合、使わない言葉。issue は試作のページと同じ検査）を通し、1つでも当たれば、件数と該当行を示して、何も書かずに終了コード 1。
 - 資料の名前、時期、掲載されている所、表の欄は、ページを作るツール（tools/build_suji.py、tools/build_hyo.py、tools/build_theme.py）の関数を使う。
-- マージ前の検査（tools/kensa.py）は、`--out build/mcp/outou.json --hikaku mcp/data/outou.json` で作り直し、リポジトリの JSON と同じであることを確認する。違えば止まる。データか docs/design.md の言葉を変えたら、`python3 -B tools/build_mcp.py` で作り直して、同じコミットか、続くデータのコミットに入れる。
+- 置き方（2026-11-28 の変更）：リポジトリには、JSON を gzip で圧縮したファイル（mcp/data/outou.json.gz）だけを置く。圧縮する前の JSON が 59,259,962 バイトになり、GitHub は 50MB を超えるファイルに警告を出し、100MB を超えるファイルを受け付けないためである。圧縮したファイルは 9,763,269 バイト。圧縮は、同じ中身なら同じバイトになる形にする（gzip の頭の時刻を 0 にし、ファイルの名前を入れない。圧縮の水準は 9）。展開した JSON は、圧縮する前の JSON と1バイトも変えない。`--out` と `--hikaku` のファイルの名前が .gz で終わるときは、圧縮したファイルとして書き、展開して読む。
+- マージ前の検査（tools/kensa.py）は、`--out build/mcp/outou.json.gz --hikaku mcp/data/outou.json.gz` で作り直し、展開した JSON の字がリポジトリのものと同じであることを確認する（圧縮したバイトでは比較しない。zlib の版によって、圧縮したバイトが変わることがあるため）。違えば止まる。データか docs/design.md の言葉を変えたら、`python3 -B tools/build_mcp.py` で作り直して、同じコミットか、続くデータのコミットに入れる。
 
 ## 5. Cloudflare に置くプログラム（mcp/）
 
-- ファイル：package.json、package-lock.json、wrangler.jsonc、tsconfig.json、src/index.ts、scripts/bunkatsu.mjs、data/outou.json。scripts/bunkatsu.mjs が作る public/ と dist/ は、リポジトリに入れない（.gitignore）。
+- ファイル：package.json、package-lock.json、wrangler.jsonc、tsconfig.json、src/index.ts、scripts/bunkatsu.mjs、data/outou.json.gz。scripts/bunkatsu.mjs が作る public/ と dist/ は、リポジトリに入れない（.gitignore）。
 - Cloudflare の現在の手引き（Agents SDK の createMcpHandler）の形。要求ごとに新しい McpServer を作り、セッションと Durable Objects を使わない。トランスポートは Streamable HTTP。パスは `/mcp`。`/` には mcp-top の文を返す。
 - 行うことは3つだけ：ツールの一覧を返す（説明と引数は JSON から）、呼ばれたツールと引数に該当する応答を JSON から引いて返す、該当するものが無いときに JSON の定型文を返す。引数は、前後の空白を除くだけで、ほかの推定をしない。
 - どのツールにも、読むだけの印（annotations の readOnlyHint）を付ける。
 - 認証なし。バインディングは、静的なアセット（ASSETS）だけ（KV、D1、Durable Objects などは使わない）。返すのは、公開の資料から作ったデータだけで、書き込みの機能は無い。
-- 応答の文の置き方（2026-11-28 の変更。案）：data/outou.json（Python のツールが作る1つのファイル。中身と検査は変えない）を、公開と手元での確認のときに、scripts/bunkatsu.mjs（wrangler.jsonc の build の command）が、目次（dist/mokuji.json。応答の文 bun のほかの全部と、応答の文の数）と、応答の文のファイル（public/o/<番号>.txt。1つの応答の文を1つのファイル）に分ける。目次はプログラムに束ね（import）、応答の文は静的なアセットとして置き、呼ばれたときに、バインディング ASSETS で1つのファイルだけを読んで返す。assets の run_worker_first を true にして、どの要求もプログラムが受ける（応答の文のファイルを URL では返さない）。
+- 応答の文の置き方（2026-11-28 の変更。案）：data/outou.json.gz（Python のツールが作る1つのファイルを gzip で圧縮したもの。中身と検査は変えない）を、公開と手元での確認のときに、scripts/bunkatsu.mjs（wrangler.jsonc の build の command）が、node の zlib で展開して（展開した JSON はファイルに書かない）、目次（dist/mokuji.json。応答の文 bun のほかの全部と、応答の文の数）と、応答の文のファイル（public/o/<番号>.txt。1つの応答の文を1つのファイル）に分ける。目次はプログラムに束ね（import）、応答の文は静的なアセットとして置き、呼ばれたときに、バインディング ASSETS で1つのファイルだけを読んで返す。assets の run_worker_first を true にして、どの要求もプログラムが受ける（応答の文のファイルを URL では返さない）。
   - 変えた理由：総合計画の分野の論点を入れると、data/outou.json が約 40MB（39,792,142 バイト）になった。前の形（JSON の全部を import で束ねる）では、wrangler deploy --dry-run の Total Upload が 73,030.54 KiB で、Workers の大きさの上限（圧縮する前の大きさで 64 MiB。Cloudflare の変更履歴 2026-09-04 で、圧縮したあとの大きさの上限（無料 3 MB、有料 10 MB）は無くなり、どのプランも圧縮する前の 64 MiB だけになった）を超える。束ねるときに日本語の字が \u の形になり、大きくなるためである。手元の node では、同じ大きさの JSON を import で読み込むのに約 320 ミリ秒、メモリ 73 MB を使った（起動の時間の上限は 1 秒、メモリの上限は 128 MB）。
   - 分けたあと：Total Upload は 1,591.11 KiB（目次とプログラム）、静的なアセットのファイルは 7,217（応答の文の数）と、そのほか1つ。静的なアセットの上限は、1つのファイルが 25 MiB、ファイルの数が 1つの版で 20,000（無料のプラン。有料は 100,000）。応答の文の数が 20,000 に近づいたら、応答の文を束ねてファイルの数を減らす形を考える。
   - 公開の手順で変わる所：Workers Builds の設定（Root directory は mcp、Build command は空、Deploy command は npx wrangler deploy）は変えない。npx wrangler deploy が、wrangler.jsonc の build の command で scripts/bunkatsu.mjs を動かしてから、プログラムと静的なアセットを公開する（Workers Builds の環境の node を使う。依存は増えていない）。
